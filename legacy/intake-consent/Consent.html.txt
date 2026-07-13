@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root{--navy:#1f4e78;--light:#eef5fa;--border:#d5e0e8;--text:#263b4d;--green:#2e7d32;--red:#a12626}
+    *{box-sizing:border-box}body{margin:0;background:#f5f8fb;font-family:Arial,"Noto Sans KR",sans-serif;color:var(--text)}
+    .wrap{max-width:760px;margin:0 auto;padding:22px}.header{background:var(--navy);color:#fff;padding:26px;border-radius:14px 14px 0 0}.header h1{margin:0 0 8px;font-size:25px}.header p{margin:0;line-height:1.55;opacity:.94}.card{background:#fff;border:1px solid var(--border);border-top:0;padding:24px;border-radius:0 0 14px 14px;box-shadow:0 4px 18px rgba(31,78,120,.08)}
+    .student{background:var(--light);border:1px solid #c9dce9;border-radius:10px;padding:15px;line-height:1.7;margin-bottom:18px}.section{border:1px solid var(--border);border-radius:10px;padding:16px;margin:14px 0}.section h3{margin:0 0 10px;font-size:17px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.full{grid-column:1/-1}label{display:block;font-size:14px;font-weight:700;margin-bottom:7px}input,select,textarea{width:100%;border:1px solid #c7d3dc;border-radius:9px;padding:11px;font:inherit;background:#fff}textarea{min-height:90px;resize:vertical}.check{display:flex;gap:10px;align-items:flex-start;line-height:1.55;margin:10px 0}.check input{width:auto;margin-top:4px}.decision{display:flex;gap:18px;flex-wrap:wrap}.decision label{font-weight:700;display:flex;gap:7px;align-items:center}.decision input{width:auto}.btn{width:100%;border:0;border-radius:9px;padding:13px;background:var(--navy);color:#fff;font-weight:700;font-size:16px;cursor:pointer}.btn:disabled{opacity:.6}.notice{padding:13px 14px;background:#fff7e8;border:1px solid #ffd99a;border-radius:9px;font-size:13px;line-height:1.6;margin-bottom:16px}.success{display:none;background:#eef9f0;border:1px solid #b9dfbf;color:#1f6528;padding:20px;border-radius:12px;text-align:center;line-height:1.7}.error{color:var(--red);background:#fff0f0;border:1px solid #ffc7c7;padding:12px;border-radius:8px;margin-top:14px;display:none}.loading{text-align:center;padding:30px;color:#5d7183}.hp{position:absolute;left:-9999px}.muted{font-size:12px;color:#6d8091;line-height:1.6}.footer{font-size:12px;color:#6d8091;text-align:center;margin-top:16px}
+    @media(max-width:640px){.wrap{padding:10px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.header{padding:22px}.card{padding:18px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header"><h1 id="title">학교 영양상담 보호자 동의</h1><p>학생의 식생활과 생활습관을 파악하고 건강한 식생활 실천을 지원하기 위한 절차입니다.</p></div>
+    <div class="card">
+      <div id="loading" class="loading">동의 정보를 확인하고 있습니다…</div>
+      <div id="formArea" style="display:none">
+        <div id="studentInfo" class="student"></div>
+        <div class="notice">내용을 충분히 읽고 동의 여부를 선택해 주세요. 동의하지 않아도 불이익은 없으며, 제출 후 변경이 필요한 경우 학교 영양교사에게 문의해 주세요.</div>
+        <form id="consentForm">
+          <input type="hidden" name="token" value="<?= token ?>">
+          <input class="hp" name="website" tabindex="-1" autocomplete="off">
+          <div class="form-grid">
+            <div><label>보호자 이름 *</label><input name="guardianName" required></div>
+            <div><label>학생과의 관계 *</label><select name="relation" required><option value="">선택</option><option>부</option><option>모</option><option>법정대리인</option><option>기타 보호자</option></select></div>
+            <div class="full"><label>보호자 연락처 *</label><input name="contact" required placeholder="예: 010-0000-0000"></div>
+          </div>
+
+          <div class="section"><h3>1. 최종 동의 여부</h3><div class="decision"><label><input type="radio" name="decision" value="동의" required onchange="toggleAgreement(true)"> 동의합니다</label><label><input type="radio" name="decision" value="비동의" required onchange="toggleAgreement(false)"> 동의하지 않습니다</label></div></div>
+
+          <div id="agreementItems" class="section"><h3>2. 동의 및 안내 확인</h3>
+            <label class="check"><input type="checkbox" name="counselingConsent" value="동의"> <span>학생의 학교 영양상담 참여에 동의합니다.</span></label>
+            <label class="check"><input type="checkbox" name="personalConsent" value="동의"> <span>영양상담 운영을 위해 학생과 보호자의 개인정보를 수집·이용하는 데 동의합니다.</span></label>
+            <label class="check"><input type="checkbox" name="sensitiveConsent" value="동의"> <span>식생활, 성장상태, 질환, 알레르기, 섭식태도 등 건강 관련 민감정보를 상담 목적으로 처리하는 데 동의합니다.</span></label>
+            <label class="check"><input type="checkbox" name="diagnosisUseConsent" value="동의"> <span>교육부 식생활·생활습관 진단프로그램의 결과와 응답내역을 영양상담 자료로 활용하는 데 동의합니다.</span></label>
+            <label class="check"><input type="checkbox" name="aiNotice" value="확인"> <span>AI는 PDF 내용 추출, 상담자료 요약, 문서 초안 작성의 보조도구로만 사용되며, 최종 판단과 기록 승인은 영양교사가 수행한다는 안내를 확인했습니다.</span></label>
+          </div>
+
+          <div class="section"><h3>3. 전자서명</h3><label>보호자 이름을 다시 입력해 주세요. *</label><input name="signatureName" required><div class="muted">위 이름 입력은 본인이 동의 내용을 확인하고 제출했다는 전자적 확인 기록으로 저장됩니다.</div></div>
+          <div class="section"><h3>4. 추가 의견</h3><textarea name="note" placeholder="영양교사에게 전달할 내용이 있으면 적어 주세요."></textarea></div>
+          <button id="submitBtn" class="btn" type="submit">동의서 제출</button>
+          <div id="error" class="error"></div>
+        </form>
+      </div>
+      <div id="success" class="success"></div>
+    </div>
+    <div class="footer">제출된 자료는 학교 영양상담 운영과 기록 관리 목적으로만 사용됩니다.</div>
+  </div>
+<script>
+  const token=document.querySelector('[name="token"]').value;
+  document.addEventListener('DOMContentLoaded',()=>{google.script.run.withSuccessHandler(renderData).withFailureHandler(showFatal).getConsentPageData(token)});
+  function renderData(d){document.getElementById('loading').style.display='none';document.getElementById('title').textContent=(d.schoolName||'학교')+' 영양상담 보호자 동의';if(d.alreadySubmitted){const s=document.getElementById('success');s.style.display='block';s.innerHTML=`<b>이미 제출된 동의서입니다.</b><br>현재 상태: ${escapeHtml(d.status)}${d.submittedAt?`<br>제출시각: ${escapeHtml(d.submittedAt)}`:''}<br><br>변경이 필요하면 학교 영양교사에게 문의해 주세요.`;return}document.getElementById('studentInfo').innerHTML=`<b>학생</b>: ${escapeHtml(d.studentNameMasked)} · ${escapeHtml(d.grade)}학년 ${escapeHtml(d.classNo)}반<br><b>상담 주제</b>: ${escapeHtml(d.topic)}`;document.getElementById('formArea').style.display='block'}
+  function toggleAgreement(agree){document.querySelectorAll('#agreementItems input[type="checkbox"]').forEach(el=>{el.disabled=!agree;if(!agree)el.checked=false})}
+  document.getElementById('consentForm').addEventListener('submit',e=>{e.preventDefault();const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='제출 중…';const data=formObject(e.target);data.website=e.target.website.value;google.script.run.withSuccessHandler(r=>{document.getElementById('formArea').style.display='none';const s=document.getElementById('success');s.style.display='block';s.innerHTML=`<b>보호자 동의서가 제출되었습니다.</b><br>선택: ${escapeHtml(r.decision)}<br>제출시각: ${escapeHtml(r.submittedAt)}<br><br>${r.decision==='동의'?'영양교사가 내용을 확인한 뒤 공식 진단과 상담 절차를 진행합니다.':'영양교사가 제출 내용을 확인합니다.'}${r.warning?`<br><br>${escapeHtml(r.warning)}`:''}`}).withFailureHandler(err=>{btn.disabled=false;btn.textContent='동의서 제출';showError(err)}).submitGuardianConsent(data)});
+  function formObject(form){const fd=new FormData(form),o={};fd.forEach((v,k)=>o[k]=v);return o}
+  function showError(err){const el=document.getElementById('error');el.textContent=err&&err.message?err.message:String(err);el.style.display='block'}
+  function showFatal(err){document.getElementById('loading').style.display='none';const s=document.getElementById('success');s.style.display='block';s.style.background='#fff0f0';s.style.borderColor='#ffc7c7';s.style.color='#a12626';s.textContent=err&&err.message?err.message:String(err)}
+  function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+</script>
+</body>
+</html>
+

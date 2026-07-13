@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <style>
+    :root{
+      --brand:#6556df;--brand2:#8f7cf4;--ink:#263149;--muted:#6c7588;
+      --line:#e3e6ee;--soft:#efedff;--bg:#f4f6fa;--green:#2f9b69;
+      --orange:#e88a35;--danger:#c84b61;--gold:#f0b429;
+      --shadow:0 18px 42px rgba(44,48,80,.12)
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;min-height:100%;
+      font-family:Arial,"Noto Sans KR",sans-serif;color:var(--ink)
+    }
+    body{background:linear-gradient(180deg,#fbfaff,#f1f4f8)}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.55}
+    .hidden{display:none!important}
+    .shell{width:min(1120px,100%);margin:auto;padding:17px 13px 48px}
+    .top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .logo{
+      width:55px;height:55px;border-radius:20px;display:grid;place-items:center;
+      font-size:29px;color:white;background:linear-gradient(135deg,var(--brand),var(--brand2));
+      box-shadow:var(--shadow)
+    }
+    h1,h2,h3,h4,p{margin-top:0}
+    h1{font-size:clamp(23px,4vw,34px);margin-bottom:4px;letter-spacing:-.04em}
+    h2{font-size:clamp(27px,5vw,41px);letter-spacing:-.045em;margin-bottom:11px}
+    h3{font-size:23px;margin-bottom:7px}
+    .sub{color:var(--muted);font-size:14px}
+    .card{
+      background:#fff;border:1px solid var(--line);border-radius:27px;
+      padding:clamp(20px,4vw,34px);box-shadow:var(--shadow);margin-bottom:16px
+    }
+    .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:center}
+    .illustration{
+      min-height:330px;border-radius:24px;
+      background:
+        radial-gradient(circle at 20% 20%,#fff0c9 0 15%,transparent 16%),
+        radial-gradient(circle at 82% 24%,#e8e3ff 0 17%,transparent 18%),
+        linear-gradient(145deg,#fff,#f5f2ff);
+      display:grid;place-items:center;text-align:center;padding:22px
+    }
+    .illustration .big{font-size:88px}
+    .lead{color:var(--muted);font-size:17px;line-height:1.7}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    label{display:block;font-size:13px;font-weight:900;margin-bottom:7px}
+    input,select,textarea{
+      width:100%;padding:13px 14px;border:1px solid var(--line);
+      border-radius:14px;background:white;outline:none
+    }
+    textarea{resize:vertical;min-height:88px}
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--brand);box-shadow:0 0 0 4px rgba(101,86,223,.1)
+    }
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:17px}
+    .actions.between{justify-content:space-between}
+    .btn{
+      border:0;border-radius:15px;padding:13px 18px;
+      min-height:49px;font-weight:900
+    }
+    .primary{background:var(--brand);color:white}
+    .secondary{background:white;border:1px solid var(--line);color:var(--ink)}
+    .success{background:var(--green);color:#fff}
+    .soft-btn{background:var(--soft);color:#5146a7}
+    .notice{
+      padding:13px 15px;border-radius:15px;background:var(--soft);
+      color:#5146a7;font-weight:700;line-height:1.55;margin-top:14px
+    }
+    .error{
+      padding:12px 14px;border-radius:13px;background:#fff0f2;
+      color:var(--danger);font-weight:800;margin-top:13px
+    }
+    .student-head{
+      display:flex;justify-content:space-between;gap:14px;align-items:flex-start
+    }
+    .identity{display:flex;gap:13px;align-items:center}
+    .avatar{
+      width:68px;height:68px;border-radius:23px;
+      background:linear-gradient(145deg,#fff2c9,#eee8ff);
+      display:grid;place-items:center;font-size:38px
+    }
+    .badge{
+      display:inline-block;border-radius:999px;background:var(--soft);
+      color:var(--brand);font-size:12px;font-weight:900;padding:7px 11px
+    }
+    .profile-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .mission{
+      margin-top:15px;border-radius:20px;padding:18px;
+      background:linear-gradient(135deg,#5d50d6,#8273ef);color:white
+    }
+    .mission p{margin:6px 0 0;line-height:1.55;opacity:.95}
+
+    .home-hero{
+      border-radius:26px;padding:26px;color:white;
+      background:
+        radial-gradient(circle at 85% 20%,rgba(255,255,255,.2) 0 13%,transparent 14%),
+        linear-gradient(135deg,#5749cd,#8275ef)
+    }
+    .home-hero-grid{
+      display:grid;grid-template-columns:1.25fr .75fr;gap:20px;align-items:center
+    }
+    .home-hero .emoji{font-size:94px;text-align:center}
+    .home-stats{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:18px
+    }
+    .home-stat{
+      border-radius:16px;padding:12px;background:rgba(255,255,255,.15);
+      text-align:center
+    }
+    .home-stat b{display:block;font-size:22px;margin-bottom:3px}
+    .home-stat span{font-size:12px;opacity:.9}
+
+    .home-menu{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;margin-top:16px
+    }
+    .home-card{
+      width:100%;border:1px solid var(--line);border-radius:22px;padding:20px;
+      background:#fff;text-align:left;display:flex;gap:15px;align-items:flex-start;
+      transition:.18s transform,.18s box-shadow,.18s border-color
+    }
+    button.home-card:hover{
+      transform:translateY(-2px);box-shadow:0 12px 30px rgba(44,48,80,.1);
+      border-color:#cfc8ff
+    }
+    .home-card .home-icon{
+      flex:0 0 auto;width:58px;height:58px;border-radius:19px;
+      display:grid;place-items:center;font-size:30px;background:var(--soft)
+    }
+    .home-card h3{font-size:20px;margin:2px 0 7px}
+    .home-card p{margin:0;color:var(--muted);line-height:1.55}
+    .home-card .card-status{
+      display:inline-block;margin-top:10px;border-radius:999px;
+      padding:6px 9px;background:#f2f4f8;color:#616b80;
+      font-size:12px;font-weight:900
+    }
+    .home-card.active-card{
+      border:2px solid var(--brand);background:linear-gradient(145deg,#fff,#f8f6ff)
+    }
+    .home-card.done-card-home{border-color:#b8dfc9;background:#f6fcf8}
+    .home-card.disabled-card{opacity:.72;cursor:default}
+    .home-card.disabled-card .home-icon{background:#f1f2f5}
+
+    .flow{
+      display:grid;grid-template-columns:repeat(3,1fr);
+      gap:10px;margin:17px 0
+    }
+    .step{
+      border:1px solid var(--line);background:#fafbfc;border-radius:17px;
+      padding:14px;text-align:center
+    }
+    .step.active{border:2px solid var(--brand);background:var(--soft)}
+    .step.done{border-color:#b9dfcb;background:#f1faf5}
+    .step b{display:block;margin-top:6px}
+    .step small{color:var(--muted)}
+
+    .meal-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+    .meal-card{
+      border:1px solid var(--line);border-radius:21px;padding:18px;background:#fafbfc
+    }
+    .meal-card.next{background:#fffaf0;border-color:#f0dfbd}
+    .menu-list{display:grid;gap:8px;margin-top:13px}
+    .menu-item{
+      padding:11px 13px;background:#fff;border:1px solid var(--line);
+      border-radius:13px;font-weight:800
+    }
+    .meal-meta{color:var(--muted);font-size:13px;margin-top:10px}
+    .question-list{display:grid;gap:9px}
+    .question{
+      border:1px solid var(--line);border-left:5px solid var(--brand);
+      border-radius:14px;padding:13px 14px;background:#fff;line-height:1.55
+    }
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      border:1px solid var(--line);background:#fff;border-radius:999px;
+      padding:9px 12px;font-weight:800
+    }
+    .chip.selected{
+      background:var(--soft);border-color:var(--brand);color:var(--brand)
+    }
+    .choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+    .choice-card,.menu-choice,.action-choice{
+      border:2px solid transparent;background:#fff;border-radius:15px;
+      padding:14px;text-align:left;font-weight:800
+    }
+    .choice-card{border-color:var(--line);min-height:66px}
+    .choice-card.selected,.menu-choice.selected,.action-choice.selected{
+      border-color:var(--brand);background:var(--soft);color:#4d43a8
+    }
+    .range-row{
+      display:grid;grid-template-columns:1fr 60px;gap:11px;
+      align-items:center;margin-top:10px
+    }
+    .range-row input{accent-color:var(--brand);padding:0}
+    .range-number{
+      display:grid;place-items:center;width:55px;height:55px;border-radius:17px;
+      background:var(--brand);color:#fff;font-size:21px;font-weight:900
+    }
+    .next-menu-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .action-list{display:grid;gap:8px}
+    .save-box{
+      border:1px solid #cae6d8;background:#f2fbf6;
+      border-radius:18px;padding:16px;margin-top:16px
+    }
+    .save-box h4{color:#23774f}
+
+    .badge-summary{
+      display:flex;justify-content:space-between;align-items:center;gap:15px;
+      border-radius:22px;background:linear-gradient(135deg,#fff8df,#fff);
+      border:1px solid #f0df9b;padding:20px;margin:16px 0
+    }
+    .badge-count{
+      min-width:105px;text-align:center;border-radius:18px;padding:13px;
+      background:#fff;color:#8c6814
+    }
+    .badge-count strong{display:block;font-size:30px}
+    .badge-grid{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px
+    }
+    .badge-card{
+      border:1px solid var(--line);border-radius:21px;padding:18px;
+      display:flex;gap:14px;align-items:flex-start;background:#fafbfc
+    }
+    .badge-card.earned{
+      border:2px solid #e3c258;background:linear-gradient(145deg,#fffdf5,#fff8dc)
+    }
+    .badge-card.locked{filter:grayscale(.85);opacity:.62}
+    .badge-icon{
+      flex:0 0 auto;width:65px;height:65px;border-radius:21px;
+      display:grid;place-items:center;font-size:36px;background:#fff;
+      border:1px solid var(--line)
+    }
+    .badge-card.earned .badge-icon{
+      border-color:#e9cf73;box-shadow:0 7px 18px rgba(210,165,30,.15)
+    }
+    .badge-card h3{font-size:19px;margin:2px 0 6px}
+    .badge-card p{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:7px}
+    .badge-earned-at{font-size:12px;font-weight:900;color:#8c6814}
+    .new-badges{
+      display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:22px 0
+    }
+    .new-badge{
+      width:190px;border-radius:24px;padding:18px;background:#fff9de;
+      border:2px solid #e3c258;box-shadow:0 12px 28px rgba(180,135,20,.14)
+    }
+    .new-badge .badge-icon{margin:0 auto 10px}
+    .new-badge b{display:block;font-size:18px;margin-bottom:5px}
+
+    .completion-card{text-align:center;padding:45px 24px}
+    .done-icon{font-size:84px}
+    .summary{
+      margin:20px auto;text-align:left;width:min(700px,100%);
+      background:#f8f9fc;border:1px solid var(--line);
+      border-radius:19px;padding:18px;line-height:1.7
+    }
+    .loading{
+      position:fixed;inset:0;background:rgba(255,255,255,.82);
+      display:none;align-items:center;justify-content:center;z-index:20;
+      font-size:18px;font-weight:900
+    }
+    .loading.open{display:flex}
+
+
+    .stage-progress{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:18px 0}
+    .stage-node{position:relative;border:1px solid var(--line);border-radius:17px;padding:13px 8px;text-align:center;background:#fafbfc}
+    .stage-node.done{background:#f1faf5;border-color:#a9d8bf}
+    .stage-node.active{background:var(--soft);border:2px solid var(--brand)}
+    .stage-node b{display:block;margin-top:5px;font-size:13px}
+    .stage-node small{color:var(--muted)}
+    .stage-dot{width:31px;height:31px;border-radius:50%;display:grid;place-items:center;margin:auto;background:#e8eaf0;font-weight:900}
+    .stage-node.done .stage-dot{background:var(--green);color:#fff}
+    .stage-node.active .stage-dot{background:var(--brand);color:#fff}
+    .progress-bar{height:12px;background:#eceef3;border-radius:999px;overflow:hidden;margin-top:10px}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:999px}
+    .mission-panel{border:1px solid #cae6d8;background:#f2fbf6;border-radius:22px;padding:20px}
+    .mission-result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+    .select-card{border:2px solid var(--line);background:#fff;border-radius:16px;padding:13px;text-align:left;font-weight:800}
+    .select-card.selected{border-color:var(--brand);background:var(--soft);color:#4d43a8}
+    .game-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .game-card{border:1px solid var(--line);border-radius:22px;padding:19px;background:#fff;text-align:left}
+    .game-card button{margin-top:12px}
+    .game-icon{font-size:46px;margin-bottom:8px}
+    .quiz-option{display:block;width:100%;border:2px solid var(--line);border-radius:15px;background:#fff;padding:14px;text-align:left;font-weight:800;margin:8px 0}
+    .quiz-option.correct{border-color:#59aa7d;background:#effaf4}
+    .quiz-option.wrong{border-color:#d66a7c;background:#fff0f2}
+    .quiz-progress{font-weight:900;color:var(--brand);margin-bottom:9px}
+    .notebook-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+    .chapter-card{border:1px solid var(--line);border-radius:20px;padding:17px;background:#fafbfc}
+    .chapter-card.complete{border-color:#a9d8bf;background:#f4fbf7}
+    .chapter-card h3{font-size:18px}
+    .notebook-line{padding:8px 0;border-bottom:1px dashed var(--line);line-height:1.55}
+    .timeline{display:grid;gap:10px}
+    .timeline-item{display:grid;grid-template-columns:48px 1fr;gap:12px;padding:13px;border:1px solid var(--line);border-radius:16px;background:#fff}
+    .timeline-icon{width:45px;height:45px;border-radius:15px;display:grid;place-items:center;background:var(--soft);font-size:24px}
+    .final-guide{border:2px solid #e3c258;background:linear-gradient(145deg,#fffdf5,#fff8dc);border-radius:24px;padding:22px}
+    .final-guide-row{margin-top:11px;padding:12px;background:#fff;border-radius:14px;line-height:1.6}
+    .section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+
+    @media(max-width:780px){
+      .hero,.meal-grid,.home-hero-grid{grid-template-columns:1fr}
+      .illustration{min-height:220px}
+      .flow,.choice-grid,.home-menu,.badge-grid,.game-grid,.notebook-grid,.mission-result-grid{grid-template-columns:1fr}
+      .next-menu-buttons{grid-template-columns:1fr}
+      .home-hero .emoji{font-size:70px}
+    }
+    @media(max-width:520px){
+      .shell{padding:10px 8px 35px}
+      .form-grid{grid-template-columns:1fr}
+      .student-head{flex-direction:column}
+      .profile-actions,.btn{width:100%}
+      .home-stats,.stage-progress{grid-template-columns:1fr}
+      .badge-summary{align-items:flex-start;flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="logo">🌿</div>
+    <div>
+      <h1 id="systemName">맛마음 탐험소</h1>
+      <div class="sub" id="schoolName">구미봉곡초등학교</div>
+    </div>
+  </header>
+
+  <section id="loginView" class="card">
+    <div class="hero">
+      <div>
+        <span class="badge">공통 QR 학생용 입구</span>
+        <h2>나만의 맛마음<br>탐험을 시작해요</h2>
+        <p class="lead">
+          선생님에게 받은 4자리 탐험코드를 입력하면
+          나의 미션과 배지, 오늘의 탐험을 만날 수 있어요.
+        </p>
+        <div class="form-grid">
+          <div>
+            <label>학년</label>
+            <select id="grade">
+              <option value="">선택</option>
+              <option value="1">1학년</option><option value="2">2학년</option>
+              <option value="3">3학년</option><option value="4">4학년</option>
+              <option value="5">5학년</option><option value="6">6학년</option>
+            </select>
+          </div>
+          <div>
+            <label>반</label>
+            <select id="classNo">
+              <option value="">선택</option>
+              <option value="1">1반</option><option value="2">2반</option>
+              <option value="3">3반</option><option value="4">4반</option>
+              <option value="5">5반</option><option value="6">6반</option>
+            </select>
+          </div>
+          <div>
+            <label>이름</label>
+            <input id="studentName" autocomplete="off" placeholder="이름 입력">
+          </div>
+          <div>
+            <label>탐험코드 4자리</label>
+            <input id="explorerCode" inputmode="numeric" maxlength="4"
+                   autocomplete="off" placeholder="0000">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" onclick="login()">탐험소 입장</button>
+        </div>
+        <div id="loginError" class="error hidden"></div>
+      </div>
+      <div class="illustration">
+        <div>
+          <div class="big">🧭</div>
+          <h3>탐험은 작은 발견에서 시작해요</h3>
+          <p class="sub">
+            잘했는지 검사하지 않아요. 내 몸과 마음을 알아차리고,
+            내가 할 수 있는 방법을 찾아요.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="appView" class="hidden">
+    <div class="card">
+      <div class="student-head">
+        <div class="identity">
+          <div class="avatar">🌱</div>
+          <div>
+            <span class="badge" id="journeyBadge"></span>
+            <h2 id="welcome" style="font-size:30px;margin:9px 0 5px"></h2>
+            <div class="sub" id="studentMeta"></div>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button id="backHomeBtn" class="btn secondary hidden"
+                  onclick="showHome(true)">← 탐험 홈</button>
+          <button id="logoutBtn" class="btn secondary"
+                  onclick="logout()">내 탐험 종료</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="homeView">
+      <div class="card">
+        <div class="home-hero">
+          <div class="home-hero-grid">
+            <div>
+              <span class="badge" style="background:rgba(255,255,255,.18);color:#fff">
+                나의 탐험 홈
+              </span>
+              <h2 id="homeGreeting" style="margin-top:13px"></h2>
+              <p id="homeLead" style="line-height:1.65;margin-bottom:0;opacity:.94"></p>
+              <div class="home-stats">
+                <div class="home-stat">
+                  <b id="completedCount">0/5</b><span>완료한 회기</span>
+                </div>
+                <div class="home-stat">
+                  <b id="earnedBadgeCount">0/10</b><span>핵심 배지</span>
+                </div>
+                <div class="home-stat">
+                  <b id="gamePlayCount">0</b><span>게임 기록</span>
+                </div>
+              </div>
+            </div>
+            <div class="emoji">🗺️</div>
+          </div>
+        </div>
+
+        <div id="homeStageProgress" class="stage-progress"></div>
+
+        <div class="home-menu">
+          <button id="todayExplorationCard" class="home-card active-card"
+                  onclick="startTodayExploration()">
+            <div class="home-icon">🍽️</div>
+            <div>
+              <h3 id="todayExplorationTitle">오늘의 탐험</h3>
+              <p id="todayExplorationText">오늘 급식에서 탐험을 시작해요.</p>
+              <span id="todayExplorationStatus" class="card-status">탐험 시작</span>
+            </div>
+          </button>
+
+          <button class="home-card" onclick="showMissionView()">
+            <div class="home-icon">🌱</div>
+            <div>
+              <h3>현재 미션</h3>
+              <p id="homeMissionText"></p>
+              <span id="missionStatusText" class="card-status">실천 점검하기</span>
+            </div>
+          </button>
+
+          <button class="home-card" onclick="showBadgeBook()">
+            <div class="home-icon">🏅</div>
+            <div>
+              <h3>나의 10개 배지</h3>
+              <p id="homeBadgeText">5회기 동안 핵심 배지를 모아요.</p>
+              <span class="card-status">배지책 열기</span>
+            </div>
+          </button>
+
+          <button class="home-card" onclick="showGameHub()">
+            <div class="home-icon">🎮</div>
+            <div>
+              <h3>자유게임</h3>
+              <p id="homeGameText">감각·식판·생활리듬·안전 게임을 할 수 있어요.</p>
+              <span class="card-status">게임방 열기</span>
+            </div>
+          </button>
+
+          <button class="home-card" onclick="showNotebook()">
+            <div class="home-icon">📔</div>
+            <div>
+              <h3>나의 탐험노트</h3>
+              <p>회기 기록, 미션 점검, 게임과 배지를 한곳에서 봐요.</p>
+              <span class="card-status">탐험노트 열기</span>
+            </div>
+          </button>
+
+          <div id="completionHomeCard" class="home-card disabled-card">
+            <div class="home-icon">🏆</div>
+            <div>
+              <h3>맛마음 탐험 1단계</h3>
+              <p id="completionHomeText">5회기와 10개 배지를 모으면 완성돼요.</p>
+              <span id="completionHomeStatus" class="card-status">진행 중</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="badgeView" class="hidden">
+      <div class="card">
+        <span class="badge">나의 탐험 배지</span>
+        <h2 style="font-size:32px;margin-top:12px">발견하고 선택한 과정이 남아요</h2>
+        <p class="lead">
+          많이 먹었는지가 아니라, 솔직하게 말하고 이유를 찾고
+          작은 행동을 선택한 과정으로 배지를 받아요.
+        </p>
+        <div class="badge-summary">
+          <div>
+            <h3 style="margin-bottom:5px">나의 배지책</h3>
+            <p class="sub" style="margin:0">
+              아직 잠긴 배지도 다음 탐험에서 천천히 만날 수 있어요.
+            </p>
+          </div>
+          <div class="badge-count">
+            <strong id="badgeBookCount">0/10</strong>
+            <span>획득</span>
+          </div>
+        </div>
+        <div id="badgeStageProgress" class="stage-progress"></div>
+        <div id="badgeGrid" class="badge-grid"></div>
+        <div class="actions">
+          <button class="btn primary" onclick="showHome(false)">탐험 홈으로</button>
+        </div>
+      </div>
+    </section>
+
+
+    <section id="missionView" class="hidden">
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <span class="badge">현재 미션</span>
+            <h2 style="font-size:32px;margin-top:12px">해본 만큼 돌아봐요</h2>
+          </div>
+          <button class="btn secondary" onclick="showHome(false)">탐험 홈으로</button>
+        </div>
+        <div id="missionContent"></div>
+      </div>
+    </section>
+
+    <section id="gameHubView" class="hidden">
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <span class="badge">자유게임</span>
+            <h2 style="font-size:32px;margin-top:12px">놀면서 단서를 찾아요</h2>
+            <p class="lead">점수는 평가가 아니라 내가 무엇을 알게 되었는지 확인하는 기록이에요.</p>
+          </div>
+          <button class="btn secondary" onclick="showHome(false)">탐험 홈으로</button>
+        </div>
+        <div id="gameGrid" class="game-grid"></div>
+      </div>
+    </section>
+
+    <section id="gamePlayView" class="hidden">
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <span class="badge">자유게임 진행 중</span>
+            <h2 id="gameTitle" style="font-size:32px;margin-top:12px"></h2>
+          </div>
+          <button class="btn secondary" onclick="showGameHub()">게임방으로</button>
+        </div>
+        <div id="gamePlayArea"></div>
+      </div>
+    </section>
+
+    <section id="notebookView" class="hidden">
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <span class="badge">나의 탐험노트</span>
+            <h2 style="font-size:32px;margin-top:12px">다섯 번의 발견을 모아요</h2>
+          </div>
+          <button class="btn secondary" onclick="showHome(false)">탐험 홈으로</button>
+        </div>
+        <div id="notebookContent"></div>
+      </div>
+    </section>
+
+    <section id="counselingView" class="hidden">
+      <div class="card">
+        <div class="notice" id="sessionGoalBox" style="margin-top:0"></div>
+        <div class="mission">
+          <b>🌱 현재 이어가는 작은 실천</b>
+          <p id="missionText"></p>
+        </div>
+        <div class="flow">
+          <div id="flow1" class="step active">
+            <span>① 약 4분</span><b>오늘 급식</b>
+            <small>먹은 경험으로 대화 열기</small>
+          </div>
+          <div id="flow2" class="step">
+            <span>② 약 10분</span><b id="activityLabel">핵심 탐험</b>
+            <small>학생별 질문으로 깊게 이야기하기</small>
+          </div>
+          <div id="flow3" class="step">
+            <span>③ 약 3분</span><b>다음 급식 약속</b>
+            <small>내가 선택한 행동과 다짐</small>
+          </div>
+        </div>
+      </div>
+
+      <section id="step1View">
+        <div class="card">
+          <span class="badge">1단계 · 오늘 급식 돌아보기</span>
+          <h2 style="font-size:31px;margin-top:12px">오늘 급식은 어땠나요?</h2>
+          <div id="mealError" class="error hidden"></div>
+          <div class="meal-grid">
+            <div class="meal-card">
+              <h3 id="todayDateLabel">오늘 급식</h3>
+              <div id="todayMenu" class="menu-list"></div>
+              <div id="todayMeta" class="meal-meta"></div>
+            </div>
+            <div class="meal-card">
+              <h3>오늘의 몸 느낌</h3>
+              <label>
+                급식 전 배고픔 · 0은 전혀 배고프지 않음,
+                10은 매우 배고픔
+              </label>
+              <div class="range-row">
+                <input id="hungerBefore" type="range" min="0" max="10" value="5"
+                       oninput="$('hungerNumber').textContent=this.value">
+                <span class="range-number" id="hungerNumber">5</span>
+              </div>
+              <label style="margin-top:17px">
+                급식 후 배부름 · 0은 전혀 차지 않음,
+                10은 매우 가득 참
+              </label>
+              <div class="range-row">
+                <input id="fullnessAfter" type="range" min="0" max="10" value="5"
+                       oninput="$('fullnessNumber').textContent=this.value">
+                <span class="range-number" id="fullnessNumber">5</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 style="margin-top:20px">오늘 가장 이야기하고 싶은 메뉴</h3>
+          <div id="todayMenuChoices" class="chips"></div>
+
+          <h3 style="margin-top:20px">
+            그 메뉴에 영향을 준 것은 무엇이었나요?
+          </h3>
+          <div id="factorChoices" class="chips"></div>
+
+          <h3 style="margin-top:20px">선생님과 나눌 첫 질문</h3>
+          <div id="openingQuestions" class="question-list"></div>
+
+          <div class="form-grid" style="margin-top:17px">
+            <div>
+              <label>학생이 실제로 한 말 한 문장</label>
+              <textarea id="studentStatement"
+                        placeholder="예: 나물은 맛보다 물컹한 느낌이 더 어려웠어요."></textarea>
+            </div>
+            <div>
+              <label>선생님 메모</label>
+              <textarea id="teacherMemo"
+                        placeholder="학생이 말한 장면, 예외적으로 잘된 날, 도움이 필요한 점"></textarea>
+            </div>
+          </div>
+
+          <div class="actions between">
+            <button class="btn secondary" onclick="showHome(false)">← 탐험 홈</button>
+            <button class="btn primary" onclick="goToCore()">
+              핵심 탐험으로 이동 →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="step2View" class="hidden">
+        <div class="card">
+          <span class="badge">2단계 · 약 10분 대화</span>
+          <h2 id="coreTitle" style="font-size:31px;margin-top:12px">
+            나의 핵심 탐험
+          </h2>
+          <p class="lead">
+            정답을 고르는 활동이 아니라, 오늘 나에게 가장 중요한 장면을
+            골라 선생님과 자세히 이야기합니다.
+          </p>
+
+          <h3>오늘 더 이야기하고 싶은 장면</h3>
+          <div id="coreChoices" class="choice-grid"></div>
+
+          <h3 style="margin-top:22px">선생님 질문카드</h3>
+          <div id="coreQuestions" class="question-list"></div>
+
+          <div class="form-grid" style="margin-top:17px">
+            <div>
+              <label>학생이 새롭게 발견해 말한 것</label>
+              <textarea id="coreStatement"
+                        placeholder="예: 먹으라는 말을 들으면 음식 자체보다 마음이 더 불편해져요."></textarea>
+            </div>
+            <div>
+              <label>교사가 발견한 강점·도움방법</label>
+              <textarea id="coreTeacherMemo"
+                        placeholder="예: 먹을 단계를 스스로 선택할 때 참여도가 높아짐"></textarea>
+            </div>
+          </div>
+
+          <div class="actions between">
+            <button class="btn secondary" onclick="showCounselStep(1)">
+              ← 오늘 급식으로
+            </button>
+            <button class="btn primary" onclick="goToPromise()">
+              다음 급식 약속으로 →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="step3View" class="hidden">
+        <div class="card">
+          <span class="badge">3단계 · 상담 마무리</span>
+          <h2 id="nextTitle" style="font-size:31px;margin-top:12px">
+            다음 급식에서 무엇을 해볼까요?
+          </h2>
+          <div class="meal-grid">
+            <div class="meal-card next">
+              <h3 id="nextDateLabel">다음 급식일</h3>
+              <div id="nextMenu" class="menu-list"></div>
+              <div id="nextMeta" class="meal-meta"></div>
+            </div>
+            <div class="meal-card">
+              <h3>이야기할 메뉴 고르기</h3>
+              <div id="nextMenuChoices" class="next-menu-buttons"></div>
+            </div>
+          </div>
+
+          <h3 style="margin-top:20px">내가 할 수 있는 행동 한 가지</h3>
+          <div id="nextActions" class="action-list"></div>
+
+          <div class="form-grid" style="margin-top:17px">
+            <div>
+              <label>나의 급식 약속문장</label>
+              <textarea id="promiseSentence"
+                        placeholder="예: 다음 급식에서 나물은 내가 정한 단계까지 천천히 살펴볼 거예요."></textarea>
+            </div>
+            <div>
+              <label>해낼 수 있을 것 같은 정도 · 0~10</label>
+              <div class="range-row">
+                <input id="confidence" type="range" min="0" max="10" value="7"
+                       oninput="$('confidenceNumber').textContent=this.value">
+                <span class="range-number" id="confidenceNumber">7</span>
+              </div>
+              <label style="margin-top:16px">오늘 대화를 마친 느낌</label>
+              <textarea id="reflection"
+                        placeholder="짧게 적어도 괜찮아요."></textarea>
+            </div>
+          </div>
+
+          <div class="save-box">
+            <h4>전체 상담기록은 마지막에 한 번만 저장됩니다</h4>
+            <p class="sub">
+              기록을 저장하면 받을 수 있는 배지를 확인한 뒤
+              탐험 홈으로 돌아갈 수 있어요.
+            </p>
+            <div class="actions between">
+              <button class="btn secondary" onclick="showCounselStep(2)">
+                ← 핵심 탐험으로
+              </button>
+              <button id="finalSaveBtn" class="btn success"
+                      onclick="saveConversation()">
+                상담 저장하고 배지 확인
+              </button>
+            </div>
+            <div id="saveMsg"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="doneView" class="hidden">
+        <div class="card completion-card">
+          <div class="done-icon">🌟</div>
+          <span class="badge">오늘의 탐험 완료</span>
+          <h2 style="margin-top:14px">오늘의 발견을 안전하게 저장했어요</h2>
+          <p class="lead">
+            기록은 다음 상담으로 이어지고, 탐험 과정은 배지책에 남아요.
+          </p>
+
+          <div id="newBadgeArea"></div>
+          <div id="doneSummary" class="summary"></div>
+
+          <div class="actions" style="justify-content:center">
+            <button class="btn primary" onclick="showHome(true)">
+              탐험 홈으로
+            </button>
+            <button class="btn soft-btn" onclick="showBadgeBook()">
+              내 배지 보기
+            </button>
+          </div>
+        </div>
+      </section>
+    </section>
+  </section>
+</div>
+
+<div id="loading" class="loading">처리하고 있어요…</div>
+
+<script>
+const state={
+  sessionToken:'',
+  account:null,
+  home:null,
+  mealData:null,
+  mealError:'',
+  guide:null,
+  memorableMenu:'',
+  factors:[],
+  coreChoice:'',
+  nextMenuChoice:'',
+  nextAction:'',
+  requestId:'',
+  saving:false,
+  saved:false,
+  newBadges:[],
+  mission:null,
+  games:null,
+  notebook:null,
+  currentGame:null,
+  gameQuestionIndex:0,
+  gameScore:0,
+  gameAnswers:[]
+};
+
+function $(id){return document.getElementById(id)}
+
+function makeRequestId(){
+  if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();
+  return Date.now()+'-'+Math.random().toString(36).slice(2);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  google.script.run
+    .withSuccessHandler(config=>{
+      $('systemName').textContent=config.systemName||'맛마음 탐험소';
+      $('schoolName').textContent=config.schoolName||'구미봉곡초등학교';
+    })
+    .getExplorerPublicConfig();
+});
+
+function login(){
+  const payload={
+    grade:$('grade').value,
+    classNo:$('classNo').value,
+    studentName:$('studentName').value.trim(),
+    explorerCode:$('explorerCode').value.trim()
+  };
+
+  $('loginError').classList.add('hidden');
+
+  if(
+    !payload.grade||!payload.classNo||
+    !payload.studentName||!payload.explorerCode
+  ){
+    showError('학년·반·이름·탐험코드를 모두 입력해 주세요.');
+    return;
+  }
+
+  setLoading(true);
+
+  google.script.run
+    .withSuccessHandler(result=>{
+      setLoading(false);
+
+      if(!result||!result.ok){
+        showError(
+          result&&result.message||
+          '로그인 정보를 확인해 주세요.'
+        );
+        return;
+      }
+
+      state.sessionToken=result.sessionToken;
+      state.account=result.account;
+      state.home=result.home;
+      state.mealData=result.meals;
+      state.mealError=result.mealError||'';
+      state.guide=result.conversation;
+      state.newBadges=[];
+
+      // 로그인 성공: 로그인 화면을 숨기고 학생 앱 화면을 표시합니다.
+      $('loginView').classList.add('hidden');
+      $('appView').classList.remove('hidden');
+
+      renderProfile();
+      renderMeals();
+      renderGuide();
+      resetConversationDraft();
+      showHome(false);
+    })
+    .withFailureHandler(error=>{
+      setLoading(false);
+      showError(
+        error&&error.message||
+        '로그인 중 오류가 발생했습니다.'
+      );
+    })
+    .loginTasteMindExplorer(payload);
+}
+
+function renderProfile(){
+  const account=state.account||{};
+  const home=state.home||{};
+
+  $('welcome').textContent=
+    (account.alias||'새싹')+' 탐험가, 반가워요!';
+
+  $('journeyBadge').textContent=
+    '맛마음 1단계 · '+Number(home.completedSessionCount||0)+'/5회기';
+
+  $('studentMeta').textContent=
+    account.grade+'학년 '+account.classNo+'반 · '+
+    account.studentActivityLabel;
+
+  $('activityLabel').textContent=
+    state.guide&&state.guide.sessionTitle
+      ?state.guide.sessionTitle
+      :(account.studentActivityLabel||'핵심 탐험');
+
+  $('sessionGoalBox').innerHTML=
+    '<b>'+esc(state.guide&&state.guide.sessionNo||home.activeSessionNo||1)+
+    '회기 탐험 목표</b><br>'+
+    esc(state.guide&&state.guide.sessionGoal||'');
+
+  $('missionText').textContent=
+    home.currentMission&&home.currentMission.statement
+      ?home.currentMission.statement
+      :(account.currentMission||
+        '아직 정한 미션이 없어요. 오늘 대화를 마치며 함께 정해요.');
+}
+
+function showHome(refresh){
+  hideMainViews();
+  $('homeView').classList.remove('hidden');
+  $('logoutBtn').classList.remove('hidden');
+  $('backHomeBtn').classList.add('hidden');
+
+  if(refresh&&state.sessionToken){
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(home=>{
+        setLoading(false);
+        state.home=home;
+        renderProfile();
+        renderHome();
+      })
+      .withFailureHandler(error=>{
+        setLoading(false);
+        alert(error&&error.message||'탐험 홈을 새로고침하지 못했습니다.');
+        renderHome();
+      })
+      .getExplorerHomeSnapshot(state.sessionToken);
+  }else{
+    renderHome();
+  }
+
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderHome(){
+  const home=state.home||{};
+  const account=home.account||state.account||{};
+  const completed=Number(home.completedSessionCount||0);
+  const earned=Number(home.earnedBadgeCount||0);
+
+  $('journeyBadge').textContent=
+    '맛마음 1단계 · '+completed+'/5회기';
+
+  $('homeGreeting').textContent=
+    (account.alias||'새싹')+' 탐험가의 오늘 지도';
+
+  $('homeLead').textContent=home.stageComplete
+    ?'다섯 번의 탐험과 10개 배지를 모두 완성했어요. 나의 설명서를 확인해 보세요!'
+    :(home.todayDone
+      ?'오늘 회기 기록을 저장했어요. 미션을 점검하거나 게임과 탐험노트를 이용할 수 있어요.'
+      :home.activeSessionNo+'회기 탐험을 시작할 준비가 되었어요.');
+
+  $('completedCount').textContent=completed+'/5';
+  $('earnedBadgeCount').textContent=earned+'/10';
+  $('gamePlayCount').textContent=Number(home.gamePlayCount||0);
+
+  $('homeStageProgress').innerHTML=renderStageProgress(
+    home.stagePlan||[],
+    home.activeSessionNo
+  );
+
+  const mission=home.currentMission;
+  $('homeMissionText').textContent=
+    mission&&mission.statement
+      ?mission.statement
+      :'아직 현재 미션이 없어요. 오늘의 탐험에서 작은 실천을 정해요.';
+
+  $('missionStatusText').textContent=mission
+    ?(
+      Number(home.missionCheckCount||0)
+        ?'점검 '+Number(home.missionCheckCount||0)+'회 · 다시 확인'
+        :'오늘 실천 점검하기'
+    )
+    :'미션 만들기';
+
+  $('homeBadgeText').textContent=
+    '5회기 동안 '+earned+'/10개의 핵심 배지를 모았어요.';
+
+  $('homeGameText').textContent=
+    Number(home.gamePlayCount||0)
+      ?'게임 기록 '+Number(home.gamePlayCount||0)+'회 · 다시 도전할 수 있어요.'
+      :'감각·식판·생활리듬·안전 게임을 할 수 있어요.';
+
+  $('todayExplorationTitle').textContent=
+    home.activeSessionNo+'회기 · '+
+    (home.activeSession&&home.activeSession.shortTitle||'오늘의 탐험');
+
+  const card=$('todayExplorationCard');
+  card.classList.toggle('done-card-home',Boolean(home.todayDone));
+  card.classList.toggle('active-card',!home.todayDone&&!home.stageComplete);
+
+  $('todayExplorationStatus').textContent=home.stageComplete
+    ?'5회기 완성 · 기록 다시 보기'
+    :(home.todayDone
+      ?'오늘 회기 완료 · 다시 살펴보기'
+      :home.activeSessionNo+'회기 시작');
+
+  $('todayExplorationText').textContent=home.stageComplete
+    ?'핵심 탐험은 완성했어요. 탐험노트에서 나의 설명서를 확인하세요.'
+    :(home.todayDone
+      ?(
+        home.latestPromise
+          ?'오늘 약속: '+home.latestPromise
+          :'오늘 기록이 저장되어 있어요.'
+      )
+      :(home.activeSession&&home.activeSession.goal||
+        '오늘 급식 경험을 이야기하고 다음 약속을 정해요.'));
+
+  $('completionHomeCard').classList.toggle(
+    'done-card-home',
+    Boolean(home.stageComplete)
+  );
+  $('completionHomeText').textContent=home.stageComplete
+    ?'나의 음식생활 설명서가 완성되었어요.'
+    :'현재 '+completed+'/5회기, '+earned+'/10개 배지를 완성했어요.';
+  $('completionHomeStatus').textContent=home.stageComplete
+    ?'1단계 완성!'
+    :'진행 중';
+
+  renderBadgeBook();
+}
+
+function renderStageProgress(stagePlan,activeSessionNo){
+  return (stagePlan||[]).map(item=>`
+    <div class="stage-node ${item.completed?'done':''} ${!item.completed&&item.sessionNo===activeSessionNo?'active':''}">
+      <div class="stage-dot">${item.completed?'✓':item.sessionNo}</div>
+      <b>${esc(item.shortTitle)}</b>
+      <small>${item.completed?'완료':item.sessionNo+'회기'}</small>
+    </div>
+  `).join('');
+}
+
+function showBadgeBook(){
+  hideMainViews();
+  $('badgeView').classList.remove('hidden');
+  $('logoutBtn').classList.add('hidden');
+  $('backHomeBtn').classList.remove('hidden');
+  renderBadgeBook();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderBadgeBook(){
+  const home=state.home||{};
+  const badges=home.badges||[];
+  const earned=badges.filter(item=>item.earned).length;
+
+  $('badgeBookCount').textContent=earned+'/10';
+  $('badgeStageProgress').innerHTML=renderStageProgress(
+    home.stagePlan||[],
+    home.activeSessionNo
+  );
+
+  $('badgeGrid').innerHTML=badges.length
+    ?badges.map(item=>`
+      <div class="badge-card ${item.earned?'earned':'locked'}">
+        <div class="badge-icon">${esc(item.earned?item.icon:'🔒')}</div>
+        <div>
+          <div class="sub">${esc(item.sessionNo)}회기</div>
+          <h3>${esc(item.name)}</h3>
+          <p>${esc(item.description)}</p>
+          <div class="badge-earned-at">
+            ${item.earned
+              ?'획득 · '+esc(item.earnedAt||'기록됨')
+              :'해당 회기를 완료하면 열려요'}
+          </div>
+        </div>
+      </div>
+    `).join('')
+    :'<div class="notice">배지 정보를 불러오지 못했습니다.</div>';
+}
+
+function showMissionView(){
+  hideMainViews();
+  $('missionView').classList.remove('hidden');
+  $('logoutBtn').classList.add('hidden');
+  $('backHomeBtn').classList.remove('hidden');
+  setLoading(true);
+
+  google.script.run
+    .withSuccessHandler(data=>{
+      setLoading(false);
+      state.mission=data;
+      renderMissionView();
+    })
+    .withFailureHandler(error=>{
+      setLoading(false);
+      $('missionContent').innerHTML=
+        '<div class="error">'+esc(error&&error.message||'미션을 불러오지 못했습니다.')+'</div>';
+    })
+    .getExplorerMissionSnapshot(state.sessionToken);
+}
+
+function renderMissionView(){
+  const data=state.mission||{};
+  const mission=data.active;
+
+  if(!mission){
+    $('missionContent').innerHTML=`
+      <div class="notice">
+        아직 현재 미션이 없어요. 오늘의 탐험을 완료하면
+        다음 급식에서 해볼 작은 미션이 이곳에 나타나요.
+      </div>
+      <div class="actions">
+        <button class="btn primary" onclick="startTodayExploration()">오늘의 탐험 시작</button>
+      </div>`;
+    return;
+  }
+
+  const latest=data.latestCheck;
+
+  $('missionContent').innerHTML=`
+    <div class="mission-panel">
+      <span class="badge">${mission.source||'탐험소 미션'}</span>
+      <h2 style="font-size:27px;margin-top:12px">${esc(mission.statement)}</h2>
+      <div class="sub">
+        ${mission.when?esc(mission.when)+' · ':''}
+        ${mission.where?esc(mission.where)+' · ':''}
+        자신감 ${esc(mission.confidence||'-')}/10
+      </div>
+      ${latest?`
+        <div class="notice">
+          최근 점검: <b>${esc(latest.result)}</b>
+          ${latest.checkedAt?' · '+esc(latest.checkedAt):''}
+        </div>`:''}
+    </div>
+
+    <h3 style="margin-top:22px">오늘은 어느 정도 해봤나요?</h3>
+    <div id="missionResultChoices" class="mission-result-grid">
+      ${['잘 해보았어요','조금 해보았어요','잊어버렸어요','상황이 어려웠어요']
+        .map(item=>`<button class="select-card" onclick="pickMissionResult('${item}',this)">${item}</button>`).join('')}
+    </div>
+
+    <div class="form-grid" style="margin-top:17px">
+      <div>
+        <label>실제로 해본 횟수</label>
+        <input id="missionActualCount" type="number" min="0" max="20" value="0">
+      </div>
+      <div>
+        <label>다음에는 어떻게 할까요?</label>
+        <select id="missionNextDecision" onchange="toggleNextMissionInput()">
+          <option value="계속하기">같은 미션 계속하기</option>
+          <option value="조금 바꾸기">미션을 조금 바꾸기</option>
+          <option value="완료하기">이 미션 완료하기</option>
+        </select>
+      </div>
+      <div>
+        <label>어려웠던 점</label>
+        <textarea id="missionDifficulty" placeholder="예: 급식시간이 짧아서 잊어버렸어요."></textarea>
+      </div>
+      <div>
+        <label>도움이 된 것</label>
+        <textarea id="missionHelp" placeholder="예: 선생님이 먼저 물어봐 주어서 기억났어요."></textarea>
+      </div>
+    </div>
+
+    <div id="nextMissionWrap" class="hidden" style="margin-top:13px">
+      <label>바꾼 미션문장</label>
+      <textarea id="missionNextText">${esc(mission.statement)}</textarea>
+    </div>
+
+    <label style="margin-top:17px">오늘 돌아본 느낌</label>
+    <textarea id="missionReflection" placeholder="짧게 적어도 괜찮아요."></textarea>
+
+    <div class="actions">
+      <button class="btn success" onclick="saveMissionCheck()">미션 점검 저장</button>
+    </div>
+
+    <div id="missionSaveMsg"></div>
+
+    ${data.recentChecks&&data.recentChecks.length?`
+      <h3 style="margin-top:25px">최근 점검 기록</h3>
+      <div class="timeline">
+        ${data.recentChecks.map(item=>`
+          <div class="timeline-item">
+            <div class="timeline-icon">🌱</div>
+            <div>
+              <b>${esc(item.result)}</b>
+              <div class="sub">${esc(item.checkedAt)}</div>
+              <div style="margin-top:5px">${esc(item.reflection||item.difficulty||item.helpFactor||'기록됨')}</div>
+            </div>
+          </div>`).join('')}
+      </div>`:''}
+  `;
+}
+
+function pickMissionResult(value,element){
+  state.missionResult=value;
+  document.querySelectorAll('#missionResultChoices .select-card')
+    .forEach(item=>item.classList.remove('selected'));
+  element.classList.add('selected');
+}
+
+function toggleNextMissionInput(){
+  const open=$('missionNextDecision').value==='조금 바꾸기';
+  $('nextMissionWrap').classList.toggle('hidden',!open);
+}
+
+function saveMissionCheck(){
+  if(!state.missionResult){
+    alert('오늘의 실천결과를 하나 선택해 주세요.');
+    return;
+  }
+
+  const payload={
+    result:state.missionResult,
+    actualCount:$('missionActualCount').value,
+    difficulty:$('missionDifficulty').value.trim(),
+    helpFactor:$('missionHelp').value.trim(),
+    reflection:$('missionReflection').value.trim(),
+    nextDecision:$('missionNextDecision').value,
+    nextMission:$('missionNextText')?$('missionNextText').value.trim():'',
+    confidence:7
+  };
+
+  setLoading(true);
+
+  google.script.run
+    .withSuccessHandler(result=>{
+      setLoading(false);
+      state.mission=result.mission;
+      state.home=result.home||state.home;
+      state.missionResult='';
+      renderMissionView();
+      $('missionSaveMsg').innerHTML='<div class="notice">미션 점검을 저장했어요.</div>';
+    })
+    .withFailureHandler(error=>{
+      setLoading(false);
+      $('missionSaveMsg').innerHTML='<div class="error">'+esc(error&&error.message||'저장하지 못했습니다.')+'</div>';
+    })
+    .saveExplorerMissionCheck(state.sessionToken,payload);
+}
+
+const GAME_BANK={
+  'sense-detective':{
+    name:'음식 감각 탐정',
+    icon:'🔍',
+    learned:'음식 경험은 맛뿐 아니라 냄새·식감·모양의 영향을 함께 받아요.',
+    questions:[
+      {q:'“물컹해서 어려워요”는 어떤 단서일까요?',options:['맛','냄새','식감','온도'],answer:2},
+      {q:'“향이 코에 강하게 느껴져요”는 어떤 단서일까요?',options:['냄새','양','모양','시간'],answer:0},
+      {q:'“재료가 섞여 보여서 불안해요”와 가장 가까운 단서는?',options:['모양·익숙함','배고픔','온도','소리'],answer:0},
+      {q:'음식과 친해지는 가장 작은 단계는?',options:['무조건 다 먹기','보기나 냄새 맡기부터 해보기','친구에게 숨기기','굶기'],answer:1},
+      {q:'먹기 어려운 이유를 말하는 것은?',options:['나쁜 행동','도움을 찾는 중요한 단서','실패','핑계'],answer:1}
+    ]
+  },
+  'plate-puzzle':{
+    name:'식판 친구 찾기',
+    icon:'🍱',
+    learned:'한 가지 완벽한 음식보다 서로 다른 역할의 음식이 함께 있는 것이 중요해요.',
+    questions:[
+      {q:'밥이 주로 하는 역할은?',options:['에너지를 주기','뼈만 만들기','물을 대신하기','잠을 없애기'],answer:0},
+      {q:'고기·생선·콩·달걀의 공통 역할은?',options:['몸을 만들고 회복 돕기','그릇 꾸미기','갈증만 없애기','향만 내기'],answer:0},
+      {q:'채소와 과일이 주로 도와주는 것은?',options:['몸의 여러 기능과 배변','키를 즉시 크게 하기','잠을 전혀 안 자도 되게 하기','밥을 없애기'],answer:0},
+      {q:'우유·요구르트와 가까운 역할은?',options:['칼슘 공급','매운맛 만들기','식사시간 줄이기','물 대신 항상 마시기'],answer:0},
+      {q:'균형 잡힌 식판에 가장 가까운 것은?',options:['좋아하는 음식 한 가지만 가득','서로 다른 역할의 음식을 알맞게','반찬은 전혀 없이 밥만','음료만 마시기'],answer:1}
+    ]
+  },
+  'rhythm-quest':{
+    name:'생활리듬 퀘스트',
+    icon:'⏰',
+    learned:'식사·수면·활동은 따로 떨어진 것이 아니라 서로 연결되어 있어요.',
+    questions:[
+      {q:'점심 전에 너무 배고프지 않도록 돕는 것은?',options:['아침식사와 규칙적인 식사','밤새 안 자기','점심을 더 늦게 먹기','물만 마시기'],answer:0},
+      {q:'먹는 중간 배부름을 알아차리는 방법은?',options:['잠깐 멈추고 몸 느낌 확인','가장 빨리 먹기','친구 양만 보기','눈 감고 먹기'],answer:0},
+      {q:'잠이 부족하면 나타날 수 있는 것은?',options:['피로와 식욕 리듬 변화','항상 집중력 증가','배고픔 완전 사라짐','모든 음식 맛 동일'],answer:0},
+      {q:'급식시간이 짧게 느껴질 때 도움이 되는 선택은?',options:['편한 메뉴부터 차분히 시작','아예 먹지 않기','친구와 경쟁하기','숨겨두기'],answer:0},
+      {q:'생활리듬을 바꿀 때 좋은 방법은?',options:['작은 행동 하나부터','하루에 모든 것을 완벽하게','실패하면 포기','다른 사람 계획 그대로'],answer:0}
+    ]
+  },
+  'safety-signal':{
+    name:'음식 안전 신호',
+    icon:'🛡️',
+    learned:'헷갈리거나 몸이 이상할 때 확인하고 어른에게 알리는 것이 가장 안전해요.',
+    questions:[
+      {q:'알레르기 표시가 헷갈릴 때 가장 먼저 할 일은?',options:['그냥 먹어보기','선생님께 확인하기','친구에게만 묻기','숨기기'],answer:1},
+      {q:'친구가 음식을 바꾸어 먹자고 하면?',options:['성분을 모르므로 바꾸지 않기','조금이면 무조건 괜찮기','몰래 먹기','냄새만 같으면 먹기'],answer:0},
+      {q:'입술·목·피부가 이상하게 느껴지면?',options:['즉시 어른에게 알리기','수업 끝까지 참기','친구에게만 말하기','혼자 밖으로 나가기'],answer:0},
+      {q:'처음 보는 가공식품을 먹기 전 중요한 것은?',options:['성분과 알레르기 표시 확인','포장색만 보기','가격만 보기','친구 수만 보기'],answer:0},
+      {q:'안전한 도움 요청 문장은?',options:['이 음식 성분을 확인해 주세요','아무에게도 말하지 않을래요','괜찮은 척할래요','그냥 친구 것을 먹을래요'],answer:0}
+    ]
+  }
+};
+
+function showGameHub(){
+  hideMainViews();
+  $('gameHubView').classList.remove('hidden');
+  $('logoutBtn').classList.add('hidden');
+  $('backHomeBtn').classList.remove('hidden');
+  setLoading(true);
+
+  google.script.run
+    .withSuccessHandler(data=>{
+      setLoading(false);
+      state.games=data;
+      renderGameHub();
+    })
+    .withFailureHandler(error=>{
+      setLoading(false);
+      $('gameGrid').innerHTML='<div class="error">'+esc(error&&error.message||'게임을 불러오지 못했습니다.')+'</div>';
+    })
+    .getExplorerGameHub(state.sessionToken);
+}
+
+function renderGameHub(){
+  const games=state.games&&state.games.games||[];
+
+  $('gameGrid').innerHTML=games.map(game=>`
+    <div class="game-card">
+      <div class="game-icon">${esc(game.icon)}</div>
+      <h3>${esc(game.name)}</h3>
+      <p class="sub">${esc(game.description)}</p>
+      <div class="notice">
+        도전 ${Number(game.playCount||0)}회 · 최고 ${Number(game.bestScore||0)}/${Number(game.maxScore||5)}
+      </div>
+      <button class="btn primary" onclick="startGame('${game.id}')">게임 시작</button>
+    </div>
+  `).join('');
+}
+
+function startGame(gameId){
+  state.currentGame=Object.assign(
+    {id:gameId},
+    GAME_BANK[gameId]||{}
+  );
+  state.gameQuestionIndex=0;
+  state.gameScore=0;
+  state.gameAnswers=[];
+
+  hideMainViews();
+  $('gamePlayView').classList.remove('hidden');
+  $('logoutBtn').classList.add('hidden');
+  $('backHomeBtn').classList.remove('hidden');
+  $('gameTitle').textContent=
+    (state.currentGame.icon||'🎮')+' '+state.currentGame.name;
+  renderGameQuestion();
+}
+
+function renderGameQuestion(){
+  const game=state.currentGame;
+  const index=state.gameQuestionIndex;
+  const question=game.questions[index];
+
+  if(!question){
+    finishGame();
+    return;
+  }
+
+  $('gamePlayArea').innerHTML=`
+    <div class="quiz-progress">${index+1} / ${game.questions.length}문제 · 현재 ${state.gameScore}점</div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width:${(index/game.questions.length)*100}%"></div>
+    </div>
+    <h2 style="font-size:27px;margin-top:22px">${esc(question.q)}</h2>
+    <div id="quizOptions">
+      ${question.options.map((option,optionIndex)=>`
+        <button class="quiz-option" onclick="answerGame(${optionIndex},this)">
+          ${esc(option)}
+        </button>`).join('')}
+    </div>
+    <div id="quizFeedback"></div>
+  `;
+}
+
+function answerGame(optionIndex,element){
+  const question=state.currentGame.questions[state.gameQuestionIndex];
+  const options=[...document.querySelectorAll('#quizOptions .quiz-option')];
+
+  options.forEach(button=>button.disabled=true);
+  options[question.answer].classList.add('correct');
+
+  const correct=optionIndex===question.answer;
+  if(correct)state.gameScore+=1;
+  else element.classList.add('wrong');
+
+  state.gameAnswers.push({
+    question:question.q,
+    correct:correct
+  });
+
+  $('quizFeedback').innerHTML=`
+    <div class="${correct?'notice':'error'}">
+      ${correct?'정답이에요!':'괜찮아요. 새로운 단서를 찾았어요.'}
+    </div>
+    <div class="actions">
+      <button class="btn primary" onclick="nextGameQuestion()">
+        ${state.gameQuestionIndex+1>=state.currentGame.questions.length?'결과 보기':'다음 문제'}
+      </button>
+    </div>`;
+}
+
+function nextGameQuestion(){
+  state.gameQuestionIndex+=1;
+  renderGameQuestion();
+}
+
+function finishGame(){
+  const game=state.currentGame;
+
+  $('gamePlayArea').innerHTML=`
+    <div class="completion-card">
+      <div class="done-icon">${game.icon}</div>
+      <h2>${state.gameScore}/${game.questions.length}점</h2>
+      <p class="lead">${esc(game.learned)}</p>
+      <label>게임을 하고 알게 된 점이나 느낌</label>
+      <textarea id="gameReflection" placeholder="짧게 적어도 괜찮아요."></textarea>
+      <div class="actions" style="justify-content:center">
+        <button class="btn success" onclick="saveGameResult()">게임 기록 저장</button>
+        <button class="btn secondary" onclick="showGameHub()">저장하지 않고 게임방으로</button>
+      </div>
+      <div id="gameSaveMsg"></div>
+    </div>`;
+}
+
+function saveGameResult(){
+  const game=state.currentGame;
+  const payload={
+    gameId:game.id,
+    score:state.gameScore,
+    summary:state.gameScore+'/'+game.questions.length+'점',
+    learned:game.learned,
+    reflection:$('gameReflection').value.trim()
+  };
+
+  setLoading(true);
+
+  google.script.run
+    .withSuccessHandler(result=>{
+      setLoading(false);
+      state.games=result.hub;
+      state.home=result.home||state.home;
+      $('gameSaveMsg').innerHTML='<div class="notice">게임 결과를 탐험노트에 저장했어요.</div>';
+      setTimeout(showGameHub,600);
+    })
+    .withFailureHandler(error=>{
+      setLoading(false);
+      $('gameSaveMsg').innerHTML='<div class="error">'+esc(error&&error.message||'저장하지 못했습니다.')+'</div>';
+    })
+    .saveExplorerGameResult(state.sessionToken,payload);
+}
+
+function showNotebook(){
+  hideMainViews();
+  $('notebookView').classList.remove('hidden');
+  $('logoutBtn').classList.add('hidden');
+  $('backHomeBtn').classList.remove('hidden');
+  setLoading(true);
+
+  google.script.run
+    .withSuccessHandler(data=>{
+      setLoading(false);
+      state.notebook=data;
+      renderNotebook();
+    })
+    .withFailureHandler(error=>{
+      setLoading(false);
+      $('notebookContent').innerHTML='<div class="error">'+esc(error&&error.message||'탐험노트를 불러오지 못했습니다.')+'</div>';
+    })
+    .getExplorerNotebook(state.sessionToken);
+}
+
+function renderNotebook(){
+  const note=state.notebook||{};
+  const chapters=note.chapters||[];
+
+  $('notebookContent').innerHTML=`
+    <div class="badge-summary">
+      <div>
+        <h3>맛마음 탐험 1단계</h3>
+        <p class="sub">현재 ${Number(note.completedSessionCount||0)}/5회기를 완성했어요.</p>
+      </div>
+      <div class="badge-count">
+        <strong>${Number(note.completedSessionCount||0)}/5</strong>
+        <span>회기</span>
+      </div>
+    </div>
+
+    ${note.finalGuide?renderFinalGuide(note.finalGuide):''}
+
+    <h3 style="margin-top:22px">5회기 탐험 기록</h3>
+    <div class="notebook-grid">
+      ${chapters.map(chapter=>`
+        <div class="chapter-card ${chapter.completed?'complete':''}">
+          <span class="badge">${chapter.sessionNo}회기</span>
+          <h3 style="margin-top:10px">${esc(chapter.title)}</h3>
+          ${chapter.completed?`
+            <div class="sub">${esc(chapter.date)}</div>
+            <div class="notebook-line"><b>기억 메뉴</b><br>${esc(chapter.memorableMenu||'-')}</div>
+            <div class="notebook-line"><b>내가 한 말</b><br>${esc(chapter.studentStatement||'-')}</div>
+            <div class="notebook-line"><b>몸 신호</b><br>${esc(chapter.bodySignal||'-')}</div>
+            <div class="notebook-line"><b>단서</b><br>${esc(chapter.barrier||'-')}</div>
+            <div class="notebook-line"><b>나의 방법</b><br>${esc(chapter.strategy||chapter.promise||'-')}</div>
+          `:`
+            <p class="sub">${esc(chapter.goal)}</p>
+            <div class="notice">아직 열리지 않은 회기예요.</div>
+          `}
+        </div>`).join('')}
+    </div>
+
+    <h3 style="margin-top:25px">나의 탐험 타임라인</h3>
+    <div class="timeline">
+      ${(note.timeline||[]).length
+        ?note.timeline.map(item=>`
+          <div class="timeline-item">
+            <div class="timeline-icon">${esc(item.icon)}</div>
+            <div>
+              <b>${esc(item.title)}</b>
+              <div class="sub">${esc(item.date)}</div>
+              <div style="margin-top:5px">${esc(item.text||'기록됨')}</div>
+            </div>
+          </div>`).join('')
+        :'<div class="notice">아직 저장된 탐험 기록이 없어요.</div>'}
+    </div>
+  `;
+}
+
+function renderFinalGuide(guide){
+  return `
+    <div class="final-guide">
+      <div class="done-icon" style="font-size:55px">📖</div>
+      <h2 style="font-size:29px">${esc(guide.title)}</h2>
+      <div class="final-guide-row"><b>내가 알아낸 나의 모습</b><br>${esc(guide.comfortable||'-')}</div>
+      <div class="final-guide-row"><b>내 몸의 신호</b><br>${esc(guide.bodySignals||'-')}</div>
+      <div class="final-guide-row"><b>나를 어렵게 하는 단서</b><br>${esc(guide.barriers||'-')}</div>
+      <div class="final-guide-row"><b>나에게 도움이 되는 방법</b><br>${esc(guide.helpfulStrategies||'-')}</div>
+      <div class="final-guide-row"><b>앞으로의 약속</b><br>${esc(guide.nextPromise||'-')}</div>
+    </div>`;
+}
+
+function startTodayExploration(){
+  if(state.home&&state.home.stageComplete){
+    showNotebook();
+    return;
+  }
+
+  resetConversationDraft();
+  showCounselStep(1);
+}
+
+function showCounselStep(step){
+  hideMainViews();
+  $('counselingView').classList.remove('hidden');
+  $('logoutBtn').classList.add('hidden');
+  $('backHomeBtn').classList.remove('hidden');
+
+  ['step1View','step2View','step3View','doneView']
+    .forEach(id=>$(id).classList.add('hidden'));
+
+  $('step'+step+'View').classList.remove('hidden');
+
+  [1,2,3].forEach(number=>{
+    const item=$('flow'+number);
+    item.classList.remove('active','done');
+
+    if(number<step)item.classList.add('done');
+    if(number===step)item.classList.add('active');
+  });
+
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function hideMainViews(){
+  ['homeView','badgeView','missionView','gameHubView','gamePlayView','notebookView','counselingView']
+    .forEach(id=>$(id).classList.add('hidden'));
+}
+
+function renderMeals(){
+  const meals=state.mealData||{};
+  const today=meals.today;
+  const next=meals.next;
+
+  if(state.mealError){
+    $('mealError').textContent=state.mealError;
+    $('mealError').classList.remove('hidden');
+  }else{
+    $('mealError').classList.add('hidden');
+  }
+
+  $('todayDateLabel').textContent=
+    today?today.dateLabel+' 오늘 급식':'오늘 등록된 급식 없음';
+
+  $('todayMenu').innerHTML=today
+    ?today.menu.map(item=>
+      '<div class="menu-item">'+esc(item)+'</div>'
+    ).join('')
+    :'<div class="notice">오늘 등록된 메뉴가 없습니다.</div>';
+
+  $('todayMeta').textContent=
+    today
+      ?today.mealName+(today.calories?' · '+today.calories:'')
+      :'';
+
+  $('todayMenuChoices').innerHTML=today
+    ?today.menu.map((item,index)=>
+      '<button class="chip" onclick="pickTodayMenu('+
+      index+',this)">'+esc(item)+'</button>'
+    ).join('')
+    :'';
+
+  $('nextTitle').textContent=
+    (meals.nextLabel||'다음 급식일')+
+    '에서 무엇을 해볼까요?';
+
+  $('nextDateLabel').textContent=next
+    ?next.dateLabel+' '+(meals.nextLabel||'다음 급식일')
+    :'다음 급식 없음';
+
+  $('nextMenu').innerHTML=next
+    ?next.menu.map(item=>
+      '<div class="menu-item">'+esc(item)+'</div>'
+    ).join('')
+    :'<div class="notice">앞으로 등록된 메뉴가 없습니다.</div>';
+
+  $('nextMeta').textContent=
+    next
+      ?next.mealName+(next.calories?' · '+next.calories:'')
+      :'';
+
+  $('nextMenuChoices').innerHTML=next
+    ?next.menu.map((item,index)=>
+      '<button class="menu-choice" onclick="pickNextMenu('+
+      index+',this)">'+esc(item)+'</button>'
+    ).join('')
+    :'';
+}
+
+function renderGuide(){
+  const guide=state.guide||{};
+  const factorList=[
+    '맛','냄새','식감','모양','온도','양',
+    '익숙함','먹는 시간','친구·분위기','몸의 느낌'
+  ];
+
+  $('factorChoices').innerHTML=factorList.map(item=>
+    '<button class="chip" onclick="toggleFactor(\''+
+    item+'\',this)">'+item+'</button>'
+  ).join('');
+
+  $('openingQuestions').innerHTML=
+    (guide.openingQuestions||[]).map((question,index)=>
+      '<div class="question"><b>'+(index+1)+'.</b> '+
+      esc(question)+'</div>'
+    ).join('');
+
+  $('coreTitle').textContent=
+    guide.studentTitle||
+    state.account.studentActivityLabel;
+
+  $('activityLabel').textContent=
+    guide.sessionTitle||guide.studentTitle||'핵심 탐험';
+
+  $('sessionGoalBox').innerHTML=
+    '<b>'+esc(guide.sessionNo||state.home.activeSessionNo||1)+
+    '회기 탐험 목표</b><br>'+esc(guide.sessionGoal||'');
+
+  $('coreChoices').innerHTML=
+    (guide.coreChoices||[]).map((choice,index)=>
+      '<button class="choice-card" onclick="pickCoreChoice('+
+      index+',this)">'+esc(choice)+'</button>'
+    ).join('');
+
+  $('coreQuestions').innerHTML=
+    (guide.coreQuestions||[]).map((question,index)=>
+      '<div class="question"><b>'+(index+1)+'.</b> '+
+      esc(question)+'</div>'
+    ).join('');
+
+  $('nextActions').innerHTML=
+    (guide.nextActions||[]).map((action,index)=>
+      '<button class="action-choice" onclick="pickAction('+
+      index+',this)">'+esc(action)+'</button>'
+    ).join('');
+}
+
+function resetConversationDraft(){
+  state.memorableMenu='';
+  state.factors=[];
+  state.coreChoice='';
+  state.nextMenuChoice='';
+  state.nextAction='';
+  state.requestId=makeRequestId();
+  state.saving=false;
+  state.saved=false;
+  state.newBadges=[];
+
+  [
+    'studentStatement','teacherMemo','coreStatement',
+    'coreTeacherMemo','promiseSentence','reflection'
+  ].forEach(id=>{
+    if($(id))$(id).value='';
+  });
+
+  $('hungerBefore').value=5;
+  $('hungerNumber').textContent='5';
+  $('fullnessAfter').value=5;
+  $('fullnessNumber').textContent='5';
+  $('confidence').value=7;
+  $('confidenceNumber').textContent='7';
+
+  document.querySelectorAll(
+    '.chip,.choice-card,.menu-choice,.action-choice'
+  ).forEach(item=>item.classList.remove('selected'));
+
+  const button=$('finalSaveBtn');
+  button.disabled=false;
+  button.textContent='상담 저장하고 배지 확인';
+  $('saveMsg').innerHTML='';
+}
+
+function goToCore(){
+  if(
+    state.mealData&&state.mealData.today&&
+    !state.memorableMenu
+  ){
+    alert('오늘 이야기하고 싶은 메뉴를 하나 골라 주세요.');
+    return;
+  }
+
+  if(!$('studentStatement').value.trim()){
+    alert('학생이 실제로 한 말 한 문장을 적어 주세요.');
+    $('studentStatement').focus();
+    return;
+  }
+
+  showCounselStep(2);
+}
+
+function goToPromise(){
+  if(!state.coreChoice){
+    alert('오늘 더 이야기하고 싶은 장면을 하나 골라 주세요.');
+    return;
+  }
+
+  if(!$('coreStatement').value.trim()){
+    alert('학생이 새롭게 발견해 말한 내용을 적어 주세요.');
+    $('coreStatement').focus();
+    return;
+  }
+
+  showCounselStep(3);
+}
+
+function pickTodayMenu(index,element){
+  document.querySelectorAll('#todayMenuChoices .chip')
+    .forEach(item=>item.classList.remove('selected'));
+
+  element.classList.add('selected');
+  state.memorableMenu=state.mealData.today.menu[index];
+}
+
+function toggleFactor(value,element){
+  const index=state.factors.indexOf(value);
+
+  if(index>=0){
+    state.factors.splice(index,1);
+    element.classList.remove('selected');
+  }else{
+    state.factors.push(value);
+    element.classList.add('selected');
+  }
+}
+
+function pickCoreChoice(index,element){
+  document.querySelectorAll('.choice-card')
+    .forEach(item=>item.classList.remove('selected'));
+
+  element.classList.add('selected');
+  state.coreChoice=state.guide.coreChoices[index];
+}
+
+function pickNextMenu(index,element){
+  document.querySelectorAll('.menu-choice')
+    .forEach(item=>item.classList.remove('selected'));
+
+  element.classList.add('selected');
+  state.nextMenuChoice=state.mealData.next.menu[index];
+  buildPromise();
+}
+
+function pickAction(index,element){
+  document.querySelectorAll('.action-choice')
+    .forEach(item=>item.classList.remove('selected'));
+
+  element.classList.add('selected');
+  state.nextAction=state.guide.nextActions[index];
+  buildPromise();
+}
+
+function buildPromise(){
+  if(state.nextMenuChoice&&state.nextAction){
+    $('promiseSentence').value=
+      (state.mealData.nextLabel||'다음 급식일')+'에 '+
+      state.nextMenuChoice+'에서 “'+state.nextAction+
+      '”를 해볼 거예요.';
+  }
+}
+
+function saveConversation(){
+  if(state.saving)return;
+
+  if(state.saved){
+    showDone({
+      saveMode:'기존 기록 유지',
+      savedAt:'이미 저장됨',
+      newBadges:state.newBadges,
+      home:state.home
+    });
+    return;
+  }
+
+  if(!state.sessionToken){
+    alert('로그인 시간이 만료되었습니다. 다시 입장해 주세요.');
+    return;
+  }
+
+  if(
+    state.mealData&&state.mealData.next&&
+    !state.nextAction
+  ){
+    alert('다음 급식에서 할 행동을 골라 주세요.');
+    return;
+  }
+
+  if(
+    state.mealData&&state.mealData.next&&
+    !state.nextMenuChoice
+  ){
+    alert('다음 급식에서 이야기할 메뉴를 골라 주세요.');
+    return;
+  }
+
+  if(
+    !$('promiseSentence').value.trim()&&
+    state.mealData&&state.mealData.next
+  ){
+    alert('나의 급식 약속문장을 확인해 주세요.');
+    return;
+  }
+
+  const payload={
+    requestId:state.requestId,
+    activityName:
+      state.guide.studentTitle||
+      state.account.studentActivityLabel,
+    todayDate:
+      state.mealData&&state.mealData.today
+        ?state.mealData.today.date:'',
+    todayMenu:
+      state.mealData&&state.mealData.today
+        ?state.mealData.today.menu:[],
+    memorableMenu:state.memorableMenu,
+    influenceFactors:state.factors,
+    hungerBefore:$('hungerBefore').value,
+    fullnessAfter:$('fullnessAfter').value,
+    studentStatement:$('studentStatement').value.trim(),
+    teacherMemo:$('teacherMemo').value.trim(),
+    coreChoice:state.coreChoice,
+    coreStatement:$('coreStatement').value.trim(),
+    coreTeacherMemo:$('coreTeacherMemo').value.trim(),
+    nextDate:
+      state.mealData&&state.mealData.next
+        ?state.mealData.next.date:'',
+    nextMenuChoice:state.nextMenuChoice,
+    nextAction:state.nextAction,
+    promiseSentence:$('promiseSentence').value.trim(),
+    confidence:$('confidence').value,
+    reflection:$('reflection').value.trim()
+  };
+
+  state.saving=true;
+
+  const button=$('finalSaveBtn');
+  button.disabled=true;
+  button.textContent='저장하고 배지 확인 중…';
+  setLoading(true);
+
+  google.script.run
+    .withSuccessHandler(result=>{
+      setLoading(false);
+      state.saving=false;
+      state.saved=true;
+      state.newBadges=result.newBadges||[];
+      state.home=result.home||state.home;
+      button.textContent='저장 완료';
+      showDone(result);
+    })
+    .withFailureHandler(error=>{
+      setLoading(false);
+      state.saving=false;
+      button.disabled=false;
+      button.textContent='상담 저장하고 배지 확인';
+      $('saveMsg').innerHTML=
+        '<div class="error">'+
+        esc(
+          error&&error.message||
+          '저장 중 오류가 발생했습니다.'
+        )+
+        '</div>';
+    })
+    .saveStudentMealConversationAndBadges(
+      state.sessionToken,
+      payload
+    );
+}
+
+function showDone(result){
+  hideMainViews();
+  $('counselingView').classList.remove('hidden');
+  $('logoutBtn').classList.add('hidden');
+  $('backHomeBtn').classList.remove('hidden');
+
+  ['step1View','step2View','step3View']
+    .forEach(id=>$(id).classList.add('hidden'));
+
+  $('doneView').classList.remove('hidden');
+
+  [1,2,3].forEach(number=>{
+    $('flow'+number).classList.remove('active');
+    $('flow'+number).classList.add('done');
+  });
+
+  const newBadges=result.newBadges||[];
+
+  $('newBadgeArea').innerHTML=result.stageComplete
+    ?'<div class="final-guide"><div class="done-icon">🏆</div><h2>맛마음 탐험 1단계 완성!</h2><p>5회기와 10개의 핵심 배지를 모두 모았어요.</p></div>'
+    :newBadges.length
+    ?(
+      '<h3>새 배지를 받았어요!</h3>'+
+      '<div class="new-badges">'+
+      newBadges.map(item=>`
+        <div class="new-badge">
+          <div class="badge-icon">${esc(item.icon)}</div>
+          <b>${esc(item.name)}</b>
+          <span class="sub">${esc(item.description)}</span>
+        </div>
+      `).join('')+
+      '</div>'
+    )
+    :(
+      '<div class="notice">'+
+      '오늘 받을 수 있는 배지는 이미 배지책에 안전하게 모여 있어요.'+
+      '</div>'
+    );
+
+  $('doneSummary').innerHTML=
+    '<b>오늘 발견한 장면</b><br>'+
+    esc(state.coreChoice||'')+
+    '<br><br><b>다음 급식 약속</b><br>'+
+    esc(
+      $('promiseSentence').value.trim()||
+      '다음 상담에서 함께 정하기'
+    )+
+    '<br><br><b>회기 진행</b><br>'+esc(result.sessionNo||'')+'/5회기'+
+    '<br><br><b>저장 결과</b><br>'+
+    esc(result.saveMode||'저장 완료')+
+    (result.savedAt?'<br>'+esc(result.savedAt):'');
+
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function logout(){
+  state.sessionToken='';
+  state.account=null;
+  state.home=null;
+  state.mealData=null;
+  state.mealError='';
+  state.guide=null;
+  state.memorableMenu='';
+  state.factors=[];
+  state.coreChoice='';
+  state.nextMenuChoice='';
+  state.nextAction='';
+  state.requestId='';
+  state.saving=false;
+  state.saved=false;
+  state.newBadges=[];
+  state.mission=null;
+  state.games=null;
+  state.notebook=null;
+  state.currentGame=null;
+  state.missionResult='';
+
+  $('appView').classList.add('hidden');
+  $('loginView').classList.remove('hidden');
+  $('studentName').value='';
+  $('explorerCode').value='';
+  $('loginError').classList.add('hidden');
+  window.scrollTo({top:0});
+}
+
+function showError(message){
+  $('loginError').textContent=message;
+  $('loginError').classList.remove('hidden');
+}
+
+function setLoading(open){
+  $('loading').classList.toggle('open',open);
+}
+
+function esc(value){
+  return String(value==null?'':value)
+    .replace(/[&<>"']/g,character=>({
+      '&':'&amp;','<':'&lt;','>':'&gt;',
+      '"':'&quot;',"'":'&#039;'
+    }[character]));
+}
+</script>
+</body>
+</html>

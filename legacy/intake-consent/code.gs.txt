@@ -1,0 +1,329 @@
+/**
+ * 공개 상담접수·보호자 동의 포털
+ *
+ * ★ 아래 한 줄에 데이터 템플릿 Google 스프레드시트 ID를 입력하세요.
+ * 예: https://docs.google.com/spreadsheets/d/여기가_ID/edit
+ */
+const DATA_SPREADSHEET_ID = '19MYO3GP3vQcCEbNdXtTkoMaJW6xHftjxd4EkRZPYMbI';
+
+const SHEETS = {
+  SETTINGS: '설정',
+  STUDENTS: '학생정보',
+  INTAKE: '상담접수',
+  CASES: '상담케이스',
+  CONSENTS: '보호자동의'
+};
+
+function doGet(e) {
+  const mode = String((e && e.parameter && e.parameter.mode) || 'intake').toLowerCase();
+  const fileName = mode === 'consent' ? 'Consent' : 'Intake';
+  const template = HtmlService.createTemplateFromFile(fileName);
+  template.token = String((e && e.parameter && e.parameter.token) || '');
+  return template.evaluate()
+    .setTitle(mode === 'consent' ? '학교 영양상담 보호자 동의' : '학교 영양상담 신청')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getPublicConfig() {
+  const ss = getDataSpreadsheet_();
+  const settings = getSettings_(ss);
+  return {
+    schoolName: settings.SCHOOL_NAME || '학교',
+    schoolYear: Number(settings.SCHOOL_YEAR || new Date().getFullYear())
+  };
+}
+
+function submitPublicIntake(payload) {
+  if (payload.website) throw new Error('잘못된 요청입니다.');
+  validateRequired_(payload, [
+    'applicantType','applicantName','relation','schoolYear','grade','classNo',
+    'studentName','topic','requestText','contact','privacyConsent'
+  ]);
+  if (payload.privacyConsent !== '동의') throw new Error('상담 접수를 위한 개인정보 수집·이용 동의가 필요합니다.');
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ss = getDataSpreadsheet_();
+    const sheet = getSheet_(ss, SHEETS.INTAKE);
+    const intakeId = nextIntakeId_(sheet, payload.schoolYear);
+    const now = new Date();
+    appendObject_(sheet, {
+      '접수ID': intakeId,
+      '접수일': now,
+      '신청자유형': payload.applicantType,
+      '신청자명': payload.applicantName,
+      '학생과의관계': payload.relation,
+      '학생코드': '',
+      '학년도': Number(payload.schoolYear),
+      '학년': Number(payload.grade),
+      '반': Number(payload.classNo),
+      '번호': payload.studentNo || '',
+      '학생명': payload.studentName,
+      '상담주제': payload.topic,
+      '신청내용': payload.requestText,
+      '희망시간': payload.preferredTime || '',
+      '긴급도': payload.urgency || '일반',
+      '처리상태': '신규 접수',
+      '연락처': payload.contact,
+      '개인정보동의': '동의',
+      '비고': payload.note || ''
+    });
+    return {
+      ok: true,
+      intakeId,
+      submittedAt: formatDateTime_(now)
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getConsentPageData(token) {
+  validateToken_(token);
+  const ss = getDataSpreadsheet_();
+  const consent = getSheetObjects_(getSheet_(ss, SHEETS.CONSENTS))
+    .find(r => String(r['동의토큰']) === String(token));
+  if (!consent) throw new Error('유효하지 않은 동의 링크입니다. 영양교사에게 새 링크를 요청해 주세요.');
+
+  const caseRow = getSheetObjects_(getSheet_(ss, SHEETS.CASES))
+    .find(r => String(r['케이스번호']) === String(consent['케이스번호']));
+  if (!caseRow) throw new Error('상담 정보를 찾을 수 없습니다.');
+  const student = getSheetObjects_(getSheet_(ss, SHEETS.STUDENTS))
+    .find(r => String(r['학생코드']) === String(caseRow['학생코드'])) || {};
+  const settings = getSettings_(ss);
+  const status = String(consent['확인상태'] || '미발송');
+
+  return {
+    schoolName: settings.SCHOOL_NAME || '학교',
+    schoolYear: settings.SCHOOL_YEAR || '',
+    studentNameMasked: maskName_(student['학생명'] || ''),
+    grade: student['학년'] || '',
+    classNo: student['반'] || '',
+    topic: caseRow['주상담주제'] || '',
+    status,
+    alreadySubmitted: ['교사 확인 필요','동의 완료','비동의'].includes(status),
+    submittedAt: formatDateTime_(consent['제출일시'])
+  };
+}
+
+function submitGuardianConsent(payload) {
+  if (payload.website) throw new Error('잘못된 요청입니다.');
+  validateRequired_(payload, ['token','guardianName','relation','contact','decision','signatureName']);
+  if (normalize_(payload.guardianName) !== normalize_(payload.signatureName)) {
+    throw new Error('보호자 이름과 전자서명 이름이 일치하지 않습니다.');
+  }
+
+  const decision = String(payload.decision);
+  if (!['동의','비동의'].includes(decision)) throw new Error('동의 여부를 선택해 주세요.');
+  if (decision === '동의') {
+    const required = ['counselingConsent','personalConsent','sensitiveConsent','diagnosisUseConsent','aiNotice'];
+    const missing = required.filter(k => !payload[k]);
+    if (missing.length) throw new Error('필수 동의 및 안내 확인 항목을 모두 확인해 주세요.');
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ss = getDataSpreadsheet_();
+    const consentSheet = getSheet_(ss, SHEETS.CONSENTS);
+    const consentRows = getSheetObjects_(consentSheet);
+    const consent = consentRows.find(r => String(r['동의토큰']) === String(payload.token));
+    if (!consent) throw new Error('유효하지 않은 동의 링크입니다.');
+    if (['교사 확인 필요','동의 완료','비동의'].includes(String(consent['확인상태'] || ''))) {
+      throw new Error('이미 제출된 동의서입니다. 변경이 필요하면 영양교사에게 문의해 주세요.');
+    }
+
+    const caseSheet = getSheet_(ss, SHEETS.CASES);
+    const caseRow = getSheetObjects_(caseSheet)
+      .find(r => String(r['케이스번호']) === String(consent['케이스번호']));
+    if (!caseRow) throw new Error('상담 정보를 찾을 수 없습니다.');
+    const student = getSheetObjects_(getSheet_(ss, SHEETS.STUDENTS))
+      .find(r => String(r['학생코드']) === String(caseRow['학생코드'])) || {};
+    const now = new Date();
+
+    const rowPatch = {
+      '보호자명': payload.guardianName,
+      '학생과의관계': payload.relation,
+      '보호자연락처': payload.contact,
+      '상담동의': decision === '동의' ? '동의' : '비동의',
+      '개인정보동의': decision === '동의' ? '동의' : '비동의',
+      '민감정보동의': decision === '동의' ? '동의' : '비동의',
+      '진단결과활용동의': decision === '동의' ? '동의' : '비동의',
+      'AI보조안내확인': decision === '동의' ? '확인' : '미확인',
+      '제출일시': now,
+      '동의일': decision === '동의' ? now : '',
+      '확인상태': decision === '동의' ? '교사 확인 필요' : '비동의',
+      '비고': payload.note || ''
+    };
+
+    let pdfUrl = '';
+    let pdfWarning = '';
+    try {
+      pdfUrl = createConsentPdf_(ss, caseRow, student, rowPatch, payload.signatureName);
+      rowPatch['동의서파일URL'] = pdfUrl;
+    } catch (err) {
+      pdfWarning = '동의 내용은 저장되었으나 PDF 생성에 실패했습니다: ' + err.message;
+      rowPatch['비고'] = [rowPatch['비고'], pdfWarning].filter(Boolean).join('\n');
+    }
+
+    updateRowByKey_(consentSheet, '케이스번호', consent['케이스번호'], rowPatch);
+    return {
+      ok: true,
+      decision,
+      submittedAt: formatDateTime_(now),
+      pdfUrl,
+      warning: pdfWarning
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function createConsentPdf_(ss, caseRow, student, consent, signatureName) {
+  const settings = getSettings_(ss);
+  const folderId = extractDriveId_(caseRow['Drive폴더URL']);
+  if (!folderId) throw new Error('학생 상담 Drive 폴더를 찾을 수 없습니다.');
+  const caseFolder = DriveApp.getFolderById(folderId);
+  const targetFolder = getOrCreateSubfolder_(caseFolder, '02_보호자동의');
+  const caseId = caseRow['케이스번호'];
+  const now = new Date();
+  const doc = DocumentApp.create(caseId + '_보호자동의_전자제출기록');
+  const body = doc.getBody();
+  body.appendParagraph((settings.SCHOOL_NAME || '학교') + ' 학교 영양상담 보호자 동의 전자제출 기록')
+    .setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  body.appendParagraph('※ 본 문서는 공개 웹페이지에서 제출된 동의 내용을 학교 내부 보관용으로 기록한 것입니다.');
+  body.appendHorizontalRule();
+  body.appendParagraph('학생: ' + (student['학생명'] || '') + ' (' + (student['학년'] || '') + '학년 ' + (student['반'] || '') + '반)');
+  body.appendParagraph('상담 주제: ' + (caseRow['주상담주제'] || ''));
+  body.appendParagraph('보호자: ' + consent['보호자명'] + ' / 관계: ' + consent['학생과의관계']);
+  body.appendParagraph('연락처: ' + consent['보호자연락처']);
+  body.appendParagraph('상담 참여 동의: ' + consent['상담동의']);
+  body.appendParagraph('개인정보 수집·이용 동의: ' + consent['개인정보동의']);
+  body.appendParagraph('건강·식생활 민감정보 처리 동의: ' + consent['민감정보동의']);
+  body.appendParagraph('교육부 식생활·생활습관 진단결과 활용 동의: ' + consent['진단결과활용동의']);
+  body.appendParagraph('AI 보조도구 활용 안내 확인: ' + consent['AI보조안내확인']);
+  body.appendParagraph('제출일시: ' + formatDateTime_(now));
+  body.appendParagraph('전자서명(이름 입력): ' + signatureName);
+  if (consent['비고']) body.appendParagraph('추가 의견: ' + consent['비고']);
+  doc.saveAndClose();
+
+  const docFile = DriveApp.getFileById(doc.getId());
+  docFile.moveTo(targetFolder);
+  const pdfName = caseId + '_보호자동의_' + Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyyMMdd_HHmmss') + '.pdf';
+  const pdfFile = targetFolder.createFile(docFile.getAs(MimeType.PDF).setName(pdfName));
+  docFile.setTrashed(true);
+  return pdfFile.getUrl();
+}
+
+function getDataSpreadsheet_() {
+  if (!DATA_SPREADSHEET_ID || DATA_SPREADSHEET_ID.indexOf('여기에_') === 0) {
+    throw new Error('public_portal_app/Code.gs 맨 위의 DATA_SPREADSHEET_ID에 Google 스프레드시트 ID를 입력하세요.');
+  }
+  return SpreadsheetApp.openById(DATA_SPREADSHEET_ID.trim());
+}
+
+function getSettings_(ss) {
+  const sheet = getSheet_(ss, SHEETS.SETTINGS);
+  const values = sheet.getDataRange().getValues();
+  const out = {};
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0]) out[String(values[i][0])] = values[i][1];
+  }
+  return out;
+}
+
+function getSheet_(ss, name) {
+  const sheet = ss.getSheetByName(name);
+  if (!sheet) throw new Error('필수 시트를 찾을 수 없습니다: ' + name);
+  return sheet;
+}
+
+function getSheetObjects_(sheet) {
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+  const headers = data[0];
+  return data.slice(1)
+    .filter(row => row.some(v => v !== '' && v !== null))
+    .map(row => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+}
+
+function nextIntakeId_(sheet, schoolYear) {
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const idCol = headers.indexOf('접수ID');
+  let max = 0;
+  for (let i = 1; i < values.length; i++) {
+    const id = String(values[i][idCol] || '');
+    const match = id.match(/(\d+)$/);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return 'REQ-' + schoolYear + '-' + Utilities.formatString('%04d', max + 1);
+}
+
+function appendObject_(sheet, obj) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  sheet.appendRow(headers.map(h => obj[h] !== undefined ? obj[h] : ''));
+}
+
+function updateRowByKey_(sheet, keyHeader, keyValue, patch) {
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const keyCol = headers.indexOf(keyHeader);
+  if (keyCol < 0) throw new Error('키 열을 찾을 수 없습니다: ' + keyHeader);
+  for (let r = 1; r < data.length; r++) {
+    if (String(data[r][keyCol]) === String(keyValue)) {
+      Object.keys(patch).forEach(key => {
+        const col = headers.indexOf(key);
+        if (col >= 0) sheet.getRange(r + 1, col + 1).setValue(patch[key]);
+      });
+      return;
+    }
+  }
+  throw new Error('수정할 동의 정보를 찾을 수 없습니다.');
+}
+
+function getOrCreateSubfolder_(parent, name) {
+  const folders = parent.getFoldersByName(name);
+  return folders.hasNext() ? folders.next() : parent.createFolder(name);
+}
+
+function extractDriveId_(url) {
+  const match = String(url || '').match(/[-\w]{25,}/);
+  return match ? match[0] : '';
+}
+
+function validateRequired_(obj, fields) {
+  fields.forEach(field => {
+    if (obj[field] === undefined || obj[field] === null || String(obj[field]).trim() === '') {
+      throw new Error('필수 항목을 입력해 주세요: ' + field);
+    }
+  });
+}
+
+function validateToken_(token) {
+  if (!token || !/^[a-zA-Z0-9]{20,}$/.test(String(token))) {
+    throw new Error('유효하지 않은 동의 링크입니다.');
+  }
+}
+
+function normalize_(value) {
+  return String(value || '').replace(/\s+/g, '').toLowerCase();
+}
+
+function maskName_(name) {
+  const chars = Array.from(String(name || '').trim());
+  if (chars.length <= 1) return chars.join('');
+  if (chars.length === 2) return chars[0] + '○';
+  return chars[0] + '○'.repeat(chars.length - 2) + chars[chars.length - 1];
+}
+
+function formatDateTime_(value) {
+  if (!value) return '';
+  const d = Object.prototype.toString.call(value) === '[object Date]' ? value : new Date(value);
+  return isNaN(d.getTime()) ? '' : Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
+}

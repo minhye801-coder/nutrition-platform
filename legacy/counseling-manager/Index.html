@@ -1,0 +1,3643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{--navy:#1f4e78;--blue:#eaf3f9;--border:#d9e2ec;--text:#243447;--green:#2e7d32;--orange:#ef6c00;--red:#c62828;--bg:#f6f8fb}
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;color:var(--text);background:var(--bg)}
+    header{background:var(--navy);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px;position:sticky;top:0;z-index:10}
+    header h1{font-size:20px;margin:0}header .sub{font-size:13px;opacity:.9}.layout{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 60px)}
+    nav{background:#fff;border-right:1px solid var(--border);padding:18px 12px;position:sticky;top:60px;height:calc(100vh - 60px)}
+    nav button,nav a{display:block;width:100%;border:0;background:transparent;text-align:left;padding:12px 14px;margin:4px 0;border-radius:8px;font-size:15px;cursor:pointer;color:var(--text);text-decoration:none}
+    nav button:hover,nav button.active,nav a:hover{background:var(--blue);color:var(--navy);font-weight:700}main{padding:24px;max-width:1600px;width:100%}.page{display:none}.page.active{display:block}
+    h2{margin:0 0 16px}h3{margin:0 0 12px}.grid{display:grid;gap:14px}.kpis{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:0 2px 5px rgba(0,0,0,.03);margin-bottom:16px}.kpi-label{font-size:13px;color:#60758a}.kpi-value{font-size:30px;font-weight:700;margin-top:8px;color:var(--navy)}
+    .form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}.span2{grid-column:span 2}label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#41566b}
+    input,select,textarea{width:100%;padding:10px 11px;border:1px solid #cbd5df;border-radius:8px;background:#fff;font:inherit}textarea{min-height:88px;resize:vertical}.readonly{background:#f1f5f9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.btn{border:0;border-radius:8px;padding:10px 15px;font-weight:700;cursor:pointer}.primary{background:var(--navy);color:#fff}.secondary{background:#e8eef4;color:var(--text)}.success{background:var(--green);color:#fff}.warningBtn{background:var(--orange);color:#fff}
+    table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}th{background:#f4f7fa;color:#52677a;white-space:nowrap}.status{display:inline-block;background:var(--blue);color:var(--navy);padding:4px 8px;border-radius:999px;font-size:12px}.status.done{background:#e7f6ea;color:#1f6d2b}.status.wait{background:#fff4dc;color:#8a5600}.status.stop{background:#fdeaea;color:#a52222}.muted{color:#6b7f92;font-size:13px}.notice{padding:12px 14px;border-radius:8px;background:#eef6ff;border:1px solid #c7def6;margin:12px 0;white-space:pre-wrap}.notice.warn{background:#fff6e8;border-color:#ffd99a;color:#7a4600}.notice.error{background:#fff0f0;border-color:#ffc4c4;color:#8b1a1a}.notice.ok{background:#eef9f0;border-color:#bfe4c5;color:#1e6628}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.toolbar input,.toolbar select{width:auto;min-width:180px}.loading{position:fixed;inset:0;background:rgba(255,255,255,.78);display:none;align-items:center;justify-content:center;font-size:18px;font-weight:700;z-index:999}.small{font-size:12px}.score-row{display:grid;grid-template-columns:1.3fr .7fr;gap:8px}.student-banner{padding:12px 14px;background:#f0f6fb;border:1px solid #cddfea;border-radius:8px;margin-bottom:14px;font-weight:700}.public-link{background:#fff;color:var(--navy)!important;border:1px solid #b9cfdf!important}.detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.detail-item{padding:12px;background:#f7f9fc;border:1px solid var(--border);border-radius:8px}.detail-item b{display:block;font-size:12px;color:#60758a;margin-bottom:6px}.linkbox{display:flex;gap:8px;align-items:center}.linkbox input{flex:1}.nowrap{white-space:nowrap}
+    .case-row:hover{background:#f8fbfe}.overview-title{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.overview-actions{display:flex;gap:8px;flex-wrap:wrap}.summary-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.summary-box{padding:12px;background:#f7f9fc;border:1px solid var(--border);border-radius:8px}.summary-box b{display:block;font-size:12px;color:#60758a;margin-bottom:6px}.summary-box strong{font-size:17px;color:#183b5b}.diag-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.diag-item{padding:12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px}.diag-item b{display:block;font-size:12px;color:#60758a;margin-bottom:5px}.goal-card{border-left:5px solid var(--green);background:#f5fbf6}.timeline{position:relative;margin-top:14px}.timeline:before{content:"";position:absolute;left:16px;top:8px;bottom:8px;width:2px;background:#d8e5ef}.session-card{position:relative;margin-left:42px;border:1px solid var(--border);border-radius:10px;background:#fff;padding:16px;margin-bottom:14px}.session-card:before{content:"";position:absolute;left:-34px;top:21px;width:14px;height:14px;border-radius:50%;background:var(--navy);border:4px solid #e8f1f8}.session-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.session-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.session-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.session-field{padding:10px;background:#f8fafc;border-radius:7px;border:1px solid #e4ebf1}.session-field b{display:block;font-size:12px;color:#60758a;margin-bottom:5px}.goal-line{margin-top:12px;padding:12px;border-radius:8px;background:#eef8f0;border:1px solid #cce7d1}.activity-line{margin-top:12px;padding:14px;border-radius:10px;background:#fff8e8;border:1px solid #f0d79a;border-left:5px solid var(--orange)}.coaching-line{margin-top:12px;padding:14px;border-radius:10px;background:#f2f7ff;border:1px solid #cbdcf0;border-left:5px solid var(--navy)}.coaching-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}.coaching-box{padding:12px;background:#fff;border:1px solid #d9e5f0;border-radius:8px;white-space:pre-wrap;line-height:1.7}.coaching-box b{display:block;color:var(--navy);margin-bottom:6px}.activity-line .activity-text{white-space:pre-wrap;line-height:1.75;margin-top:8px}.activity-badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#fff0cc;color:#805100;font-size:12px;margin-left:6px}.record-details{margin-top:10px;border:1px solid var(--border);border-radius:8px;padding:10px;background:#fff}.record-details summary{cursor:pointer;font-weight:700;color:var(--navy)}.record-text{white-space:pre-wrap;line-height:1.65;margin-top:10px}.structured-record{display:grid;gap:10px;margin-top:8px}.structured-paragraph{padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;line-height:1.7;white-space:pre-wrap}.structured-paragraph b{display:inline-block;min-width:24px;color:var(--navy)}.compact-table td{max-width:260px}.text-ellipsis{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.empty-box{padding:26px;text-align:center;color:#6b7f92;background:#f8fafc;border-radius:8px;border:1px dashed #cbd5df}
+
+    .record-group{grid-column:1/-1;border:1px solid var(--border);border-radius:12px;padding:14px;background:#fbfdff}
+    .record-group-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:10px}
+    .record-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .record-card{background:#fff;border:1px solid #dce6ef;border-radius:10px;padding:12px}
+    .record-card label{font-size:14px;color:var(--navy)}
+    .record-card textarea{min-height:108px;background:#fff}
+    .effect-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+    .comparison-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .compare-card{padding:12px;border:1px solid var(--border);border-radius:9px;background:#f8fafc}
+    .compare-card b{display:block;font-size:12px;color:#60758a;margin-bottom:5px}
+    .change-up{color:#1f6d2b;font-weight:700}.change-down{color:#a52222;font-weight:700}
+    .form-link-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+    .form-link-card{padding:14px;border:1px solid var(--border);border-radius:10px;background:#f8fbfe}
+    .form-link-card h4{margin:0 0 8px;color:var(--navy)}
+    .form-link-card .linkbox{margin-top:8px}
+    .quick-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:12px}
+    .quick-tool-card{display:flex;flex-direction:column;justify-content:space-between;min-height:168px;padding:18px;border:1px solid var(--border);border-radius:12px;background:#f8fbfe}
+    .quick-tool-card h4{margin:0 0 8px;color:var(--navy);font-size:17px}
+    .quick-tool-card p{margin:0 0 16px;color:#60758a;line-height:1.65;font-size:13px}
+    .quick-tool-card a,.quick-tool-card button{width:100%;text-align:center;text-decoration:none}
+    .stage-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+    .stage-card{padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;line-height:1.55}
+    .stage-card b{display:block;color:var(--navy);margin-bottom:5px}
+    .stage-card span{font-size:12px;color:#60758a}
+
+
+    .explorer-panel{margin-top:16px;padding:18px;border:1px solid #d9d2ff;border-left:6px solid #6c5ce7;border-radius:12px;background:linear-gradient(135deg,#fbfaff,#f4f1ff)}
+    .explorer-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .explorer-title{display:flex;align-items:center;gap:10px}.explorer-title-icon{width:46px;height:46px;border-radius:15px;background:#6c5ce7;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .explorer-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:14px}
+    .explorer-item{padding:12px;background:#fff;border:1px solid #e1dcff;border-radius:9px;min-height:70px}.explorer-item b{display:block;font-size:12px;color:#675da9;margin-bottom:6px}.explorer-item strong{font-size:17px;color:#3d347d}
+    .explorer-activity{margin-top:12px;padding:14px;background:#fff;border:1px solid #e1dcff;border-radius:10px;line-height:1.65}
+    .explorer-activity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}.explorer-activity-item{padding:10px;background:#f8f7ff;border-radius:8px}.explorer-activity-item b{display:block;font-size:12px;color:#675da9;margin-bottom:4px}
+    .explorer-code{font-size:24px;letter-spacing:.12em;color:#4d43a8}
+    @media(max-width:900px){.explorer-grid,.explorer-activity-grid{grid-template-columns:1fr}}
+
+    .goal-progress-wrap{margin-top:14px;padding:12px;background:#fff;border:1px solid #cce7d1;border-radius:10px}
+    .goal-progress-track{height:16px;background:#e6edf3;border-radius:999px;overflow:hidden;margin:8px 0}
+    .goal-progress-bar{height:100%;background:linear-gradient(90deg,#4e9d5b,#7fbe68);border-radius:999px}
+    .goal-step-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.goal-step{width:29px;height:29px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #b8c8d6;background:#fff;color:#789;font-weight:800}.goal-step.done{background:#58a765;color:#fff;border-color:#58a765}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,35,55,.48);z-index:200;align-items:center;justify-content:center;padding:20px}.modal-overlay.open{display:flex}.modal-panel{width:min(920px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.25)}.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.modal-close{border:0;background:#eef2f6;width:36px;height:36px;border-radius:50%;font-size:21px;cursor:pointer}.goal-check-summary{padding:14px;border-radius:10px;background:#f2f8f1;border:1px solid #cde1ca;margin-bottom:14px}.goal-check-history{margin-top:16px}.goal-check-history table{font-size:13px}
+    .next-session-details{margin-top:10px;border:1px solid #cbdcf0;border-radius:10px;padding:10px;background:#f5f8fd}.next-session-details summary{cursor:pointer;font-weight:800;color:var(--navy)}
+    .choice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.choice-chip{display:flex;align-items:center;gap:7px;padding:10px 11px;background:#f8fafc;border:1px solid var(--border);border-radius:8px}.choice-chip input{width:auto}.prep-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.prep-summary .summary-box{min-height:78px}.prep-output-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.prep-output-card{padding:14px;border:1px solid #d9e5f0;background:#fff;border-radius:10px}.prep-output-card.full{grid-column:1/-1}.prep-output-card textarea{min-height:135px}.prep-history-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:10px;background:#fff}.prep-history-card summary{cursor:pointer;font-weight:800;color:var(--navy)}.prep-result-box{padding:14px;background:#fff8e8;border:1px solid #f0d79a;border-radius:10px;margin-top:12px}.prep-step{display:flex;gap:10px;align-items:flex-start;margin-top:8px}.prep-step-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto}
+
+    .danger{background:var(--red);color:#fff}
+    .danger-zone{border:2px solid #e6a2a2;background:#fff6f6}
+    .cleanup-result{border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:10px;background:#fff}
+    .cleanup-result.test{border-left:6px solid var(--green)}
+    .cleanup-result.real{border-left:6px solid var(--red)}
+    .count-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+    .count-box{padding:11px;background:#f8fafc;border:1px solid var(--border);border-radius:8px}
+    .count-box b{display:block;font-size:12px;color:#60758a;margin-bottom:5px}
+    .count-box strong{font-size:21px;color:var(--navy)}
+    .confirm-phrase{font-family:Consolas,monospace;font-size:16px;font-weight:800;background:#fff0f0;border:1px solid #f0b2b2;padding:10px;border-radius:8px}
+
+
+    .dashboard-kpis{
+      display:grid;
+      grid-template-columns:repeat(11,minmax(82px,1fr));
+      gap:8px;
+      overflow-x:auto;
+      padding-bottom:3px;
+      margin-bottom:14px
+    }
+    .dashboard-kpi{
+      min-width:82px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px 9px;
+      box-shadow:0 2px 5px rgba(0,0,0,.025)
+    }
+    .dashboard-kpi .kpi-label{
+      font-size:11px;
+      white-space:nowrap
+    }
+    .dashboard-kpi .kpi-value{
+      font-size:22px;
+      margin-top:5px
+    }
+    .dashboard-section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px
+    }
+    .dashboard-section-title h3{margin:0}
+    .dashboard-quick-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:9px
+    }
+    .dashboard-link-card{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-height:74px;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#f8fbfe;
+      text-decoration:none;
+      color:var(--text);
+      cursor:pointer
+    }
+    .dashboard-link-card:hover{
+      border-color:#9dbad2;
+      box-shadow:0 3px 9px rgba(31,78,120,.08)
+    }
+    .dashboard-link-icon{
+      width:38px;
+      height:38px;
+      flex:0 0 38px;
+      display:grid;
+      place-items:center;
+      border-radius:10px;
+      background:#eaf3f9;
+      font-size:21px
+    }
+    .dashboard-link-card b{
+      display:block;
+      color:var(--navy);
+      font-size:14px;
+      margin-bottom:3px
+    }
+    .dashboard-link-card span{
+      display:block;
+      color:#6b7f92;
+      font-size:11px;
+      line-height:1.35
+    }
+    .dashboard-data-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:9px;
+      margin-top:9px
+    }
+    .upcoming-compact table{font-size:13px}
+    .upcoming-compact th,
+    .upcoming-compact td{padding:8px}
+    .calendar-card{padding:16px}
+    .calendar-toolbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px
+    }
+    .calendar-nav{
+      display:flex;
+      align-items:center;
+      gap:7px
+    }
+    .calendar-month-title{
+      min-width:112px;
+      text-align:center;
+      font-weight:800;
+      color:var(--navy);
+      font-size:18px
+    }
+    .calendar-legend{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      font-size:12px;
+      color:#60758a
+    }
+    .legend-dot{
+      display:inline-block;
+      width:10px;
+      height:10px;
+      border-radius:3px;
+      margin-right:4px
+    }
+    .legend-consult{background:#dbeeff}
+    .legend-visit{background:#e8f6dc}
+    .legend-trip{background:#9f2525}
+    .legend-other{background:#eee7fa}
+    .schedule-add-panel{
+      display:none;
+      padding:14px;
+      margin-bottom:12px;
+      border:1px solid #ccdbe8;
+      border-radius:10px;
+      background:#f8fbfe
+    }
+    .schedule-add-panel.open{display:block}
+    .schedule-form-grid{
+      display:grid;
+      grid-template-columns:1.1fr .9fr .9fr .9fr 1.8fr;
+      gap:9px;
+      align-items:end
+    }
+    .calendar-grid{
+      display:grid;
+      grid-template-columns:repeat(7,minmax(0,1fr));
+      border-top:1px solid var(--border);
+      border-left:1px solid var(--border)
+    }
+    .calendar-weekday{
+      padding:9px 5px;
+      text-align:center;
+      font-weight:800;
+      font-size:12px;
+      background:#f3f6f9;
+      border-right:1px solid var(--border);
+      border-bottom:1px solid var(--border)
+    }
+    .calendar-weekday.sun{color:#c62828}
+    .calendar-weekday.sat{color:#1d65ad}
+    .calendar-day{
+      position:relative;
+      min-height:132px;
+      padding:7px;
+      background:#fff;
+      border-right:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      overflow:hidden
+    }
+    .calendar-day.outside{background:#fafbfc}
+    .calendar-day.today{
+      box-shadow:inset 0 0 0 2px #2e75b6
+    }
+    .calendar-day.trip-day{
+      background:linear-gradient(180deg,#7f1d1d 0,#9f2525 100%);
+      color:#fff
+    }
+    .calendar-day.trip-day .calendar-date,
+    .calendar-day.trip-day .calendar-capacity{
+      color:#fff
+    }
+    .calendar-day.full-day:not(.trip-day){
+      background:#f1f4f7
+    }
+    .calendar-date-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:6px;
+      margin-bottom:5px
+    }
+    .calendar-date{
+      font-size:13px;
+      font-weight:800
+    }
+    .calendar-day.sun .calendar-date{color:#c62828}
+    .calendar-day.sat .calendar-date{color:#1d65ad}
+    .calendar-capacity{
+      font-size:10px;
+      color:#60758a;
+      border-radius:999px;
+      padding:2px 5px;
+      background:rgba(255,255,255,.72)
+    }
+    .calendar-capacity.full{
+      background:#495a6a;
+      color:#fff
+    }
+    .calendar-events{
+      display:grid;
+      gap:4px
+    }
+    .calendar-event{
+      display:flex;
+      align-items:flex-start;
+      gap:5px;
+      width:100%;
+      padding:5px 6px;
+      border:0;
+      border-radius:6px;
+      text-align:left;
+      font:inherit;
+      font-size:11px;
+      line-height:1.3;
+      overflow:hidden;
+      cursor:default
+    }
+    .calendar-event.completed{
+      opacity:.64;
+      filter:saturate(.65)
+    }
+    .calendar-event.completed .calendar-event-text{
+      text-decoration:line-through
+    }
+    .calendar-event-check{
+      width:13px;
+      height:13px;
+      min-width:13px;
+      margin:0;
+      margin-top:1px;
+      accent-color:#1f8b4c;
+      cursor:pointer
+    }
+    .calendar-event-text{
+      flex:1;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap
+    }
+    .calendar-event-delete{
+      flex:0 0 auto;
+      width:16px;
+      height:16px;
+      padding:0;
+      border:0;
+      border-radius:4px;
+      background:rgba(255,255,255,.58);
+      color:inherit;
+      font-size:13px;
+      line-height:16px;
+      text-align:center;
+      cursor:pointer
+    }
+    .calendar-event-delete:hover{
+      background:rgba(255,255,255,.95)
+    }
+    .calendar-day.trip-day .calendar-event-check{
+      accent-color:#56d67f
+    }
+    .calendar-event.consult{
+      background:#dbeeff;
+      color:#155d9c
+    }
+    .calendar-event.visit{
+      background:#e8f6dc;
+      color:#3f6f1e
+    }
+    .calendar-event.trip{
+      background:#5f0f0f;
+      color:#fff;
+      font-weight:800
+    }
+    .calendar-event.meeting{
+      background:#eee7fa;
+      color:#64449a
+    }
+    .calendar-event.other{
+      background:#edf0f3;
+      color:#4f6070
+    }
+    .calendar-day.trip-day .calendar-event:not(.trip){
+      border:1px solid rgba(255,255,255,.55)
+    }
+    .calendar-note{
+      margin-top:10px;
+      font-size:12px;
+      color:#6b7f92
+    }
+    @media(max-width:1200px){
+      .dashboard-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .schedule-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:760px){
+      .dashboard-data-grid,
+      .dashboard-quick-grid,
+      .schedule-form-grid{grid-template-columns:1fr}
+      .calendar-grid{
+        min-width:880px
+      }
+      .calendar-scroll{
+        overflow-x:auto
+      }
+    }
+
+    @media(max-width:900px){.layout{grid-template-columns:1fr}nav{position:static;height:auto;display:flex;overflow:auto;border-right:0;border-bottom:1px solid var(--border)}nav button,nav a{min-width:max-content;width:auto}.form-grid,.two,.detail-grid,.summary-grid,.diag-grid,.session-summary,.record-card-grid,.comparison-grid,.coaching-grid{grid-template-columns:1fr}.span2{grid-column:auto}main{padding:16px}}
+      @media(max-width:900px){.quick-tools,.stage-flow,.count-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header><h1>AI 영양상담 매니저</h1><div class="sub" id="schoolName"></div></header>
+<div class="layout">
+  <nav>
+    <button class="active" onclick="showPage('dashboard',this)">홈 대시보드</button>
+    <button onclick="showPage('intakes',this)">상담 접수 관리</button>
+    <button onclick="showPage('consents',this)">보호자 동의 관리</button>
+    <button onclick="showPage('diagnosis',this)">공식 진단 PDF</button>
+    <button onclick="showPage('session',this)">상담 기록</button>
+    <button onclick="showPage('preparation',this)">다음 회기 준비</button>
+    <button onclick="showPage('neis',this);loadNeisRows()">나이스 업로드</button>
+    <button onclick="showPage('evaluation',this)">효과평가·성장</button>
+    <button onclick="showPage('cases',this)">학생·상담 검색</button>
+    <button onclick="showPage('cleanup',this);resetCleanupPage()">테스트 데이터 정리</button>
+    <a id="publicIntakeLink" class="public-link" href="#" target="_blank" style="display:none">공개 접수 페이지 열기</a>
+    <a id="officialLink" href="#" target="_blank">교육부 진단프로그램</a>
+    <a href="https://knhanes.kdca.go.kr/knhanes/grtcht/clclt/measClclt.do" target="_blank">질병관리청 성장도표 계산기</a>
+  </nav>
+  <main>
+    <section id="dashboard" class="page active">
+      <h2>운영 현황</h2>
+      <div id="kpis" class="dashboard-kpis"></div>
+
+      <div class="card upcoming-compact">
+        <div class="dashboard-section-title">
+          <h3>다가오는 일정</h3>
+          <span class="muted">상담케이스 다음일정과 직접 입력 일정을 함께 표시합니다.</span>
+        </div>
+        <div id="upcoming"></div>
+      </div>
+
+      <div class="card">
+        <div class="dashboard-section-title">
+          <h3>업무 바로가기</h3>
+        </div>
+
+        <div class="dashboard-quick-grid">
+          <a
+            id="officialDashboardLink"
+            class="dashboard-link-card"
+            href="#"
+            target="_blank"
+          >
+            <span class="dashboard-link-icon">📋</span>
+            <span>
+              <b>교육부 식생활·생활습관 진단</b>
+              <span>공식 진단 프로그램 열기</span>
+            </span>
+          </a>
+
+          <a
+            class="dashboard-link-card"
+            href="https://knhanes.kdca.go.kr/knhanes/grtcht/clclt/measClclt.do"
+            target="_blank"
+          >
+            <span class="dashboard-link-icon">📏</span>
+            <span>
+              <b>질병관리청 성장도표</b>
+              <span>신장·체중 성장 백분위 확인</span>
+            </span>
+          </a>
+
+          <button
+            type="button"
+            class="dashboard-link-card"
+            onclick="openNeisExportFromDashboard()"
+          >
+            <span class="dashboard-link-icon">📊</span>
+            <span>
+              <b>나이스 상담관리 엑셀</b>
+              <span>업로드용 상담 엑셀 생성</span>
+            </span>
+          </button>
+
+          <a
+            class="dashboard-link-card"
+            href="https://script.google.com/macros/s/AKfycbxNLfvU_ZDzwjUmKXq7jfWLNmqWYBcD1htCuFOFIWKvtiolrmGTqjDAyxtceWL7gC99/exec"
+            target="_blank"
+          >
+            <span class="dashboard-link-icon">🌱</span>
+            <span>
+              <b>맛마음 탐험소</b>
+              <span>학생용 탐험소 열기</span>
+            </span>
+          </a>
+        </div>
+
+        <div class="dashboard-section-title" style="margin-top:15px">
+          <h3 style="font-size:15px">데이터</h3>
+        </div>
+
+        <div class="dashboard-data-grid">
+          <a
+            class="dashboard-link-card"
+            href="https://docs.google.com/spreadsheets/d/19MYO3GP3vQcCEbNdXtTkoMaJW6xHftjxd4EkRZPYMbI/edit?gid=1325426852#gid=1325426852"
+            target="_blank"
+          >
+            <span class="dashboard-link-icon">🗂️</span>
+            <span>
+              <b>영양상담 매니저 데이터</b>
+              <span>상담접수·케이스·회기 데이터 열기</span>
+            </span>
+          </a>
+
+          <a
+            class="dashboard-link-card"
+            href="https://docs.google.com/spreadsheets/d/1ZpjQDdLz0t6UtIAQlDmMg6RMNf9E7TALxRndM5NITus/edit?gid=1539659801#gid=1539659801"
+            target="_blank"
+          >
+            <span class="dashboard-link-icon">📗</span>
+            <span>
+              <b>맛마음 탐험소 데이터</b>
+              <span>학생계정·활동·미션 데이터 열기</span>
+            </span>
+          </a>
+        </div>
+      </div>
+
+      <div class="card calendar-card">
+        <div class="calendar-toolbar">
+          <div>
+            <h3 style="margin-bottom:7px">월간 일정 캘린더</h3>
+            <div class="calendar-legend">
+              <span><i class="legend-dot legend-consult"></i>상담</span>
+              <span><i class="legend-dot legend-visit"></i>사전방문</span>
+              <span><i class="legend-dot legend-trip"></i>출장</span>
+              <span><i class="legend-dot legend-other"></i>회의·기타</span>
+            </div>
+          </div>
+
+          <div class="calendar-nav">
+            <button class="btn secondary" onclick="moveDashboardCalendar(-1)">‹</button>
+            <div id="calendarMonthTitle" class="calendar-month-title"></div>
+            <button class="btn secondary" onclick="moveDashboardCalendar(1)">›</button>
+            <button class="btn secondary" onclick="goDashboardCalendarToday()">오늘</button>
+            <button class="btn primary" onclick="toggleScheduleAddPanel()">일정 추가</button>
+          </div>
+        </div>
+
+        <div id="scheduleAddPanel" class="schedule-add-panel">
+          <form id="dashboardScheduleForm" onsubmit="saveDashboardSchedule(event)">
+            <div class="schedule-form-grid">
+              <div>
+                <label>날짜 *</label>
+                <input name="date" type="date" required>
+              </div>
+
+              <div>
+                <label>유형 *</label>
+                <select name="type" required>
+                  <option value="상담">상담</option>
+                  <option value="사전방문">사전방문</option>
+                  <option value="출장">출장</option>
+                  <option value="회의·연수">회의·연수</option>
+                  <option value="기타">기타</option>
+                </select>
+              </div>
+
+              <div>
+                <label>시작시간</label>
+                <input name="startTime" type="time">
+              </div>
+
+              <div>
+                <label>종료시간</label>
+                <input name="endTime" type="time">
+              </div>
+
+              <div>
+                <label>일정명 *</label>
+                <input
+                  name="title"
+                  placeholder="예: 교육청 출장, 김○○ 사전방문"
+                  required
+                >
+              </div>
+
+              <div class="full">
+                <label>메모</label>
+                <input
+                  name="note"
+                  placeholder="장소·준비사항 등"
+                >
+              </div>
+            </div>
+
+            <div class="actions" style="margin-top:10px">
+              <button class="btn success" type="submit">일정 저장</button>
+              <button class="btn secondary" type="button" onclick="toggleScheduleAddPanel(false)">닫기</button>
+            </div>
+          </form>
+          <div id="scheduleSaveMsg"></div>
+        </div>
+
+        <div class="calendar-scroll">
+          <div id="dashboardCalendar"></div>
+        </div>
+
+        <div class="calendar-note">
+          상담케이스의 <b>다음일정</b>은 자동으로 표시됩니다.
+          각 일정의 체크박스를 선택하면 완료로 저장되고, 다시 해제할 수도 있습니다.
+          직접 입력한 일정은 오른쪽 × 버튼으로 삭제합니다.
+          상담·사전방문은 하루 최대 2건까지 등록됩니다.
+        </div>
+      </div>
+    </section>
+
+    <section id="intakes" class="page">
+      <h2>상담 접수 관리</h2>
+      <div class="notice">학부모·학생 공개 접수 페이지에서 제출된 신청이 여기에 표시됩니다. 내용을 검토한 뒤 <b>케이스 생성</b>을 누르면 학생정보, 상담케이스, Drive 폴더가 생성됩니다.</div>
+      <div class="card"><div id="pendingIntakes"></div></div>
+    </section>
+
+    <section id="consents" class="page">
+      <h2>보호자 동의 관리</h2>
+      <div class="notice">상담 접수 승인 후 학생별 동의 링크를 생성해 보호자에게 전달합니다. 보호자가 제출하면 <b>교사 확인 필요</b>로 표시되며, 영양교사가 확인한 뒤에만 공식 진단 단계로 넘어갑니다.</div>
+      <div class="card"><div id="consentCases"></div></div>
+      <div id="consentDetail" class="card" style="display:none"></div>
+    </section>
+
+    <section id="diagnosis" class="page">
+      <h2>공식 진단 PDF 자동 확인</h2>
+      <div class="card">
+        <div class="form-grid">
+          <div class="span2"><label>학생 선택</label><select id="diagStudentSelect" onchange="selectCaseForForm('diag',this.value)"><option value="">학생 이름으로 선택</option></select></div>
+          <div><label>현재 선택</label><input id="diagSelectedLabel" class="readonly" readonly></div>
+          <div><label>평가 시점</label><select id="diagEvaluationPoint" onchange="syncDiagnosisPoint()"><option>사전</option><option>사후</option><option>추적</option></select></div>
+          <div><label>진단결과 PDF (필수)</label><input id="resultPdf" type="file" accept="application/pdf"></div>
+          <div><label>응답내역 PDF (선택)</label><input id="responsePdf" type="file" accept="application/pdf"></div>
+          <div class="actions" style="align-items:end"><button type="button" class="btn warningBtn" onclick="uploadAndAnalyze()">PDF 업로드 및 자동 확인</button></div>
+        </div>
+        <div id="analysisMsg"></div>
+      </div>
+
+      <div class="card">
+        <form id="diagnosisForm" class="form-grid">
+          <input type="hidden" name="caseId">
+          <input type="hidden" name="diagnosisId">
+          <input type="hidden" name="evaluationPoint" value="사전">
+          <input type="hidden" name="studentName">
+          <div><label>검사일</label><input name="examDate" type="date" required></div>
+          <div><label>성별</label><input name="sex"></div><div><label>나이</label><input name="age" type="number"></div>
+          <div><label>신장(cm)</label><input name="heightCm" type="number" step="0.1"></div><div><label>신장 백분위</label><input name="heightPercentile"></div>
+          <div><label>체중(kg)</label><input name="weightKg" type="number" step="0.1"></div><div><label>체중 백분위</label><input name="weightPercentile"></div>
+          <div><label>BMI</label><input name="bmi" type="number" step="0.01"></div><div><label>BMI 백분위</label><input name="bmiPercentile"></div>
+          <div><label>주관적 건강상태</label><input name="subjectiveHealth"></div><div><label>체형 인식</label><input name="bodyImage"></div>
+          <div><label>식사빈도</label><input name="mealFrequency"></div><div><label>규칙적 식사</label><input name="regularMealTime"></div><div><label>식사속도</label><input name="eatingSpeed"></div><div><label>식사량</label><input name="mealAmount"></div>
+          <div><label>종합 등급 / 점수</label><div class="score-row"><input name="totalLevel"><input name="totalScore" type="number" step="0.1"></div></div>
+          <div><label>균형 등급 / 점수</label><div class="score-row"><input name="balanceLevel"><input name="balanceScore" type="number" step="0.1"></div></div>
+          <div><label>절제 등급 / 점수</label><div class="score-row"><input name="moderationLevel"><input name="moderationScore" type="number" step="0.1"></div></div>
+          <div><label>실천 등급 / 점수</label><div class="score-row"><input name="practiceLevel"><input name="practiceScore" type="number" step="0.1"></div></div>
+          <div><label>섭식태도</label><input name="eatingAttitude"></div><div><label>섭식태도 점수</label><input name="eatingAttitudeScore" type="number"></div>
+          <div><label>식품 알레르기</label><input name="allergy"></div><div><label>질환</label><input name="disease"></div>
+          <div><label>수면습관</label><input name="sleepLevel"></div><div><label>수면시간</label><input name="sleepDuration"></div><div><label>정신건강</label><input name="mentalLevel"></div>
+          <div><label>스마트폰 사용 습관</label><input name="smartphoneLevel"></div><div><label>평일 스마트폰 시간</label><input name="weekdaySmartphoneHours"></div><div><label>주말 스마트폰 시간</label><input name="weekendSmartphoneHours"></div><div><label>스마트폰 과의존</label><input name="smartphoneOverdependence"></div>
+          <div class="full"><label>추가 상담 요청사항</label><textarea name="additionalRequest"></textarea></div>
+          <div class="full"><label>응답내역 핵심 요약</label><textarea name="responseHighlights"></textarea></div>
+          <div class="full"><label>이상값·확인사항</label><textarea name="warning"></textarea></div>
+          <div><label>다음 상담일</label><input name="nextDate" type="date"></div>
+          <div class="actions full"><button type="submit" class="btn success">교사 확인 후 저장</button></div>
+        </form>
+        <div id="diagMsg"></div>
+      </div>
+    </section>
+
+    <section id="session" class="page">
+      <h2>상담 기록·실천목표</h2>
+      <div class="card"><form id="sessionForm" class="form-grid">
+        <input type="hidden" name="caseId">
+        <input type="hidden" name="tasteMindLinkId">
+        <div class="span2"><label>학생 선택</label><select id="sessionStudentSelect" onchange="selectCaseForForm('session',this.value)"><option value="">학생 이름으로 선택</option></select></div>
+        <div><label>현재 선택</label><input id="sessionSelectedLabel" class="readonly" readonly></div>
+        <div><label>상담일</label><input name="sessionDate" type="date" required></div><div><label>상담시간(분)</label><input name="minutes" type="number"></div><div><label>변화 준비도(0~10)</label><input name="readiness" type="number" min="0" max="10"></div>
+        <div class="full"><label>학생의 주요 호소</label><textarea name="mainConcern"></textarea></div><div class="full"><label>학생이 말한 원인</label><textarea name="cause"></textarea></div>
+        <div><label>학생의 강점</label><textarea name="strength"></textarea></div><div class="span2"><label>교사 관찰</label><textarea name="observation"></textarea></div>
+        <div class="record-group">
+          <div class="record-group-title">이번 회기 활동 실시 결과</div>
+          <div class="notice" style="margin-top:0">지난 회기에서 준비한 1:1 영양교육 활동을 이번 상담에서 실시했다면 결과를 기록합니다. 최초상담이면 <b>해당 없음(최초상담)</b>을 선택하세요. 지난 활동 계획은 아래의 <b>지난 회기·목표 불러오기</b>에서 확인할 수 있습니다.</div>
+          <div class="record-card-grid">
+            <div class="record-card">
+              <label>이번 회기 활동 실시 상태</label>
+              <select name="activityStatus"><option>미정</option><option>해당 없음(최초상담)</option><option>실시</option><option>부분 실시</option><option>미실시</option></select>
+            </div>
+            <div class="record-card">
+              <label>활동 후 학생 반응·교사 메모</label>
+              <textarea name="activityNote" placeholder="예: 음식카드 분류에 적극 참여했고, 아침식사 대안으로 바나나와 우유를 직접 선택함"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="full">
+          <div class="notice">
+            <b>상담 후 AI 기록 작성 지원</b><br>
+            상담을 마친 뒤 학생의 주요 호소, 원인, 강점, 교사 관찰을 입력하세요. AI는 <b>이번 회기의 SOAP·PES·연계 검토·SMART 목표</b>를 정리합니다. 다음 회기 계획은 상담기록 저장 후 별도 <b>다음 회기 준비</b> 탭에서 최근 기록을 자동으로 불러와 만듭니다.
+            <div class="actions" style="justify-content:flex-start;margin-top:12px">
+              <button type="button" class="btn secondary" onclick="loadPreviousSessionSummary()">지난 회기·목표 불러오기</button>
+              <button type="button" id="aiDraftBtn" class="btn primary" onclick="generateCounselingDraftFromForm()">AI 상담기록 초안 자동작성</button>
+            </div>
+          </div>
+          <div id="previousSessionBox" style="display:none;margin-bottom:14px"></div>
+          <div id="aiDraftMsg"></div>
+        </div>
+        <div class="record-group">
+          <div class="record-group-title">SOAP 상담기록</div>
+          <div class="record-card-grid">
+            <div class="record-card"><label>S · 학생이 말한 내용</label><textarea name="soapS" placeholder="학생이 직접 말한 어려움, 생각, 느낌을 기록합니다."></textarea></div>
+            <div class="record-card"><label>O · 객관적 자료</label><textarea name="soapO" placeholder="공식 진단결과, 측정값, 교사 관찰을 기록합니다."></textarea></div>
+            <div class="record-card"><label>A · 영양상담 평가</label><textarea name="soapA" placeholder="S와 O를 종합한 영양상담 관점의 평가를 기록합니다."></textarea></div>
+            <div class="record-card"><label>P · 상담 및 실천 계획</label><textarea name="soapP" placeholder="학생과 협의한 실천계획과 추후 확인 계획을 기록합니다."></textarea></div>
+          </div>
+        </div>
+        <div class="record-group">
+          <div class="record-group-title">PES 영양진단문</div>
+          <div class="record-card-grid">
+            <div class="record-card"><label>P · 영양문제</label><textarea name="pesP" placeholder="우선적으로 다룰 영양문제를 기록합니다."></textarea></div>
+            <div class="record-card"><label>E · 관련 원인</label><textarea name="pesE" placeholder="문제와 관련된 원인이나 환경요인을 기록합니다."></textarea></div>
+            <div class="record-card full"><label>S · 근거</label><textarea name="pesS" placeholder="공식 진단결과, 학생 발언, 관찰자료 등 근거를 기록합니다."></textarea></div>
+          </div>
+        </div>
+        <div class="full"><label>연계 검토</label><textarea name="referral" placeholder="보호자 협조, 담임·보건교사 협의, 전문기관 연계 또는 추가 확인사항을 기록합니다."></textarea></div>
+        <div class="full"><label>SMART 실천목표</label><textarea name="goalText" placeholder="학생이 원하는 행동을 짧게 입력하세요. 예: 아침을 일주일에 두 번 먹어 보고 싶음"></textarea><div class="small" style="margin-top:6px">학생의 표현을 그대로 짧게 적으면 AI가 구체적인 SMART 목표 문장으로 정리합니다.</div></div>
+        <div><label>목표 시작일</label><input name="goalStart" type="date"></div><div><label>목표 종료일</label><input name="goalEnd" type="date"></div><div><label>목표 횟수</label><input name="targetCount" type="number"></div>
+        <div><label>확인방법</label><select name="checkMethod"><option>학생 체크표</option><option>보호자 확인</option><option>구두 확인</option><option>사진 기록</option><option>기타</option></select></div><div><label>다음 상담일</label><input name="nextDate" type="date"></div><div><label><input name="approved" type="checkbox" style="width:auto"> 교사 승인본</label></div>
+        <div class="actions full"><button type="submit" class="btn primary">상담 기록 저장</button></div>
+      </form><div id="sessionMsg"></div></div>
+    </section>
+
+
+    <section id="preparation" class="page">
+      <h2>다음 회기 준비</h2>
+      <div class="notice">
+        상담기록·공식 진단·최근 목표점검을 자동으로 불러온 뒤, 교사는 상담 영역과 장벽·시간·단계·재료만 선택합니다. AI가 다음 회기에 바로 사용할 수 있는 <b>1:1 영양상담 설계안</b>을 생성합니다.
+      </div>
+
+      <div class="card">
+        <form id="prepForm" class="form-grid">
+          <input type="hidden" name="prepId">
+          <input type="hidden" name="caseId">
+          <input type="hidden" name="baseSessionId">
+          <input type="hidden" name="baseSessionNo">
+          <input type="hidden" name="targetSessionNo">
+          <div class="span2"><label>학생 선택</label><select id="prepStudentSelect" onchange="selectPreparationCase(this.value)"><option value="">학생 이름으로 선택</option></select></div>
+          <div><label>현재 선택</label><input id="prepSelectedLabel" class="readonly" readonly></div>
+          <div class="actions" style="align-items:end"><button type="button" class="btn secondary" onclick="reloadPreparationContext()">최근 기록 다시 불러오기</button></div>
+
+          <div class="full" id="prepAutoSummary"><div class="empty-box">학생을 선택하면 최근 상담기록·목표·진단결과가 자동으로 요약됩니다.</div></div>
+
+          <div><label>상담 영역</label><select name="counselingArea"><option>비만</option><option>저체중</option><option>편식</option><option>알레르기</option><option>성장</option><option>기타·복합</option></select></div>
+          <div><label>학년</label><input name="grade" class="readonly" readonly></div>
+          <div><label>상담시간</label><select name="counselingMinutes"><option value="10">10분</option><option value="15" selected>15분</option><option value="20">20분</option></select></div>
+          <div><label>상담 단계</label><select name="counselingStage"><option>첫 만남</option><option>탐색</option><option>실천</option><option>추적</option></select></div>
+
+          <div class="full">
+            <label>학생의 주요 장벽 · 복수 선택</label>
+            <div class="choice-grid" id="barrierChoices">
+              <label class="choice-chip"><input type="checkbox" name="prepBarrier" value="지식 부족">지식 부족</label>
+              <label class="choice-chip"><input type="checkbox" name="prepBarrier" value="시간 부족">시간 부족</label>
+              <label class="choice-chip"><input type="checkbox" name="prepBarrier" value="감각 문제">감각 문제</label>
+              <label class="choice-chip"><input type="checkbox" name="prepBarrier" value="환경 문제">환경 문제</label>
+              <label class="choice-chip"><input type="checkbox" name="prepBarrier" value="정서 문제">정서 문제</label>
+              <label class="choice-chip"><input type="checkbox" name="prepBarrier" value="동기 부족">동기 부족</label>
+              <label class="choice-chip"><input type="checkbox" name="prepBarrier" value="기술 부족">기술 부족</label>
+            </div>
+          </div>
+
+          <div class="full">
+            <label>사용할 재료 유형 · 복수 선택</label>
+            <div class="choice-grid" id="materialChoices">
+              <label class="choice-chip"><input type="checkbox" name="prepMaterial" value="카드">카드</label>
+              <label class="choice-chip"><input type="checkbox" name="prepMaterial" value="게임">게임</label>
+              <label class="choice-chip"><input type="checkbox" name="prepMaterial" value="역할극">역할극</label>
+              <label class="choice-chip"><input type="checkbox" name="prepMaterial" value="기록지">기록지</label>
+              <label class="choice-chip"><input type="checkbox" name="prepMaterial" value="식판">식판</label>
+              <label class="choice-chip"><input type="checkbox" name="prepMaterial" value="사진자료">사진자료</label>
+            </div>
+          </div>
+
+          <div class="full"><label>교사의 추가 요청 · 선택</label><textarea name="extraRequest" placeholder="예: 영양소 설명보다 감각 탐색 중심으로 구성, 준비물은 급식실에서 쉽게 구할 수 있는 것으로 제안"></textarea></div>
+          <div class="actions full" style="justify-content:flex-start"><button type="button" id="prepAiBtn" class="btn primary" onclick="generateNextPreparation()">AI 다음 회기 준비안 생성</button><button type="button" class="btn secondary" onclick="saveNextPreparation('초안')">초안 저장</button><button type="button" class="btn success" onclick="saveNextPreparation('확정')">확정 저장</button></div>
+          <div id="prepMsg" class="full"></div>
+
+          <div class="record-group">
+            <div class="record-group-title">AI 다음 회기 준비안</div>
+            <div class="prep-output-grid">
+              <div class="prep-output-card full"><label>오늘의 상담 목표 1개</label><textarea name="sessionObjective"></textarea></div>
+              <div class="prep-output-card"><label>학생에게 물을 질문 3개</label><textarea name="questions"></textarea></div>
+              <div class="prep-output-card"><label>추천 상담기법·교사 반응 예시</label><textarea name="counselingTechnique"></textarea></div>
+              <div class="prep-output-card"><label>추천 상담 재료 1~2개</label><textarea name="recommendedMaterials"></textarea></div>
+              <div class="prep-output-card"><label>상담실에서 할 체험 1개</label><textarea name="experienceActivity"></textarea></div>
+              <div class="prep-output-card"><label>학생이 선택할 일주일 행동실험</label><textarea name="behaviorExperiments"></textarea></div>
+              <div class="prep-output-card"><label>다음 상담 확인 질문</label><textarea name="nextCheckQuestion"></textarea></div>
+              <div class="prep-output-card"><label>보호자·교내 담당자·의료기관 연계 확인사항</label><textarea name="referralCheck"></textarea></div>
+              <div class="prep-output-card"><label>상담시간별 진행안</label><textarea name="timingPlan"></textarea></div>
+              <div class="prep-output-card"><label>상담기록 초안 틀 · 상담 후 작성</label><textarea name="postSessionChecklist"></textarea></div>
+            </div>
+          </div>
+
+          <div class="record-group">
+            <div class="record-group-title">상담 실시 후 간단 기록</div>
+            <div class="notice" style="margin-top:0">다음 상담일에 준비안을 열어 실제 실시 결과만 짧게 적은 뒤 상담기록 화면으로 넘길 수 있습니다.</div>
+            <div class="record-card-grid">
+              <div class="record-card"><label>실제로 실시한 활동</label><textarea name="actualActivity"></textarea></div>
+              <div class="record-card"><label>학생이 새롭게 말한 내용</label><textarea name="newStudentStatement"></textarea></div>
+              <div class="record-card"><label>학생이 선택한 행동실험</label><textarea name="selectedBehaviorExperiment"></textarea></div>
+              <div class="record-card"><label>교사가 관찰한 반응</label><textarea name="teacherObservationResponse"></textarea></div>
+              <div class="record-card full"><label>다음 상담에서 확인할 내용</label><textarea name="nextFollowup"></textarea></div>
+            </div>
+            <div class="actions" style="justify-content:flex-start"><button type="button" class="btn warningBtn" onclick="transferPreparationToSession()">실시 결과를 상담기록으로 전환</button></div>
+          </div>
+        </form>
+      </div>
+
+      <div class="card"><h3>저장된 준비안 이력</h3><div id="prepHistory"><div class="empty-box">학생을 선택하면 준비안 이력이 표시됩니다.</div></div></div>
+    </section>
+
+
+    <section id="neis" class="page">
+      <h2>나이스 상담관리 업로드</h2>
+      <div class="notice">
+        상담회기 1건을 엑셀의 1행으로 내보냅니다. 상담자료에서 자동 입력되는 항목은
+        <b>상담일자·학년·성별·상담시간(분)</b>이며, 나머지는 예시 서식과 같은 고정값을 사용합니다.
+        상담내용은 비워 둡니다.
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div><label>상담일 시작</label><input id="neisStartDate" type="date"></div>
+          <div><label>상담일 종료</label><input id="neisEndDate" type="date"></div>
+          <button type="button" class="btn primary" onclick="loadNeisRows()">상담회기 조회</button>
+          <button type="button" class="btn secondary" onclick="toggleAllNeisRows(true)">전체 선택</button>
+          <button type="button" class="btn secondary" onclick="toggleAllNeisRows(false)">전체 해제</button>
+        </div>
+        <div class="small" style="margin-bottom:12px">
+          고정값: 일반상담 · 일반 · 상담 · 개인상담 · 기타 · 상담인원 1명 · 영양상담 · 상담시간(시) 0 · 교사 · 면담
+        </div>
+        <div id="neisTable" class="empty-box">상담회기 조회를 누르면 저장된 상담기록이 표시됩니다.</div>
+        <div class="actions" style="margin-top:16px">
+          <button type="button" id="neisDownloadBtn" class="btn success" onclick="downloadNeisExcel()" disabled>
+            선택 회기 나이스 엑셀 다운로드
+          </button>
+        </div>
+        <div id="neisMsg"></div>
+      </div>
+    </section>
+
+
+    <section id="evaluation" class="page">
+      <h2>사전·사후 효과평가와 성장관리</h2>
+      <div class="notice">
+        단기상담은 간단한 사전·사후 효과평가를 기본으로 사용합니다.
+        한 학기 또는 8주 이상 장기상담은 교육부 공식 진단프로그램을 사후에 한 번 더 실시해 비교할 수 있습니다.
+        신장·체중은 성장기 변화이므로 상담 효과를 체중 증감만으로 판단하지 않습니다.
+      </div>
+
+      <div class="card">
+        <div class="form-grid">
+          <div class="span2"><label>학생 선택</label><select id="evaluationStudentSelect" onchange="selectEvaluationCase(this.value)"><option value="">학생 이름으로 선택</option></select></div>
+          <div><label>현재 선택</label><input id="evaluationSelectedLabel" class="readonly" readonly></div>
+          <div class="actions" style="align-items:end"><button type="button" class="btn secondary" onclick="loadEffectGrowthSummary()">저장자료 다시 불러오기</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="overview-title">
+          <div>
+            <h3>학생용 Google Form 효과평가</h3>
+            <div class="muted">학생을 선택하면 상담ID·학생명·학년·반·평가시점·최근 목표가 미리 입력된 사전·사후 링크가 생성됩니다.</div>
+          </div>
+          <div class="overview-actions">
+            <button type="button" class="btn secondary" onclick="loadEffectFormLinks()">Form 연결·링크 새로고침</button>
+            <button type="button" class="btn secondary" id="effectFormEditBtn" onclick="openEffectFormEditor()" disabled>검사지 편집</button>
+          </div>
+        </div>
+        <div id="effectFormStatus" class="notice">학생을 선택하면 사전·사후 평가 링크를 준비합니다.</div>
+        <div class="form-link-grid">
+          <div class="form-link-card">
+            <h4>사전평가 링크</h4>
+            <div class="small">첫 상담 전 또는 1회기 시작 시 학생에게 제공합니다.</div>
+            <div class="linkbox">
+              <input id="effectPreLink" class="readonly" readonly placeholder="학생 선택 후 생성">
+              <button type="button" class="btn secondary" onclick="copyEffectLink('pre')">복사</button>
+              <button type="button" class="btn primary" onclick="openEffectLink('pre')">열기</button>
+            </div>
+          </div>
+          <div class="form-link-card">
+            <h4>사후평가 링크</h4>
+            <div class="small">상담 종결 전 또는 마지막 회기에서 학생에게 제공합니다.</div>
+            <div class="linkbox">
+              <input id="effectPostLink" class="readonly" readonly placeholder="학생 선택 후 생성">
+              <button type="button" class="btn secondary" onclick="copyEffectLink('post')">복사</button>
+              <button type="button" class="btn success" onclick="openEffectLink('post')">열기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="card">
+          <h3>교사용 직접 입력·수정</h3>
+          <div class="muted" style="margin-bottom:12px">Google Form 응답은 자동으로 입력됩니다. 필요한 경우 교사가 아래에서 확인·수정할 수 있습니다.</div>
+          <form id="effectForm" class="form-grid">
+            <input type="hidden" name="caseId">
+            <input type="hidden" name="evaluationPoint" value="사전">
+
+            <div class="full">
+              <label>입력할 평가 선택</label>
+              <div class="actions" style="justify-content:flex-start; margin:8px 0 10px;">
+                <button
+                  type="button"
+                  id="effectPreTab"
+                  class="btn primary"
+                  onclick="setEffectEvaluationPoint('사전')"
+                >
+                  사전평가 입력
+                </button>
+                <button
+                  type="button"
+                  id="effectPostTab"
+                  class="btn secondary"
+                  onclick="setEffectEvaluationPoint('사후')"
+                >
+                  사후평가 입력
+                </button>
+              </div>
+              <div id="effectPointGuide" class="notice" style="margin:0;">
+                현재 <b>사전평가</b> 입력 화면입니다. 상담 시작 전 학생의 현재 상태만 확인합니다.
+              </div>
+            </div>
+
+            <div class="full" style="margin-top:4px;">
+              <h4 id="effectCommonTitle" style="margin:0 0 4px;">사전평가 문항</h4>
+              <div class="muted" id="effectCommonHelp">
+                상담 시작 전의 현재 생각과 행동을 입력합니다.
+              </div>
+            </div>
+
+            <div><label>평가일</label><input name="evaluationDate" type="date" required></div>
+            <div><label>식생활 만족도(1~5)</label><input name="dietSatisfaction" type="number" min="1" max="5"></div>
+            <div><label>목표 이해(1~5)</label><input name="goalUnderstanding" type="number" min="1" max="5"></div>
+            <div><label>실천 자신감(0~10)</label><input name="confidence" type="number" min="0" max="10"></div>
+            <div><label>변화 중요도(0~10)</label><input name="importance" type="number" min="0" max="10"></div>
+            <div><label>변화 준비도(0~10)</label><input name="readiness" type="number" min="0" max="10"></div>
+            <div><label>실천방법 이해(1~5)</label><input name="methodUnderstanding" type="number" min="1" max="5"></div>
+            <div><label>도움 요청 능력(1~5)</label><input name="helpSeeking" type="number" min="1" max="5"></div>
+            <div class="span2"><label>평가할 목표행동</label><input name="targetBehavior" placeholder="예: 앞으로 2주 동안 주 3회 아침식사하기"></div>
+            <div><label id="behaviorCountLabel">상담 전 지난 7일 실천 횟수</label><input name="behaviorCount" type="number" min="0"></div>
+
+            <div class="full">
+              <label id="helpfulPointLabel">목표 실천에 도움이 될 것으로 예상되는 점·요인</label>
+              <textarea name="helpfulPoint"></textarea>
+            </div>
+            <div class="full">
+              <label id="difficultyLabel">현재 예상되는 어려움·방해요인</label>
+              <textarea name="difficulty"></textarea>
+            </div>
+
+            <div id="effectPostFields" class="full" style="display:none;">
+              <div class="notice" style="margin:4px 0 14px;">
+                아래 항목은 <b>사후평가 전용</b>입니다. 상담을 마친 뒤 학생의 경험과 변화를 기록합니다.
+              </div>
+              <div class="form-grid">
+                <div><label>상담 만족도(1~5)</label><input name="counselingSatisfaction" type="number" min="1" max="5"></div>
+                <div><label>상담 도움 정도(1~5)</label><input name="counselingHelpfulness" type="number" min="1" max="5"></div>
+                <div class="full"><label>상담 후 달라진 점</label><textarea name="changeAfterCounseling"></textarea></div>
+                <div class="full"><label>앞으로 유지할 행동</label><textarea name="maintenanceBehavior"></textarea></div>
+                <div><label>추가 상담 필요</label><select name="needMoreCounseling"><option value="">선택</option><option>계속 상담받고 싶다</option><option>한 번 더 확인하고 싶다</option><option>지금은 스스로 실천할 수 있다</option><option>잘 모르겠다</option></select></div>
+                <div class="span2"><label>영양교사에게 전한 말</label><textarea name="teacherMessage"></textarea></div>
+                <div class="full"><label>교사 종합평가</label><textarea name="teacherEvaluation"></textarea></div>
+              </div>
+            </div>
+
+            <div class="actions full">
+              <button type="submit" id="effectSaveBtn" class="btn primary">사전평가 저장</button>
+            </div>
+          </form>
+          <div id="effectMsg"></div>
+        </div>
+
+        <div class="card">
+          <div class="overview-title">
+            <h3>신장·체중·BMI 측정</h3>
+            <a class="btn secondary" href="https://knhanes.kdca.go.kr/knhanes/grtcht/clclt/measClclt.do" target="_blank" style="text-decoration:none">질병관리청 성장도표 계산기 열기</a>
+          </div>
+          <div class="notice" style="margin-top:0">성별·생년월일·측정일·신장·체중을 질병관리청 계산기에 입력해 백분위를 확인한 뒤 아래 백분위 칸에 옮겨 적으세요. 현재 시범버전은 외부 계산기의 결과를 자동으로 가져오지 않습니다.</div>
+          <form id="growthForm" class="form-grid">
+            <input type="hidden" name="caseId">
+            <div><label>측정 시점</label><select name="measurementPoint"><option>사전</option><option>사후</option><option>추적</option></select></div>
+            <div><label>측정일</label><input name="measurementDate" type="date" required></div>
+            <div><label>신장(cm)</label><input name="heightCm" type="number" step="0.1" oninput="calculateGrowthBmi()"></div>
+            <div><label>체중(kg)</label><input name="weightKg" type="number" step="0.1" oninput="calculateGrowthBmi()"></div>
+            <div><label>BMI 자동계산</label><input name="bmi" class="readonly" readonly></div>
+            <div><label>신장 백분위</label><input name="heightPercentile"></div>
+            <div><label>체중 백분위</label><input name="weightPercentile"></div>
+            <div><label>BMI 백분위</label><input name="bmiPercentile"></div>
+            <div><label>자료 출처</label><select name="source"><option>직접 측정</option><option>공식 진단 PDF</option><option>학생건강검사</option><option>기타</option></select></div>
+            <div class="full"><label>비고</label><textarea name="note"></textarea></div>
+            <div class="actions full"><button type="submit" class="btn success">성장측정 저장</button></div>
+          </form>
+          <div id="growthMsg"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="overview-title">
+          <h3>효과평가·성장 변화 한눈에 보기</h3>
+          <button class="btn secondary" type="button" onclick="goToPostDiagnosis()">공식 사후 진단 등록</button>
+        </div>
+        <div id="effectGrowthSummary" class="empty-box">학생을 선택하면 사전·사후 변화가 표시됩니다.</div>
+      </div>
+    </section>
+
+
+    <section id="cleanup" class="page">
+      <h2>테스트 데이터 일괄 삭제</h2>
+
+      <div class="notice error">
+        검색 결과에서 삭제할 테스트 케이스를 체크한 뒤 삭제하세요.
+        선택한 케이스의 매니저 기록, 상담접수, 맛마음 탐험소 자료,
+        보호자동의 PDF·생성문서와 상담 Drive 폴더까지 함께 정리됩니다.
+        <b>백업은 생성되지 않습니다.</b>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <input
+            id="cleanupKeyword"
+            placeholder="학생 이름·케이스번호·접수번호"
+            onkeydown="if(event.key==='Enter')searchCleanupCandidates()"
+          >
+          <button
+            class="btn primary"
+            onclick="searchCleanupCandidates()"
+          >
+            검색
+          </button>
+          <button
+            class="btn secondary"
+            onclick="toggleAllCleanupCandidates(true)"
+          >
+            전체 선택
+          </button>
+          <button
+            class="btn secondary"
+            onclick="toggleAllCleanupCandidates(false)"
+          >
+            전체 해제
+          </button>
+        </div>
+
+        <div id="cleanupSearchMsg"></div>
+        <div id="cleanupCandidates"></div>
+
+        <div class="actions">
+          <button
+            id="cleanupDeleteSelectedBtn"
+            class="btn danger"
+            disabled
+            onclick="deleteSelectedCleanupCases()"
+          >
+            체크한 테스트 자료 전체 삭제
+          </button>
+        </div>
+
+        <div id="cleanupResultMsg"></div>
+      </div>
+    </section>
+
+    <section id="cases" class="page">
+      <h2>학생·상담 검색</h2>
+      <div class="toolbar"><input id="caseKeyword" placeholder="학생 이름·학년·주제 검색"><select id="caseStatus"><option value="">전체 상태</option><option>동의 대기</option><option>진단 대기</option><option>결과 확인</option><option>상담 예정</option><option>실천 중</option><option>추적상담 예정</option><option>종결 검토</option><option>종결</option></select><button class="btn primary" onclick="loadCases()">검색</button></div>
+      <div class="card"><div id="caseTable"></div></div>
+      <div id="caseOverview" class="card" style="display:none"></div>
+    </section>
+  </main>
+</div>
+<div id="goalCheckModal" class="modal-overlay" onclick="if(event.target===this)closeGoalCheckModal()">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div>
+        <h2 style="margin:0 0 6px">목표 실천 점검</h2>
+        <div id="goalCheckStudent" class="muted"></div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeGoalCheckModal()">×</button>
+    </div>
+
+    <div id="goalCheckSummary" class="goal-check-summary"></div>
+
+    <form id="goalCheckForm" class="form-grid" onsubmit="event.preventDefault();saveGoalCheckFromModal(false)">
+      <input type="hidden" name="caseId">
+      <input type="hidden" name="goalId">
+
+      <div><label>점검일</label><input name="checkDate" type="date" required></div>
+      <div><label>목표 횟수</label><input name="targetCount" class="readonly" readonly></div>
+      <div><label>현재까지 실제 실천 횟수</label><input name="actualCount" type="number" min="0" required oninput="updateGoalCheckPreview()"></div>
+
+      <div><label>목표 결과</label><select name="result"><option>자동 계산</option><option>진행 중</option><option>달성</option><option>부분 달성</option><option>미달성</option></select></div>
+      <div><label>다음 결정</label><select name="nextDecision"><option value="">선택</option><option>기존 목표 유지</option><option>목표 수정</option><option>새로운 목표 설정</option><option>종결 검토</option><option value="종결">종결 확정</option></select></div>
+      <div><label>다음 상담일</label><input name="nextDate" type="date"></div>
+
+      <div class="full"><div id="goalCheckPreview"></div></div>
+      <div class="full"><label>학생이 느낀 변화·소감</label><textarea name="studentFeedback" placeholder="예: 아침을 먹은 날에는 1교시에 배가 덜 고팠어요."></textarea></div>
+      <div class="full"><label>실천하기 어려웠던 점</label><textarea name="difficulty" placeholder="예: 늦잠을 자면 준비할 시간이 부족했어요."></textarea></div>
+      <div class="full"><label>도움이 된 점</label><textarea name="supportFactor" placeholder="예: 보호자가 전날 바나나를 준비해 주었어요."></textarea></div>
+
+      <div class="actions full">
+        <button type="submit" class="btn primary">점검 저장</button>
+        <button type="button" class="btn success" onclick="saveGoalCheckFromModal(true)">저장하고 성장판 보기</button>
+        <button type="button" class="btn secondary" onclick="closeGoalCheckModal()">취소</button>
+      </div>
+    </form>
+
+    <div id="goalCheckHistory" class="goal-check-history"></div>
+  </div>
+</div>
+
+<div id="loading" class="loading">처리 중입니다…</div>
+<script>
+  let bootstrap = null;
+  let currentOverviewData = null;
+  let currentPreparationContext = null;
+  let dashboardCalendarData = null;
+  let dashboardCalendarYear = null;
+  let dashboardCalendarMonth = null;
+  document.addEventListener('DOMContentLoaded', ()=>{
+    updateEffectFieldVisibility('사전');
+    refreshAll();
+  });
+
+  function refreshAll(){
+    setLoading(true);
+    google.script.run.withSuccessHandler(data=>{
+      bootstrap=data;
+      document.getElementById('schoolName').textContent=(data.settings.SCHOOL_NAME||'')+' · '+(data.settings.SCHOOL_YEAR||'')+'학년도';
+      document.getElementById('officialLink').href=data.settings.OFFICIAL_DIAG_URL||'#';
+      const officialDashboardLink=document.getElementById('officialDashboardLink');
+      if(officialDashboardLink)officialDashboardLink.href=data.settings.OFFICIAL_DIAG_URL||'#';
+      const publicLink=document.getElementById('publicIntakeLink');
+      if(data.settings.PUBLIC_APP_URL){publicLink.href=data.settings.PUBLIC_APP_URL;publicLink.style.display='block'}
+      renderDashboard(data.dashboard);renderPendingIntakes(data.pendingIntakes);renderConsentCases(data.consentCases||[]);renderCases(data.cases);renderStudentOptions(data.diagnosisCases||[],data.sessionCases||[],data.evaluationCases||[],data.preparationCases||[]);setLoading(false);
+    }).withFailureHandler(showError).getBootstrapData();
+  }
+
+  function showPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active')}
+  function renderDashboard(d){
+    const items=[
+      ['신규 접수',d.counts['신규 접수']||0],
+      ['동의 대기',d.counts['동의 대기']||0],
+      ['진단 대기',d.counts['진단 대기']||0],
+      ['결과 확인',d.counts['결과 확인']||0],
+      ['상담 예정',d.counts['상담 예정']||0],
+      ['실천 중',d.counts['실천 중']||0],
+      ['추적상담 예정',d.counts['추적상담 예정']||0],
+      ['종결 검토',d.counts['종결 검토']||0],
+      ['종결',d.counts['종결']||0],
+      ['전체 케이스',d.total||0],
+      ['오늘 일정',d.dueToday||0]
+    ];
+
+    document.getElementById('kpis').innerHTML=
+      items.map(item=>`
+        <div class="dashboard-kpi">
+          <div class="kpi-label">${escapeHtml(item[0])}</div>
+          <div class="kpi-value">${Number(item[1]||0)}</div>
+        </div>
+      `).join('');
+
+    renderDashboardUpcoming(d.upcoming||[]);
+
+    if(d.calendar){
+      dashboardCalendarData=d.calendar;
+      dashboardCalendarYear=Number(d.calendar.year);
+      dashboardCalendarMonth=Number(d.calendar.month);
+      renderDashboardCalendar(d.calendar);
+    }
+  }
+
+  function renderDashboardUpcoming(rows){
+    const el=document.getElementById('upcoming');
+
+    if(!rows.length){
+      el.innerHTML='<p class="muted">등록된 일정이 없습니다.</p>';
+      return;
+    }
+
+    el.innerHTML=`
+      <table>
+        <thead>
+          <tr>
+            <th>일정</th>
+            <th>시간</th>
+            <th>유형</th>
+            <th>내용</th>
+            <th>학생·학년반</th>
+            <th>상태·메모</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(row=>`
+            <tr>
+              <td>${escapeHtml(row.date||'')}</td>
+              <td>${escapeHtml(formatScheduleTimeRange(row))}</td>
+              <td>
+                <span class="status ${scheduleStatusClass(row.type)}">
+                  ${escapeHtml(row.type||'기타')}
+                </span>
+                ${row.completed
+                  ?'<span class="status done" style="margin-left:4px">완료</span>'
+                  :''}
+              </td>
+              <td>
+                <b style="${row.completed?'text-decoration:line-through;opacity:.65':''}">
+                  ${escapeHtml(row.title||'')}
+                </b>
+              </td>
+              <td>
+                ${escapeHtml(
+                  [row.gradeClass,row.studentName]
+                    .filter(Boolean)
+                    .join(' ')
+                )}
+              </td>
+              <td>${escapeHtml(row.status||row.note||'')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function formatScheduleTimeRange(row){
+    const start=row.startTime||'';
+    const end=row.endTime||'';
+
+    if(start&&end)return start+'–'+end;
+    if(start)return start;
+    return '시간 미정';
+  }
+
+  function scheduleStatusClass(type){
+    if(type==='출장')return'stop';
+    if(type==='사전방문')return'done';
+    if(type==='상담')return'';
+    return'wait';
+  }
+
+  function scheduleEventClass(type){
+    if(type==='상담')return'consult';
+    if(type==='사전방문')return'visit';
+    if(type==='출장')return'trip';
+    if(type==='회의·연수')return'meeting';
+    return'other';
+  }
+
+  function renderDashboardCalendar(data){
+    dashboardCalendarData=data;
+    dashboardCalendarYear=Number(data.year);
+    dashboardCalendarMonth=Number(data.month);
+
+    document.getElementById('calendarMonthTitle').textContent=
+      data.monthLabel||'';
+
+    const weekdays=['일','월','화','수','목','금','토'];
+    const cells=[];
+
+    weekdays.forEach((label,index)=>{
+      cells.push(`
+        <div class="calendar-weekday ${index===0?'sun':index===6?'sat':''}">
+          ${label}
+        </div>
+      `);
+    });
+
+    const firstWeekday=Number(data.firstWeekday||0);
+    const lastDay=Number(data.lastDay||0);
+    const totalCells=Math.ceil((firstWeekday+lastDay)/7)*7;
+
+    for(let cellIndex=0;cellIndex<totalCells;cellIndex+=1){
+      const day=cellIndex-firstWeekday+1;
+      const weekdayIndex=cellIndex%7;
+
+      if(day<1||day>lastDay){
+        cells.push('<div class="calendar-day outside"></div>');
+        continue;
+      }
+
+      const dateKey=
+        data.year+'-'+
+        String(data.month).padStart(2,'0')+'-'+
+        String(day).padStart(2,'0');
+
+      const dayData=
+        data.days&&data.days[dateKey]
+          ?data.days[dateKey]
+          :{
+              events:[],
+              appointmentCount:0,
+              hasTrip:false,
+              isFull:false
+            };
+
+      const classes=[
+        'calendar-day',
+        weekdayIndex===0?'sun':'',
+        weekdayIndex===6?'sat':'',
+        dateKey===data.today?'today':'',
+        dayData.hasTrip?'trip-day':'',
+        dayData.isFull?'full-day':''
+      ].filter(Boolean).join(' ');
+
+      const capacityText=
+        Number(dayData.appointmentCount||0)
+          ?Number(dayData.appointmentCount||0)+'/'+
+            Number(data.dailyLimit||2)
+          :'';
+
+      const events=(dayData.events||[]).map(event=>{
+        const time=event.startTime
+          ?event.startTime+' '
+          :'';
+
+        const className=
+          scheduleEventClass(event.type);
+
+        const title=[
+          event.type,
+          formatScheduleTimeRange(event),
+          event.title,
+          event.note||event.topic||'',
+          event.completed
+            ?'완료 '+(event.completedAt||'')
+            :'미완료'
+        ].filter(Boolean).join(' · ');
+
+        return `
+          <div
+            class="calendar-event ${className} ${event.completed?'completed':''}"
+            title="${escapeAttr(title)}"
+          >
+            <input
+              class="calendar-event-check"
+              type="checkbox"
+              ${event.completed?'checked':''}
+              aria-label="${escapeAttr(event.title+' 완료 여부')}"
+              onchange="toggleDashboardEventCompletion(
+                this,
+                '${escapeJs(event.source)}',
+                '${escapeJs(event.sourceId)}',
+                '${escapeJs(event.date)}',
+                '${escapeJs(event.caseId||'')}',
+                '${escapeJs(event.title)}'
+              )"
+            >
+            <span class="calendar-event-text">
+              ${escapeHtml(time+event.title)}
+            </span>
+            ${event.editable
+              ?`<button
+                  type="button"
+                  class="calendar-event-delete"
+                  title="일정 삭제"
+                  onclick="deleteDashboardSchedulePrompt(
+                    '${escapeJs(event.id)}',
+                    '${escapeJs(event.title)}'
+                  )"
+                >×</button>`
+              :''}
+          </div>
+        `;
+      }).join('');
+
+      cells.push(`
+        <div class="${classes}">
+          <div class="calendar-date-row">
+            <span class="calendar-date">${day}</span>
+            ${
+              capacityText
+                ?`<span class="calendar-capacity ${dayData.isFull?'full':''}">
+                    ${dayData.isFull?'마감 ':''}${escapeHtml(capacityText)}
+                  </span>`
+                :''
+            }
+          </div>
+          <div class="calendar-events">${events}</div>
+        </div>
+      `);
+    }
+
+    document.getElementById('dashboardCalendar').innerHTML=
+      `<div class="calendar-grid">${cells.join('')}</div>`;
+  }
+
+  function moveDashboardCalendar(offset){
+    let year=
+      Number(dashboardCalendarYear||new Date().getFullYear());
+
+    let month=
+      Number(dashboardCalendarMonth||new Date().getMonth()+1)+
+      Number(offset||0);
+
+    if(month<1){
+      year-=1;
+      month=12;
+    }
+
+    if(month>12){
+      year+=1;
+      month=1;
+    }
+
+    loadDashboardCalendar(year,month);
+  }
+
+  function goDashboardCalendarToday(){
+    const today=new Date();
+    loadDashboardCalendar(
+      today.getFullYear(),
+      today.getMonth()+1
+    );
+  }
+
+  function loadDashboardCalendar(year,month){
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(data=>{
+        setLoading(false);
+        renderDashboardCalendar(data);
+      })
+      .withFailureHandler(showError)
+      .getDashboardCalendar(year,month);
+  }
+
+  function toggleScheduleAddPanel(force){
+    const panel=document.getElementById('scheduleAddPanel');
+
+    const shouldOpen=
+      typeof force==='boolean'
+        ?force
+        :!panel.classList.contains('open');
+
+    panel.classList.toggle('open',shouldOpen);
+
+    if(shouldOpen){
+      const form=document.getElementById('dashboardScheduleForm');
+
+      if(!form.elements['date'].value){
+        const today=new Date();
+        form.elements['date'].value=
+          today.getFullYear()+'-'+
+          String(today.getMonth()+1).padStart(2,'0')+'-'+
+          String(today.getDate()).padStart(2,'0');
+      }
+
+      form.elements['title'].focus();
+    }
+  }
+
+  function saveDashboardSchedule(event){
+    event.preventDefault();
+
+    const form=event.target;
+    const payload=Object.fromEntries(new FormData(form).entries());
+
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(result=>{
+        setLoading(false);
+
+        message(
+          'scheduleSaveMsg',
+          '일정을 저장했습니다.',
+          'ok'
+        );
+
+        form.reset();
+        toggleScheduleAddPanel(false);
+
+        if(result.dashboard){
+          bootstrap.dashboard=result.dashboard;
+          renderDashboard(result.dashboard);
+        }else if(result.calendar){
+          renderDashboardCalendar(result.calendar);
+        }
+      })
+      .withFailureHandler(error=>{
+        setLoading(false);
+
+        message(
+          'scheduleSaveMsg',
+          error&&error.message
+            ?error.message
+            :String(error),
+          'error'
+        );
+      })
+      .saveDashboardManualSchedule(payload);
+  }
+
+  function toggleDashboardEventCompletion(
+    checkbox,
+    source,
+    sourceId,
+    date,
+    caseId,
+    title
+  ){
+    const completed=checkbox.checked;
+    const eventBox=checkbox.closest('.calendar-event');
+
+    checkbox.disabled=true;
+
+    if(eventBox){
+      eventBox.classList.toggle(
+        'completed',
+        completed
+      );
+    }
+
+    google.script.run
+      .withSuccessHandler(result=>{
+        checkbox.disabled=false;
+
+        if(result.dashboard){
+          bootstrap.dashboard=result.dashboard;
+          renderDashboard(result.dashboard);
+        }else if(result.calendar){
+          renderDashboardCalendar(
+            result.calendar
+          );
+        }
+      })
+      .withFailureHandler(error=>{
+        checkbox.disabled=false;
+        checkbox.checked=!completed;
+
+        if(eventBox){
+          eventBox.classList.toggle(
+            'completed',
+            !completed
+          );
+        }
+
+        showError(error);
+      })
+      .toggleDashboardScheduleCompletion({
+        source:source,
+        sourceId:sourceId,
+        date:date,
+        caseId:caseId,
+        title:title,
+        completed:completed
+      });
+  }
+
+  function deleteDashboardSchedulePrompt(scheduleId,title){
+    if(
+      !confirm(
+        '직접 입력한 일정 "'+
+        title+
+        '"을 삭제할까요?'
+      )
+    ){
+      return;
+    }
+
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(result=>{
+        setLoading(false);
+
+        if(result.dashboard){
+          bootstrap.dashboard=result.dashboard;
+          renderDashboard(result.dashboard);
+        }else if(result.calendar){
+          renderDashboardCalendar(result.calendar);
+        }
+      })
+      .withFailureHandler(showError)
+      .deleteDashboardManualSchedule(scheduleId);
+  }
+
+  function renderPendingIntakes(rows){
+    if(!rows.length){document.getElementById('pendingIntakes').innerHTML='<p class="muted">신규 접수가 없습니다.</p>';return}
+    const html=`<table><thead><tr><th>접수일</th><th>학생</th><th>신청자</th><th>주제</th><th>내용</th><th>연락처</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${escapeHtml(r.intakeDate)}</td><td>${escapeHtml(r.grade+'학년 '+r.classNo+'반 '+r.studentName)}</td><td>${escapeHtml((r.applicantType||'')+' '+(r.applicantName||''))}</td><td>${escapeHtml(r.topic)}</td><td>${escapeHtml(r.requestText)}</td><td>${escapeHtml(r.contact)}</td><td><button class="btn success" onclick="approveIntake('${escapeJs(r.intakeId)}')">케이스 생성</button></td></tr>`).join('')}</tbody></table>`;
+    document.getElementById('pendingIntakes').innerHTML=html;
+  }
+  function approveIntake(id){if(!confirm('이 접수를 상담 케이스로 생성할까요?'))return;setLoading(true);google.script.run.withSuccessHandler(r=>{setLoading(false);alert('상담 케이스가 생성되었습니다.');refreshAll()}).withFailureHandler(showError).approveIntake(id)}
+
+  function renderConsentCases(rows){
+    const el=document.getElementById('consentCases');
+    if(!rows.length){el.innerHTML='<p class="muted">관리할 보호자 동의 건이 없습니다.</p>';return}
+    el.innerHTML=`<table><thead><tr><th>학생</th><th>주제</th><th>보호자 연락처</th><th>동의 상태</th><th>발송일</th><th>제출일</th><th>학생 참여</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${escapeHtml(r.gradeClass+' '+r.studentName)}</td><td>${escapeHtml(r.topic)}</td><td>${escapeHtml(r.contact)}</td><td><span class="status ${consentStatusClass(r.consentStatus)}">${escapeHtml(r.consentStatus)}</span></td><td>${escapeHtml(r.sentDate)}</td><td>${escapeHtml(r.submittedAt)}</td><td>${escapeHtml(r.studentAssent)}</td><td><button class="btn secondary nowrap" onclick="openConsent('${escapeJs(r.caseId)}')">관리</button></td></tr>`).join('')}</tbody></table>`;
+  }
+  function consentStatusClass(v){if(v==='동의 완료')return'done';if(v==='비동의')return'stop';return'wait'}
+  function openConsent(caseId){setLoading(true);google.script.run.withSuccessHandler(d=>{setLoading(false);renderConsentDetail(d)}).withFailureHandler(showError).getConsentDetail(caseId)}
+  function hasSubmittedGuardianConsent(c) {
+    const required = ['상담동의', '개인정보동의', '민감정보동의', '진단결과활용동의'];
+    const allAgreed = required.every(key => String(c[key] || '') === '동의');
+    const hasSubmissionData = Boolean(c['제출일시'] || c['동의일'] || c['동의서파일URL'] || c['보호자명']);
+    return hasSubmissionData && allAgreed;
+  }
+  function renderConsentDetail(d){
+    const c=d.consent||{};const box=document.getElementById('consentDetail');box.style.display='block';
+    const link=c['동의링크']||'';const savedStatus=c['확인상태']||'미발송';
+    const guardianSubmitted=hasSubmittedGuardianConsent(c);const consentCompleted=savedStatus==='동의 완료';const consentRejected=savedStatus==='비동의';
+    const displayStatus=guardianSubmitted&&!consentCompleted&&!consentRejected?'교사 확인 필요':savedStatus;
+    const canMarkSent=Boolean(link)&&!guardianSubmitted&&!consentCompleted&&!consentRejected;
+    const canConfirm=guardianSubmitted&&!consentCompleted&&!consentRejected;
+    let nextStepMessage='';
+    if(consentCompleted){nextStepMessage='<div class="notice ok" style="margin-top:14px">보호자 동의 확인이 완료되었습니다. 이제 왼쪽 메뉴의 <b>공식 진단 PDF</b>에서 학생을 선택해 진단자료를 등록할 수 있습니다.</div>'}
+    else if(canConfirm){nextStepMessage='<div class="notice" style="margin-top:14px">보호자가 동의서를 제출했습니다. 동의서 PDF와 제출 항목을 확인한 뒤 <b>동의 완료 처리</b>를 눌러 주세요.</div>'}
+    else if(displayStatus==='동의 요청'){nextStepMessage='<div class="notice" style="margin-top:14px">보호자의 동의서 제출을 기다리고 있습니다.</div>'}
+    box.innerHTML=`<h3>${escapeHtml(d.gradeClass+' '+d.studentName)} 보호자 동의</h3>
+      <div class="detail-grid">
+        <div class="detail-item"><b>상담 주제</b>${escapeHtml(d.topic)}</div>
+        <div class="detail-item"><b>현재 단계</b>${escapeHtml(d.caseStatus)}</div>
+        <div class="detail-item"><b>동의 상태</b><span class="status ${consentStatusClass(displayStatus)}">${escapeHtml(displayStatus)}</span></div>
+        <div class="detail-item"><b>보호자 연락처</b>${escapeHtml(d.contact)}</div>
+        <div class="detail-item"><b>보호자명</b>${escapeHtml(c['보호자명']||'')}</div>
+        <div class="detail-item"><b>관계</b>${escapeHtml(c['학생과의관계']||'')}</div>
+        <div class="detail-item"><b>제출일</b>${escapeHtml(formatClientDate(c['제출일시']))}</div>
+        <div class="detail-item"><b>동의서</b>${c['동의서파일URL']?`<a href="${escapeAttr(c['동의서파일URL'])}" target="_blank">PDF 열기</a>`:'미생성'}</div>
+      </div>
+      <div class="card" style="margin:14px 0 0;padding:14px">
+        <b>보호자 제출 항목</b><div class="small" style="line-height:1.9;margin-top:8px">상담 참여: ${escapeHtml(c['상담동의']||'미확인')} · 개인정보: ${escapeHtml(c['개인정보동의']||'미확인')} · 민감정보: ${escapeHtml(c['민감정보동의']||'미확인')} · 공식 진단결과 활용: ${escapeHtml(c['진단결과활용동의']||'미확인')} · AI 보조 안내: ${escapeHtml(c['AI보조안내확인']||'미확인')}</div>
+      </div>
+      ${nextStepMessage}
+      <div style="margin-top:14px"><label>보호자 동의 링크</label><div class="linkbox"><input id="consentLinkBox" class="readonly" readonly value="${escapeAttr(link)}"><button class="btn secondary" onclick="copyConsentLink()" ${link?'':'disabled'}>링크 복사</button><button class="btn secondary" onclick="openConsentLink()" ${link?'':'disabled'}>열기</button></div></div>
+      <div style="margin-top:14px"><label>학생 참여 의사</label><div class="linkbox"><select id="studentAssentSelect"><option ${sel(c['학생참여의사'],'미확인')}>미확인</option><option ${sel(c['학생참여의사'],'참여 희망')}>참여 희망</option><option ${sel(c['학생참여의사'],'설명 후 결정')}>설명 후 결정</option><option ${sel(c['학생참여의사'],'참여하지 않음')}>참여하지 않음</option></select><button class="btn secondary" onclick="saveAssent('${escapeJs(d.caseId)}')">저장</button></div></div>
+      <div class="actions" style="margin-top:16px">
+        ${!consentCompleted&&!consentRejected?`<button class="btn primary" onclick="generateConsentLink('${escapeJs(d.caseId)}')">${link?'링크 확인·재표시':'동의 링크 생성'}</button>`:''}
+        ${canMarkSent?`<button class="btn warningBtn" onclick="markConsentSent('${escapeJs(d.caseId)}')">발송 처리</button>`:''}
+        ${canConfirm?`<button class="btn success" onclick="confirmConsent('${escapeJs(d.caseId)}')">동의 완료 처리</button>`:''}
+      </div>`;
+    box.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function sel(current,value){return String(current||'미확인')===value?'selected':''}
+  function formatClientDate(v){if(!v)return'';try{return new Date(v).toLocaleString('ko-KR')}catch(e){return String(v)}}
+  function generateConsentLink(caseId){setLoading(true);google.script.run.withSuccessHandler(r=>{setLoading(false);navigator.clipboard?.writeText(r.link);alert('동의 링크를 생성했습니다. 링크를 복사해 보호자에게 전달하세요.');refreshAll();setTimeout(()=>openConsent(caseId),400)}).withFailureHandler(showError).generateConsentLink(caseId)}
+  function copyConsentLink(){const el=document.getElementById('consentLinkBox');if(!el||!el.value)return;copyText(el.value);alert('동의 링크를 복사했습니다.')}
+  function openConsentLink(){const el=document.getElementById('consentLinkBox');if(el&&el.value)window.open(el.value,'_blank')}
+  function copyText(v){if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(v);else{const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}}
+  function markConsentSent(caseId){
+    if(!confirm('보호자에게 동의 링크를 전달한 것으로 표시할까요?'))return;
+    setLoading(true);
+    google.script.run.withSuccessHandler(result=>{
+      setLoading(false);
+      if(result&&result.message)alert(result.message);
+      refreshAll();
+      setTimeout(()=>openConsent(caseId),400);
+    }).withFailureHandler(showError).markConsentSent(caseId);
+  }
+  function confirmConsent(caseId){if(!confirm('보호자 제출 내용을 확인했고 동의 완료로 처리할까요?'))return;setLoading(true);google.script.run.withSuccessHandler(()=>{setLoading(false);alert('동의 완료 처리했습니다. 이제 공식 진단 PDF를 등록할 수 있습니다.');document.getElementById('consentDetail').style.display='none';refreshAll()}).withFailureHandler(showError).confirmGuardianConsent(caseId)}
+  function saveAssent(caseId){const v=document.getElementById('studentAssentSelect').value;setLoading(true);google.script.run.withSuccessHandler(()=>{setLoading(false);refreshAll();setTimeout(()=>openConsent(caseId),400)}).withFailureHandler(showError).saveStudentAssent({caseId,studentAssent:v})}
+
+  function openNextPreparationForCase(caseId){
+    const navButton=Array.from(document.querySelectorAll('nav button')).find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("showPage('preparation'"));
+    showPage('preparation',navButton);
+    const select=document.getElementById('prepStudentSelect');
+    if(select)select.value=caseId||'';
+    selectPreparationCase(caseId);
+  }
+
+  function selectPreparationCase(caseId){
+    const form=document.getElementById('prepForm');
+    form.reset();
+    form.caseId.value=caseId||'';
+    const prepSelect=document.getElementById('prepStudentSelect');
+    if(prepSelect)prepSelect.value=caseId||'';
+    currentPreparationContext=null;
+    document.getElementById('prepSelectedLabel').value='';
+    document.getElementById('prepHistory').innerHTML='<div class="empty-box">불러오는 중입니다.</div>';
+    if(!caseId){document.getElementById('prepAutoSummary').innerHTML='<div class="empty-box">학생을 선택하면 최근 상담기록·목표·진단결과가 자동으로 요약됩니다.</div>';return;}
+    const item=(bootstrap.preparationCases||[]).find(x=>x.caseId===caseId)||(bootstrap.studentCases||[]).find(x=>x.caseId===caseId);
+    document.getElementById('prepSelectedLabel').value=item?item.label:'';
+    loadPreparationContext(caseId);
+  }
+
+  function reloadPreparationContext(){
+    const caseId=document.getElementById('prepForm').caseId.value;
+    if(!caseId)return alert('먼저 학생을 선택하세요.');
+    loadPreparationContext(caseId);
+  }
+
+  function loadPreparationContext(caseId){
+    setLoading(true);
+    google.script.run.withSuccessHandler(ctx=>{
+      setLoading(false);
+      currentPreparationContext=ctx;
+      renderPreparationContext(ctx);
+    }).withFailureHandler(showError).getNextSessionPreparationContext(caseId);
+  }
+
+  function renderPreparationContext(ctx){
+    const form=document.getElementById('prepForm');
+    form.caseId.value=ctx.caseId||'';
+    form.baseSessionId.value=(ctx.latestSession&&ctx.latestSession.sessionId)||'';
+    form.baseSessionNo.value=(ctx.latestSession&&ctx.latestSession.sessionNo)||'';
+    form.targetSessionNo.value=ctx.nextSessionNo||1;
+    form.grade.value=ctx.grade||'';
+
+    const s=ctx.latestSession||{};
+    const g=ctx.latestGoal||{};
+    const c=ctx.latestCheck||{};
+    const d=ctx.diagnosis||{};
+    document.getElementById('prepAutoSummary').innerHTML=`<div class="card" style="margin:0;background:#f8fbfe"><h3 style="margin-top:0">최근 상담 자동 요약 · 다음 ${escapeHtml(ctx.nextSessionNo||1)}회기 준비</h3><div class="prep-summary">
+      ${summaryBox('최근 상담',s.sessionNo?`${s.sessionNo}회기 · ${s.sessionDate||'-'}`:'상담기록 없음')}
+      ${summaryBox('주요 문제',s.mainConcern||ctx.caseTopic||'-')}
+      ${summaryBox('학생이 말한 원인',s.cause||'-')}
+      ${summaryBox('학생 강점',s.strength||'-')}
+      ${summaryBox('최근 목표',g.goalText||'-')}
+      ${summaryBox('목표 결과',c.result||g.result||'미점검')}
+    </div><div class="detail-grid" style="margin-top:12px"><div class="detail-item"><b>어려웠던 점</b>${escapeHtml(c.difficulty||g.difficulty||'-')}</div><div class="detail-item"><b>도움이 된 점</b>${escapeHtml(c.supportFactor||g.supportFactor||'-')}</div><div class="detail-item"><b>공식 진단 핵심</b>${escapeHtml([d.totalLevel&&('종합 '+d.totalLevel),d.balanceLevel&&('균형 '+d.balanceLevel),d.practiceLevel&&('실천 '+d.practiceLevel),d.allergy&&('알레르기 '+d.allergy)].filter(Boolean).join(' · ')||'-')}</div><div class="detail-item"><b>기존 연계 검토</b>${escapeHtml(s.referral||'-')}</div></div></div>`;
+
+    const prep=ctx.existingPreparation||{};
+    form.prepId.value=prep.prepId||'';
+    form.counselingArea.value=prep.counselingArea||ctx.defaultArea||'기타·복합';
+    form.counselingMinutes.value=String(prep.counselingMinutes||ctx.defaultMinutes||15);
+    form.counselingStage.value=prep.counselingStage||ctx.defaultStage||'첫 만남';
+    form.extraRequest.value=prep.extraRequest||'';
+    setCheckedValues('prepBarrier',prep.barriers&&prep.barriers.length?prep.barriers:(ctx.defaultBarriers||[]));
+    setCheckedValues('prepMaterial',prep.materialTypes||[]);
+    ['sessionObjective','questions','counselingTechnique','recommendedMaterials','experienceActivity','behaviorExperiments','nextCheckQuestion','referralCheck','timingPlan','postSessionChecklist','actualActivity','newStudentStatement','selectedBehaviorExperiment','teacherObservationResponse','nextFollowup'].forEach(name=>{
+      if(form.elements[name])form.elements[name].value=prep[name]||'';
+    });
+    renderPreparationHistory(ctx.history||[]);
+  }
+
+  function setCheckedValues(name,values){
+    const set=new Set((values||[]).map(String));
+    document.querySelectorAll(`input[name="${name}"]`).forEach(box=>box.checked=set.has(box.value));
+  }
+
+  function getCheckedValues(name){
+    return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(box=>box.value);
+  }
+
+  function collectPreparationPayload(){
+    const form=document.getElementById('prepForm');
+    const data=formObject(form);
+    data.barriers=getCheckedValues('prepBarrier');
+    data.materialTypes=getCheckedValues('prepMaterial');
+    return data;
+  }
+
+  function generateNextPreparation(){
+    const data=collectPreparationPayload();
+    if(!data.caseId)return alert('먼저 학생을 선택하세요.');
+    if(!data.barriers.length&&!confirm('주요 장벽을 선택하지 않았습니다. 최근 기록만으로 준비안을 생성할까요?'))return;
+    const btn=document.getElementById('prepAiBtn');
+    btn.disabled=true;btn.textContent='AI 준비안 생성 중…';setLoading(true);
+    google.script.run.withSuccessHandler(result=>{
+      setLoading(false);btn.disabled=false;btn.textContent='AI 다음 회기 준비안 생성';
+      const form=document.getElementById('prepForm');
+      ['sessionObjective','questions','counselingTechnique','recommendedMaterials','experienceActivity','behaviorExperiments','nextCheckQuestion','referralCheck','timingPlan','postSessionChecklist'].forEach(name=>{if(form.elements[name])form.elements[name].value=result[name]||''});
+      const warnings=Array.isArray(result.warnings)?result.warnings:[];
+      let text='다음 회기 준비안을 생성했습니다. 학생 상황과 실제 준비 가능한 자료를 확인한 뒤 수정·저장하세요.';
+      if(warnings.length)text+='\n\n추가 확인사항:\n- '+warnings.join('\n- ');
+      message('prepMsg',text,warnings.length?'':'ok');
+      form.sessionObjective.scrollIntoView({behavior:'smooth',block:'center'});
+    }).withFailureHandler(err=>{btn.disabled=false;btn.textContent='AI 다음 회기 준비안 생성';showError(err)}).generateNextSessionPreparation(data);
+  }
+
+  function saveNextPreparation(status,afterSave){
+    const data=collectPreparationPayload();
+    if(!data.caseId)return alert('먼저 학생을 선택하세요.');
+    data.status=status||'초안';
+    setLoading(true);
+    google.script.run.withSuccessHandler(result=>{
+      setLoading(false);
+      document.getElementById('prepForm').prepId.value=result.prepId||'';
+      currentPreparationContext=result.context||currentPreparationContext;
+      message('prepMsg',`${status||'초안'} 상태로 저장했습니다.`,'ok');
+      if(result.context)renderPreparationHistory(result.context.history||[]);
+      refreshAll();
+      if(typeof afterSave==='function')afterSave(result);
+    }).withFailureHandler(showError).saveNextSessionPreparation(data);
+  }
+
+  function transferPreparationToSession(){
+    const data=collectPreparationPayload();
+    if(!data.caseId)return alert('먼저 학생을 선택하세요.');
+    if(!data.actualActivity&&!data.newStudentStatement&&!data.teacherObservationResponse&&!data.selectedBehaviorExperiment){
+      if(!confirm('상담 실시 결과가 아직 비어 있습니다. 빈 상태로 상담기록 화면으로 이동할까요?'))return;
+    }
+    saveNextPreparation('실시완료',result=>{
+      const prepId=result.prepId;
+      google.script.run.withSuccessHandler(()=>{}).markPreparationConverted(prepId);
+      const navButton=Array.from(document.querySelectorAll('nav button')).find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("showPage('session'"));
+      showPage('session',navButton);
+      const sessionSelect=document.getElementById('sessionStudentSelect');
+      if(sessionSelect)sessionSelect.value=data.caseId;
+      selectCaseForForm('session',data.caseId);
+      const form=document.getElementById('sessionForm');
+      const ctx=currentPreparationContext||{};
+      const latest=(ctx.latestSession||{});
+      form.sessionDate.value=new Date().toISOString().slice(0,10);
+      form.minutes.value=data.counselingMinutes||15;
+      form.mainConcern.value=data.newStudentStatement||latest.mainConcern||'';
+      form.cause.value=latest.cause||'';
+      form.strength.value=latest.strength||'';
+      const obs=[];
+      if(data.actualActivity)obs.push('실시 활동: '+data.actualActivity);
+      if(data.teacherObservationResponse)obs.push('학생 반응: '+data.teacherObservationResponse);
+      if(data.nextFollowup)obs.push('다음 확인: '+data.nextFollowup);
+      form.observation.value=obs.join('\n');
+      form.activityStatus.value=data.actualActivity?'실시':'미정';
+      form.activityNote.value=[data.actualActivity,data.teacherObservationResponse].filter(Boolean).join('\n');
+      form.goalText.value=data.selectedBehaviorExperiment||'';
+      form.approved.checked=false;
+      document.getElementById('sessionMsg').innerHTML='<div class="notice">다음 회기 준비안의 실시 결과를 상담기록 입력칸으로 옮겼습니다. 학생이 실제로 말한 내용과 교사 관찰을 보완한 뒤 AI 초안을 만들고 저장하세요.</div>';
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  }
+
+  function renderPreparationHistory(rows){
+    const box=document.getElementById('prepHistory');
+    if(!rows.length){box.innerHTML='<div class="empty-box">저장된 다음 회기 준비안이 없습니다.</div>';return;}
+    box.innerHTML=rows.map(prep=>`<details class="prep-history-card"><summary>${escapeHtml(prep.targetSessionNo||'-')}회기 준비 · ${escapeHtml(prep.counselingArea||'-')} · ${escapeHtml(prep.status||'초안')} · ${escapeHtml(prep.createdAt||'')}</summary><div class="coaching-grid"><div class="coaching-box"><b>회기 목표</b>${escapeHtml(prep.sessionObjective||'-')}</div><div class="coaching-box"><b>질문</b>${escapeHtml(prep.questions||'-')}</div><div class="coaching-box"><b>상담기법</b>${escapeHtml(prep.counselingTechnique||'-')}</div><div class="coaching-box"><b>추천재료</b>${escapeHtml(prep.recommendedMaterials||'-')}</div><div class="coaching-box"><b>행동실험</b>${escapeHtml(prep.behaviorExperiments||'-')}</div><div class="coaching-box"><b>연계 확인</b>${escapeHtml(prep.referralCheck||'-')}</div></div><div class="activity-line"><b>상담실 체험</b><div class="activity-text">${escapeHtml(prep.experienceActivity||'-')}</div></div></details>`).join('');
+  }
+
+  function renderStudentOptions(diagnosisRows,sessionRows,evaluationRows,preparationRows){
+    const configs=[
+      ['diagStudentSelect',diagnosisRows],
+      ['sessionStudentSelect',sessionRows],
+      ['evaluationStudentSelect',evaluationRows],
+      ['prepStudentSelect',preparationRows]
+    ];
+    configs.forEach(([id,rows])=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      const current=el.value;
+      el.innerHTML='<option value="">학생 이름으로 선택</option>'+
+        rows.map(r=>`<option value="${escapeHtml(r.caseId)}">${escapeHtml(r.label)}</option>`).join('');
+      if(current)el.value=current;
+    });
+  }
+
+  function selectCaseForForm(type,caseId){
+    const source=type==='diag'?(bootstrap.diagnosisCases||[]):(bootstrap.sessionCases||[]);
+    const item=source.find(x=>x.caseId===caseId)||(bootstrap.studentCases||[]).find(x=>x.caseId===caseId);
+    const form=document.getElementById(type==='diag'?'diagnosisForm':'sessionForm');
+    form.caseId.value=caseId||'';
+
+    if(type==='session'&&form.tasteMindLinkId){
+      form.tasteMindLinkId.value='';
+    }
+
+    document.getElementById(type==='diag'?'diagSelectedLabel':'sessionSelectedLabel').value=item?item.label:'';
+    if(type==='diag'){
+      form.studentName.value=item?item.studentName:'';
+      form.diagnosisId.value='';
+      syncDiagnosisPoint();
+    }
+  }
+
+  function syncDiagnosisPoint(){
+    const point=document.getElementById('diagEvaluationPoint').value||'사전';
+    const form=document.getElementById('diagnosisForm');
+    form.evaluationPoint.value=point;
+    form.diagnosisId.value='';
+  }
+
+  async function uploadAndAnalyze(){
+    const form=document.getElementById('diagnosisForm');
+    const caseId=form.caseId.value;
+    const evaluationPoint=document.getElementById('diagEvaluationPoint').value||'사전';
+    const resultFile=document.getElementById('resultPdf').files[0];
+    const responseFile=document.getElementById('responsePdf').files[0];
+
+    if(!caseId)return alert('학생을 먼저 선택하세요.');
+    if(!resultFile)return alert('진단결과 PDF를 선택하세요.');
+
+    form.evaluationPoint.value=evaluationPoint;
+    setLoading(true);
+    message('analysisMsg',evaluationPoint+' 진단 PDF를 Drive에 저장하고 값을 확인하고 있습니다. 잠시 기다려 주세요.','');
+
+    try{
+      const resultUpload=await uploadFile(caseId,'진단결과',resultFile,evaluationPoint);
+      let responseUpload=null;
+      if(responseFile)responseUpload=await uploadFile(caseId,'응답내역',responseFile,evaluationPoint);
+
+      google.script.run
+        .withSuccessHandler(r=>{
+          fillForm(form,r.values);
+          document.getElementById('diagEvaluationPoint').value=r.values.evaluationPoint||evaluationPoint;
+          message('analysisMsg',evaluationPoint+' 진단 PDF 자동 확인이 완료되었습니다. 아래 값을 원본과 비교한 뒤 “교사 확인 후 저장”을 누르세요.','ok');
+          setLoading(false);
+          refreshAll();
+        })
+        .withFailureHandler(showError)
+        .analyzeDiagnosisFiles({
+          caseId,
+          diagnosisId:resultUpload.diagnosisId,
+          evaluationPoint,
+          resultFileId:resultUpload.fileId,
+          responseFileId:responseUpload?responseUpload.fileId:''
+        });
+    }catch(err){
+      showError(err);
+    }
+  }
+
+
+  function loadPreviousSessionSummary(){
+    const form=document.getElementById('sessionForm');
+    const caseField=form.elements['caseId'];
+    const caseId=caseField?String(caseField.value||'').trim():'';
+    if(!caseId){alert('먼저 상담할 학생을 선택해 주세요.');return}
+    setLoading(true);
+    google.script.run.withSuccessHandler(result=>{
+      setLoading(false);
+      const box=document.getElementById('previousSessionBox');
+      box.style.display='block';
+      if(!result.hasPrevious){
+        box.innerHTML=`<div class="notice ok">${escapeHtml(result.message)}</div>`;
+        return;
+      }
+      box.innerHTML=`<div class="card" style="margin-bottom:0">
+        <h3 style="margin-top:0">지난 상담 요약 <span class="status">다음 상담 ${escapeHtml(result.nextSessionNo)}회기</span></h3>
+        <div class="form-grid">
+          <div><label>지난 회기</label><div>${escapeHtml(result.previousSessionNo)}회기 · ${escapeHtml(result.previousSessionDate)}</div></div>
+          <div><label>지난 목표 결과</label><div>${escapeHtml(result.result||'진행 중')}</div></div>
+          <div class="full"><label>지난 SMART 목표</label><div>${escapeHtml(result.goalText||'등록된 목표 없음')}</div></div>
+          <div><label>목표 횟수</label><div>${escapeHtml(result.targetCount||'-')}</div></div>
+          <div><label>실제 횟수</label><div>${escapeHtml(result.actualCount||'-')}</div></div>
+          <div class="full"><label>학생 소감</label><div>${escapeHtml(result.studentFeedback||'-')}</div></div>
+          <div><label>어려웠던 점</label><div>${escapeHtml(result.difficulty||'-')}</div></div>
+          <div><label>도움이 된 점</label><div>${escapeHtml(result.supportFactor||'-')}</div></div>
+          <div class="full"><label>지난 SOAP</label>${formatStructuredRecordHtml(result.soap,['S','O','A','P'])}</div>
+          <div class="full"><label>지난 PES</label>${formatStructuredRecordHtml(result.pes,['P','E','S'])}</div>
+          <div class="full">
+            <details class="next-session-details" open>
+              <summary>지난 회기에서 준비한 이번 회기 상담안 펼쳐보기</summary>
+              <div class="coaching-grid">
+                <div class="coaching-box"><b>추천 상담기법</b>${escapeHtml(result.counselingTechnique||'기록 없음')}</div>
+                <div class="coaching-box"><b>상담 콘텐츠</b>${escapeHtml(result.counselingContent||'기록 없음')}</div>
+                <div class="coaching-box"><b>교육 중점</b>${escapeHtml(result.educationFocus||'기록 없음')}</div>
+              </div>
+              <div class="activity-line"><b>이번 회기에 실시할 1:1 영양교육 활동</b><div class="activity-text">${escapeHtml(result.teacherActivity||'기록된 활동 없음')}</div></div>
+            </details>
+          </div>
+        </div>
+      </div>`;
+      box.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }).withFailureHandler(showError).getPreviousSessionSummary(caseId);
+  }
+
+  function generateCounselingDraftFromForm(){
+    const form=document.getElementById('sessionForm');
+    const data=formObject(form);
+    const caseId=String(data.caseId||'').trim();
+
+    if(!caseId){
+      alert('먼저 상담할 학생을 선택해 주세요.');
+      return;
+    }
+
+    const currentInputs=[
+      data.mainConcern,
+      data.cause,
+      data.strength,
+      data.observation
+    ].filter(value=>String(value||'').trim()!=='');
+
+    if(currentInputs.length<2){
+      alert('학생의 주요 호소, 원인, 강점, 교사 관찰 중\n2개 이상을 먼저 입력해 주세요.');
+      return;
+    }
+
+    const fieldNames=['soapS','soapO','soapA','soapP','pesP','pesE','pesS','referral'];
+    const alreadyWritten=fieldNames.some(name=>{
+      const field=form.elements[name];
+      return field&&String(field.value||'').trim()!=='';
+    });
+
+    if(alreadyWritten&&!confirm('기존 SOAP·PES·연계 검토 내용이 있습니다.\nAI 초안으로 덮어쓸까요?'))return;
+
+    const goalField=form.elements['goalText'];
+    data.goalSeed=goalField?String(goalField.value||'').trim():'';
+
+    const button=document.getElementById('aiDraftBtn');
+    if(button){
+      button.disabled=true;
+      button.textContent='AI 상담기록 작성 중…';
+    }
+
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(result=>{
+        setLoading(false);
+
+        if(button){
+          button.disabled=false;
+          button.textContent='AI 상담기록 초안 자동작성';
+        }
+
+        ['soapS','soapO','soapA','soapP','pesP','pesE','pesS','referral'].forEach(name=>{
+          const field=form.elements[name];
+          if(field)field.value=result[name]||'';
+        });
+
+        if(goalField)goalField.value=result.goalText||'';
+
+        const approvedField=form.elements['approved'];
+        if(approvedField)approvedField.checked=false;
+
+        const warnings=Array.isArray(result.warnings)?result.warnings:[];
+        let resultMessage='이번 회기의 SOAP·PES·연계 검토·SMART 목표 초안을 작성했습니다. 학생이 실제로 말한 내용과 교사 관찰을 비교한 뒤 수정·승인해 주세요. 다음 회기 계획은 별도 다음 회기 준비 탭에서 만듭니다.';
+        if(warnings.length)resultMessage+='\n\n추가 확인사항:\n- '+warnings.join('\n- ');
+
+        message('aiDraftMsg',resultMessage,warnings.length?'':'ok');
+
+        const firstField=form.elements['soapS'];
+        if(firstField)firstField.scrollIntoView({behavior:'smooth',block:'center'});
+      })
+      .withFailureHandler(error=>{
+        if(button){
+          button.disabled=false;
+          button.textContent='AI 상담기록 초안 자동작성';
+        }
+        showError(error);
+      })
+      .generateCounselingDraft(data);
+  }
+
+  document.getElementById('diagnosisForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const data=formObject(e.target);
+    if(!data.caseId)return alert('학생을 먼저 선택하세요.');
+    data.evaluationPoint=document.getElementById('diagEvaluationPoint').value||'사전';
+    setLoading(true);
+    google.script.run.withSuccessHandler(()=>{
+      message('diagMsg',data.evaluationPoint+' 진단결과가 교사 확인본으로 저장되었습니다.','ok');
+      setLoading(false);
+      refreshAll();
+    }).withFailureHandler(showError).saveDiagnosis(data);
+  });
+
+  document.getElementById('sessionForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const data=formObject(e.target);
+    if(!data.caseId)return alert('학생을 먼저 선택하세요.');
+    data.approved=e.target.approved.checked;
+    setLoading(true);
+    google.script.run.withSuccessHandler(r=>{
+      setLoading(false);
+      const syncText=
+        r.explorerSync&&r.explorerSync.ok
+          ?'<br>맛마음 탐험소 정보와 현재 미션도 동기화되었습니다.'
+          :(r.explorerSync&&r.explorerSync.error
+            ?'<br><span style="color:#9a5b00">탐험소 동기화 확인 필요: '+escapeHtml(r.explorerSync.error)+'</span>'
+            :'');
+
+      const reflectedText=
+        r.explorerReflection&&r.explorerReflection.reflected
+          ?'<br>불러온 탐험활동이 반영완료 처리되었습니다.'
+          :(r.explorerReflection&&r.explorerReflection.error
+            ?'<br><span style="color:#9a5b00">탐험활동 반영상태 확인 필요: '+escapeHtml(r.explorerReflection.error)+'</span>'
+            :'');
+
+      document.getElementById('sessionMsg').innerHTML=`<div class="notice ok"><b>${escapeHtml(r.sessionNo)}회기 상담이 저장되었습니다.</b>${syncText}${reflectedText}<div class="actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn primary" onclick="openNextPreparationForCase('${escapeJs(data.caseId)}')">이 기록으로 다음 회기 준비안 만들기</button><button type="button" class="btn secondary" onclick="document.getElementById('sessionForm').reset()">새 상담기록 작성</button></div></div>`;
+      refreshAll();
+    }).withFailureHandler(showError).saveSession(data);
+  });
+
+  document.getElementById('effectForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const data=formObject(e.target);
+    if(!data.caseId)return alert('학생을 먼저 선택하세요.');
+
+    /*
+     * 사전평가 저장 시 사후 전용 항목이 섞이지 않도록
+     * 서버로 보내기 전에 값을 명확히 비웁니다.
+     */
+    if(data.evaluationPoint==='사전'){
+      [
+        'counselingSatisfaction',
+        'counselingHelpfulness',
+        'changeAfterCounseling',
+        'maintenanceBehavior',
+        'needMoreCounseling',
+        'teacherMessage',
+        'teacherEvaluation'
+      ].forEach(key=>data[key]='');
+    }
+
+    setLoading(true);
+    google.script.run.withSuccessHandler(()=>{
+      message('effectMsg',data.evaluationPoint+' 효과평가가 저장되었습니다.','ok');
+      setLoading(false);
+      loadEffectGrowthSummary();
+    }).withFailureHandler(showError).saveEffectEvaluation(data);
+  });
+
+  document.getElementById('growthForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const data=formObject(e.target);
+    if(!data.caseId)return alert('학생을 먼저 선택하세요.');
+    setLoading(true);
+    google.script.run.withSuccessHandler(()=>{
+      message('growthMsg','성장측정이 저장되었습니다.','ok');
+      setLoading(false);
+      e.target.reset();
+      e.target.caseId.value=document.getElementById('evaluationStudentSelect').value;
+      loadEffectGrowthSummary();
+    }).withFailureHandler(showError).saveGrowthMeasurement(data);
+  });
+
+  function uploadFile(caseId,fileType,file,evaluationPoint){
+    return new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const base64=String(reader.result).split(',')[1];
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .uploadCaseFile({
+            caseId,
+            fileType,
+            evaluationPoint:evaluationPoint||'사전',
+            fileName:file.name,
+            mimeType:file.type||'application/pdf',
+            base64
+          });
+      };
+      reader.onerror=reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function selectEvaluationCase(caseId){
+    const item=(bootstrap.evaluationCases||[]).find(x=>x.caseId===caseId);
+    document.getElementById('evaluationSelectedLabel').value=item?item.label:'';
+    document.getElementById('effectForm').caseId.value=caseId||'';
+    document.getElementById('growthForm').caseId.value=caseId||'';
+
+    if(caseId){
+      const today=new Date().toISOString().slice(0,10);
+      if(!document.getElementById('effectForm').evaluationDate.value){
+        document.getElementById('effectForm').evaluationDate.value=today;
+      }
+      if(!document.getElementById('growthForm').measurementDate.value){
+        document.getElementById('growthForm').measurementDate.value=today;
+      }
+      loadEffectGrowthSummary();
+      loadEffectFormLinks();
+    }else{
+      document.getElementById('effectGrowthSummary').innerHTML='학생을 선택하면 사전·사후 변화가 표시됩니다.';
+      clearEffectFormLinks();
+    }
+  }
+
+
+  let currentEffectFormInfo={preUrl:'',postUrl:'',editUrl:'',formUrl:''};
+
+  function clearEffectFormLinks(){
+    currentEffectFormInfo={preUrl:'',postUrl:'',editUrl:'',formUrl:''};
+    const pre=document.getElementById('effectPreLink');
+    const post=document.getElementById('effectPostLink');
+    const status=document.getElementById('effectFormStatus');
+    const edit=document.getElementById('effectFormEditBtn');
+    if(pre)pre.value='';
+    if(post)post.value='';
+    if(status)status.textContent='학생을 선택하면 사전·사후 평가 링크를 준비합니다.';
+    if(edit)edit.disabled=true;
+  }
+
+  function loadEffectFormLinks(){
+    const caseId=document.getElementById('evaluationStudentSelect').value;
+    if(!caseId){
+      clearEffectFormLinks();
+      return;
+    }
+
+    const status=document.getElementById('effectFormStatus');
+    status.className='notice';
+    status.textContent='Google Form과 학생별 사전·사후 링크를 준비하고 있습니다…';
+
+    google.script.run
+      .withSuccessHandler(info=>{
+        currentEffectFormInfo=info||{};
+        document.getElementById('effectPreLink').value=info.preUrl||'';
+        document.getElementById('effectPostLink').value=info.postUrl||'';
+        const edit=document.getElementById('effectFormEditBtn');
+        edit.disabled=!info.editUrl;
+        status.className='notice ok';
+        status.textContent=`${info.gradeClass||''} ${info.studentName||''} · 최근 목표: ${info.targetBehavior||'목표 미등록'}\n사전·사후 응답은 제출 즉시 효과평가 표에 자동 반영됩니다.`;
+      })
+      .withFailureHandler(error=>{
+        status.className='notice error';
+        status.textContent=error&&error.message?error.message:String(error);
+      })
+      .getEffectEvaluationFormLinks(caseId);
+  }
+
+  function copyEffectLink(type){
+    const input=document.getElementById(type==='post'?'effectPostLink':'effectPreLink');
+    if(!input||!input.value)return alert('먼저 학생을 선택해 링크를 생성해 주세요.');
+    navigator.clipboard.writeText(input.value)
+      .then(()=>alert((type==='post'?'사후':'사전')+'평가 링크를 복사했습니다.'))
+      .catch(()=>{
+        input.select();
+        document.execCommand('copy');
+        alert((type==='post'?'사후':'사전')+'평가 링크를 복사했습니다.');
+      });
+  }
+
+  function openEffectLink(type){
+    const url=type==='post'?currentEffectFormInfo.postUrl:currentEffectFormInfo.preUrl;
+    if(!url)return alert('먼저 학생을 선택해 링크를 생성해 주세요.');
+    window.open(url,'_blank');
+  }
+
+  function openEffectFormEditor(){
+    if(!currentEffectFormInfo.editUrl)return alert('먼저 Form 연결을 준비해 주세요.');
+    window.open(currentEffectFormInfo.editUrl,'_blank');
+  }
+
+  function setEffectEvaluationPoint(point){
+    const normalized=point==='사후'?'사후':'사전';
+    const form=document.getElementById('effectForm');
+    if(!form)return;
+
+    form.evaluationPoint.value=normalized;
+    updateEffectFieldVisibility(normalized);
+
+    const caseId=document.getElementById('evaluationStudentSelect').value;
+    if(caseId){
+      loadEffectGrowthSummary();
+    }
+  }
+
+  function updateEffectFieldVisibility(point){
+    const normalized=point==='사후'?'사후':'사전';
+    const isPost=normalized==='사후';
+
+    const preTab=document.getElementById('effectPreTab');
+    const postTab=document.getElementById('effectPostTab');
+    const postFields=document.getElementById('effectPostFields');
+    const guide=document.getElementById('effectPointGuide');
+    const title=document.getElementById('effectCommonTitle');
+    const help=document.getElementById('effectCommonHelp');
+    const countLabel=document.getElementById('behaviorCountLabel');
+    const helpfulLabel=document.getElementById('helpfulPointLabel');
+    const difficultyLabel=document.getElementById('difficultyLabel');
+    const saveBtn=document.getElementById('effectSaveBtn');
+
+    if(preTab)preTab.className=isPost?'btn secondary':'btn primary';
+    if(postTab)postTab.className=isPost?'btn success':'btn secondary';
+    if(postFields)postFields.style.display=isPost?'block':'none';
+
+    if(guide){
+      guide.innerHTML=isPost
+        ? '현재 <b>사후평가</b> 입력 화면입니다. 상담 후의 변화와 상담 경험만 기록합니다.'
+        : '현재 <b>사전평가</b> 입력 화면입니다. 상담 시작 전 학생의 현재 상태만 확인합니다.';
+    }
+
+    if(title)title.textContent=isPost?'사후평가 문항':'사전평가 문항';
+    if(help){
+      help.textContent=isPost
+        ? '상담 종료 시점의 현재 생각과 행동을 입력하고 사전 결과와 비교합니다.'
+        : '상담 시작 전의 현재 생각과 행동을 입력합니다.';
+    }
+
+    if(countLabel){
+      countLabel.textContent=isPost
+        ? '상담 후 지난 7일 실천 횟수'
+        : '상담 전 지난 7일 실천 횟수';
+    }
+
+    if(helpfulLabel){
+      helpfulLabel.textContent=isPost
+        ? '실제로 목표 실천에 도움이 된 점·요인'
+        : '목표 실천에 도움이 될 것으로 예상되는 점·요인';
+    }
+
+    if(difficultyLabel){
+      difficultyLabel.textContent=isPost
+        ? '실제로 실천하기 어려웠던 점·방해요인'
+        : '현재 예상되는 어려움·방해요인';
+    }
+
+    if(saveBtn){
+      saveBtn.textContent=isPost?'사후평가 저장':'사전평가 저장';
+      saveBtn.className=isPost?'btn success':'btn primary';
+    }
+  }
+
+  function calculateGrowthBmi(){
+    const form=document.getElementById('growthForm');
+    const h=Number(form.heightCm.value);
+    const w=Number(form.weightKg.value);
+    if(h>0&&w>0){
+      form.bmi.value=(w/Math.pow(h/100,2)).toFixed(2);
+    }else{
+      form.bmi.value='';
+    }
+  }
+
+  function loadEffectGrowthSummary(){
+    const caseId=document.getElementById('evaluationStudentSelect').value;
+    if(!caseId){
+      alert('먼저 학생을 선택해 주세요.');
+      return;
+    }
+
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(data=>{
+        setLoading(false);
+        renderEffectGrowthSummary(data);
+        fillLatestEvaluationForms(data);
+      })
+      .withFailureHandler(showError)
+      .getEffectGrowthData(caseId);
+  }
+
+  function fillLatestEvaluationForms(data){
+    const effectForm=document.getElementById('effectForm');
+    const growthForm=document.getElementById('growthForm');
+    const evaluations=Array.isArray(data.evaluations)?data.evaluations:[];
+    const growth=Array.isArray(data.growth)?data.growth:[];
+
+    const selectedPoint=effectForm.evaluationPoint.value||'사전';
+    const preservedCaseId=effectForm.caseId.value;
+    const preservedPoint=selectedPoint;
+    [
+      'evaluationDate','dietSatisfaction','goalUnderstanding','confidence','importance','readiness',
+      'targetBehavior','behaviorCount','methodUnderstanding','helpSeeking',
+      'counselingSatisfaction','counselingHelpfulness','helpfulPoint',
+      'difficulty','changeAfterCounseling','maintenanceBehavior','needMoreCounseling',
+      'teacherMessage','teacherEvaluation'
+    ].forEach(name=>{
+      if(effectForm.elements[name])effectForm.elements[name].value='';
+    });
+    effectForm.caseId.value=preservedCaseId;
+    effectForm.evaluationPoint.value=preservedPoint;
+
+    const evaluation=evaluations.slice().reverse().find(x=>x.point===selectedPoint);
+    if(evaluation){
+      effectForm.evaluationDate.value=evaluation.date||'';
+      effectForm.dietSatisfaction.value=evaluation.dietSatisfaction??'';
+      effectForm.goalUnderstanding.value=evaluation.goalUnderstanding??'';
+      effectForm.confidence.value=evaluation.confidence??'';
+      effectForm.importance.value=evaluation.importance??'';
+      effectForm.readiness.value=evaluation.readiness??'';
+      effectForm.targetBehavior.value=evaluation.targetBehavior??'';
+      effectForm.behaviorCount.value=evaluation.behaviorCount??'';
+      effectForm.methodUnderstanding.value=evaluation.methodUnderstanding??'';
+      effectForm.helpSeeking.value=evaluation.helpSeeking??'';
+      effectForm.counselingSatisfaction.value=evaluation.counselingSatisfaction??'';
+      effectForm.counselingHelpfulness.value=evaluation.counselingHelpfulness??'';
+      effectForm.helpfulPoint.value=evaluation.helpfulPoint??'';
+      effectForm.difficulty.value=evaluation.difficulty??'';
+      effectForm.changeAfterCounseling.value=evaluation.changeAfterCounseling??'';
+      effectForm.maintenanceBehavior.value=evaluation.maintenanceBehavior??'';
+      effectForm.needMoreCounseling.value=evaluation.needMoreCounseling??'';
+      effectForm.teacherMessage.value=evaluation.teacherMessage??'';
+      effectForm.teacherEvaluation.value=evaluation.teacherEvaluation??'';
+    }else{
+      effectForm.evaluationDate.value=new Date().toISOString().slice(0,10);
+    }
+
+    updateEffectFieldVisibility(preservedPoint);
+
+    const latestGrowth=growth.length?growth[growth.length-1]:null;
+    if(latestGrowth&&!growthForm.measurementDate.value){
+      growthForm.measurementDate.value=latestGrowth.date||'';
+    }
+  }
+
+  function renderEffectGrowthSummary(data){
+    const box=document.getElementById('effectGrowthSummary');
+    const evalRows=Array.isArray(data.evaluationComparison)?data.evaluationComparison:[];
+    const growthRows=Array.isArray(data.growthComparison)?data.growthComparison:[];
+    const diagnosis=Array.isArray(data.diagnosisHistory)?data.diagnosisHistory:[];
+    const evaluations=Array.isArray(data.evaluations)?data.evaluations:[];
+    const growth=Array.isArray(data.growth)?data.growth:[];
+
+    box.className='';
+    box.innerHTML=`
+      <div class="overview-title">
+        <div>
+          <h3 style="margin-bottom:5px">${escapeHtml(data.gradeClass+' '+data.studentName)}</h3>
+          <div class="muted">${escapeHtml(data.topic||'')}</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:18px">효과평가 사전·사후 비교</h3>
+      ${renderComparisonTable(evalRows)}
+
+      <h3 style="margin-top:18px">성장·신체 변화</h3>
+      ${renderComparisonTable(growthRows)}
+      <div class="notice" style="margin-top:10px">
+        성장기 학생의 신장·체중 변화는 보조지표입니다. 체중의 단순 증감보다 BMI 백분위와 성장 흐름, 식행동 변화를 함께 확인하세요.
+      </div>
+
+      <h3 style="margin-top:18px">공식 진단 이력</h3>
+      ${diagnosis.length?`
+        <table><thead><tr><th>시점</th><th>검사일</th><th>종합</th><th>균형</th><th>절제</th><th>실천</th><th>PDF</th></tr></thead>
+        <tbody>${diagnosis.map(r=>`<tr>
+          <td>${escapeHtml(r.point||'-')}</td>
+          <td>${escapeHtml(r.examDate||'-')}</td>
+          <td>${escapeHtml(scoreText(r.totalLevel,r.totalScore)||'-')}</td>
+          <td>${escapeHtml(scoreText(r.balanceLevel,r.balanceScore)||'-')}</td>
+          <td>${escapeHtml(scoreText(r.moderationLevel,r.moderationScore)||'-')}</td>
+          <td>${escapeHtml(scoreText(r.practiceLevel,r.practiceScore)||'-')}</td>
+          <td>${r.resultPdfUrl?`<a href="${escapeAttr(r.resultPdfUrl)}" target="_blank">열기</a>`:'-'}</td>
+        </tr>`).join('')}</tbody></table>
+      `:'<div class="empty-box">저장된 공식 진단 이력이 없습니다.</div>'}
+
+      <h3 style="margin-top:18px">저장 이력</h3>
+      <div class="grid two">
+        <div>
+          <b>효과평가 ${evaluations.length}건</b>
+          ${evaluations.length?`<ul>${evaluations.map(r=>`<li>${escapeHtml(r.point)} · ${escapeHtml(r.date||'-')} · 목표행동 ${escapeHtml(r.targetBehavior||'-')} · ${escapeHtml(r.behaviorCount||'-')}회</li>`).join('')}</ul>`:'<p class="muted">없음</p>'}
+        </div>
+        <div>
+          <b>성장측정 ${growth.length}건</b>
+          ${growth.length?`<ul>${growth.map(r=>`<li>${escapeHtml(r.point)} · ${escapeHtml(r.date||'-')} · ${escapeHtml(r.heightCm||'-')}cm / ${escapeHtml(r.weightKg||'-')}kg / BMI ${escapeHtml(r.bmi||'-')}</li>`).join('')}</ul>`:'<p class="muted">없음</p>'}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderComparisonTable(rows){
+    if(!rows.length)return'<div class="empty-box">비교할 자료가 없습니다.</div>';
+    return `<table><thead><tr><th>항목</th><th>사전</th><th>사후</th><th>변화</th></tr></thead><tbody>${rows.map(r=>`<tr>
+      <td><b>${escapeHtml(r.label)}</b></td>
+      <td>${escapeHtml(r.pre!==''?r.pre:'-')}</td>
+      <td>${escapeHtml(r.post!==''?r.post:'-')}</td>
+      <td>${formatChange(r.change)}</td>
+    </tr>`).join('')}</tbody></table>`;
+  }
+
+  function formatChange(value){
+    if(value===''||value===null||value===undefined)return'-';
+    const n=Number(value);
+    if(!isFinite(n))return escapeHtml(value);
+    const cls=n>0?'change-up':n<0?'change-down':'';
+    const sign=n>0?'+':'';
+    return `<span class="${cls}">${sign}${escapeHtml(n)}</span>`;
+  }
+
+  function goToPostDiagnosis(){
+    const caseId=document.getElementById('evaluationStudentSelect').value;
+    if(!caseId){
+      alert('먼저 학생을 선택해 주세요.');
+      return;
+    }
+
+    showPage('diagnosis',document.querySelector("nav button[onclick*=\"diagnosis\"]"));
+    document.getElementById('diagStudentSelect').value=caseId;
+    selectCaseForForm('diag',caseId);
+    document.getElementById('diagEvaluationPoint').value='사후';
+    syncDiagnosisPoint();
+    document.getElementById('resultPdf').scrollIntoView({behavior:'smooth',block:'center'});
+  }
+
+  function loadCases(){
+    const filters={
+      keyword:document.getElementById('caseKeyword').value,
+      status:document.getElementById('caseStatus').value
+    };
+    setLoading(true);
+    google.script.run.withSuccessHandler(rows=>{
+      renderCases(rows);
+      document.getElementById('caseOverview').style.display='none';
+      setLoading(false);
+    }).withFailureHandler(showError).listCases(filters);
+  }
+
+  function renderCases(rows){
+    const el=document.getElementById('caseTable');
+    if(!rows.length){
+      el.innerHTML='<p class="muted">상담 케이스가 없습니다.</p>';
+      return;
+    }
+    el.innerHTML=`
+      <table class="compact-table">
+        <thead><tr>
+          <th>학년반</th><th>학생</th><th>주제</th><th>상태</th>
+          <th>상담 회기</th><th>최근 상담</th><th>다음 일정</th><th>최근 목표</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr class="case-row">
+              <td>${escapeHtml(r.gradeClass)}</td>
+              <td><b>${escapeHtml(r.studentName)}</b></td>
+              <td>${escapeHtml(r.topic)}</td>
+              <td><span class="status">${escapeHtml(r.status)}</span></td>
+              <td>${escapeHtml(r.sessionCount||0)}회</td>
+              <td>${escapeHtml(r.lastSessionDate||'-')}</td>
+              <td>${escapeHtml(r.nextDate||'-')}</td>
+              <td><div class="text-ellipsis" title="${escapeAttr(r.latestGoal||'')}">${escapeHtml(shortText(r.latestGoal||'',45)||'-')}</div></td>
+              <td><button class="btn primary nowrap" onclick="openCaseOverview('${escapeJs(r.caseId)}')">상담 이력 보기</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function openCaseOverview(caseId){
+    setLoading(true);
+    google.script.run.withSuccessHandler(data=>{
+      setLoading(false);
+      renderCaseOverview(data);
+    }).withFailureHandler(showError).getStudentCounselingOverview(caseId);
+  }
+
+  function renderCaseOverview(data){
+    currentOverviewData=data;
+    const box=document.getElementById('caseOverview');
+    const s=data.student||{};
+    const c=data.caseSummary||{};
+    const d=data.diagnosis||{};
+    const g=data.currentGoal||{};
+    const timeline=Array.isArray(data.timeline)?data.timeline:[];
+    const comparison=Array.isArray(data.comparison)?data.comparison:[];
+    const warnings=Array.isArray(data.warnings)?data.warnings:[];
+    const effects=data.effects||{};
+    const explorer=data.explorer||{};
+
+    const diagnosisItems=[
+      ['종합',scoreText(d.totalLevel,d.totalScore)],
+      ['균형',scoreText(d.balanceLevel,d.balanceScore)],
+      ['절제',scoreText(d.moderationLevel,d.moderationScore)],
+      ['실천',scoreText(d.practiceLevel,d.practiceScore)],
+      ['식사빈도',d.mealFrequency],
+      ['규칙적 식사',d.regularMeal],
+      ['섭식태도',d.eatingAttitude],
+      ['수면습관',d.sleepLevel],
+      ['정신건강',d.mentalHealth],
+      ['스마트폰',d.smartphoneLevel],
+      ['알레르기',d.allergy],
+      ['질환',d.disease]
+    ].filter(x=>String(x[1]||'').trim()!=='');
+
+    box.innerHTML=`
+      <div class="overview-title">
+        <div>
+          <h2 style="margin-bottom:6px">${escapeHtml(s.gradeClass+' '+s.name)} 상담 종합</h2>
+          <div class="muted">${escapeHtml(c.topic||'상담 주제 미등록')} · 학생코드 ${escapeHtml(s.studentCode||'')}</div>
+        </div>
+        <div class="overview-actions">
+          ${c.folderUrl?`<a class="btn secondary" href="${escapeAttr(c.folderUrl)}" target="_blank" style="text-decoration:none">Drive 폴더</a>`:''}
+          ${d.resultPdfUrl?`<a class="btn secondary" href="${escapeAttr(d.resultPdfUrl)}" target="_blank" style="text-decoration:none">진단결과 PDF</a>`:''}
+          ${g.text?`<button class="btn warningBtn" onclick="openGoalCheck()">목표 실천 점검</button><button class="btn success" onclick="openStudentGoalBoard()">학생용 목표 성장판</button>`:''}
+          <button class="btn primary" onclick="openNextPreparationForCase('${escapeJs(data.caseId)}')">다음 회기 준비</button>
+          <button class="btn secondary" onclick="document.getElementById('caseOverview').style.display='none'">닫기</button>
+        </div>
+      </div>
+
+      <h3 style="margin-top:20px">현재 상태</h3>
+      <div class="summary-grid">
+        ${summaryBox('진행 상태',c.status||'-')}
+        ${summaryBox('총 상담 횟수',(c.totalSessions||0)+'회')}
+        ${summaryBox('최초 상담',c.firstSessionDate||'-')}
+        ${summaryBox('최근 상담',c.lastSessionDate||'-')}
+        ${summaryBox('다음 상담',c.nextDate||'-')}
+        ${summaryBox('보호자 동의',c.consentStatus||'-')}
+      </div>
+
+      ${renderTasteMindExplorerPanel(explorer,data.caseId)}
+
+      <div class="grid two" style="margin-top:16px">
+        <div class="card" style="margin:0">
+          <h3>공식 진단 핵심 결과</h3>
+          ${diagnosisItems.length?`<div class="diag-grid">${diagnosisItems.map(x=>`<div class="diag-item"><b>${escapeHtml(x[0])}</b>${escapeHtml(x[1])}</div>`).join('')}</div>`:'<div class="empty-box">저장된 공식 진단결과가 없습니다.</div>'}
+        </div>
+        <div class="card goal-card" style="margin:0">
+          <h3>현재 실천목표</h3>
+          ${g.text?`
+            <div style="font-size:16px;font-weight:700;line-height:1.6">${escapeHtml(g.text)}</div>
+            <div class="detail-grid" style="margin-top:12px">
+              <div class="detail-item"><b>기간</b>${escapeHtml(dateRange(g.startDate,g.endDate))}</div>
+              <div class="detail-item"><b>목표 횟수</b>${escapeHtml(g.targetCount||'-')}</div>
+              <div class="detail-item"><b>실제 횟수</b>${escapeHtml(g.actualCount||'-')}</div>
+              <div class="detail-item"><b>결과</b>${escapeHtml(g.result||'진행 중')}</div>
+            </div>
+            ${renderGoalProgress(g)}
+            <div class="small" style="margin-top:8px">점검 ${escapeHtml(g.checkCount||0)}회${g.lastCheckDate?` · 최근 ${escapeHtml(g.lastCheckDate)}`:''}</div>
+          `:'<div class="empty-box">설정된 실천목표가 없습니다.</div>'}
+        </div>
+      </div>
+
+      ${warnings.length?`
+        <div class="notice warn" style="margin-top:16px"><b>추가 확인사항</b><br>${warnings.map(w=>`${escapeHtml(w.label)}: ${escapeHtml(w.value)}`).join('<br>')}</div>
+      `:''}
+
+      <h3 style="margin-top:22px">효과평가·성장 변화</h3>
+      <div class="grid two">
+        <div class="card" style="margin:0">
+          <h3>효과평가 사전·사후</h3>
+          ${renderComparisonTable(Array.isArray(effects.evaluationComparison)?effects.evaluationComparison:[])}
+        </div>
+        <div class="card" style="margin:0">
+          <h3>성장·신체 변화</h3>
+          ${renderComparisonTable(Array.isArray(effects.growthComparison)?effects.growthComparison:[])}
+        </div>
+      </div>
+
+      <h3 style="margin-top:22px">회기 한눈에 비교</h3>
+      ${comparison.length?renderSessionComparison(comparison):'<div class="empty-box">아직 저장된 상담 회기가 없습니다.</div>'}
+
+      <h3 style="margin-top:22px">상담 회기별 기록</h3>
+      ${timeline.length?`<div class="timeline">${timeline.map(renderSessionCard).join('')}</div>`:'<div class="empty-box">상담 기록을 저장하면 1회기부터 시간순으로 표시됩니다.</div>'}
+    `;
+    box.style.display='block';
+    box.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+
+  function renderTasteMindExplorerPanel(explorer,caseId){
+    if(!explorer||!explorer.connected){
+      return `<div class="explorer-panel">
+        <div class="explorer-panel-head">
+          <div class="explorer-title">
+            <div class="explorer-title-icon">🌿</div>
+            <div><h3 style="margin:0 0 5px">맛마음 탐험소</h3><div class="muted">탐험소 연결정보를 불러오지 못했습니다.</div></div>
+          </div>
+          <button class="btn secondary" onclick="refreshTasteMindExplorer('${escapeJs(caseId)}')">다시 확인</button>
+        </div>
+        <div class="notice error">${escapeHtml(explorer&&explorer.message||'연결 설정을 확인하세요.')}</div>
+      </div>`;
+    }
+
+    if(!explorer.hasAccount){
+      return `<div class="explorer-panel">
+        <div class="explorer-panel-head">
+          <div class="explorer-title">
+            <div class="explorer-title-icon">🌿</div>
+            <div><h3 style="margin:0 0 5px">맛마음 탐험소</h3><div class="muted">${escapeHtml(explorer.message||'학생계정이 없습니다.')}</div></div>
+          </div>
+          <div class="overview-actions">
+            <a class="btn primary" href="${escapeAttr(explorer.webAppUrl||'#')}" target="_blank" style="text-decoration:none">탐험소 열기</a>
+            <button class="btn success" onclick="syncTasteMindExplorer('${escapeJs(caseId)}')">등록·동기화</button>
+            <button class="btn secondary" onclick="refreshTasteMindExplorer('${escapeJs(caseId)}')">새로고침</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    const latest=explorer.latestActivity||null;
+
+    return `<div class="explorer-panel">
+      <div class="explorer-panel-head">
+        <div class="explorer-title">
+          <div class="explorer-title-icon">🌿</div>
+          <div>
+            <h3 style="margin:0 0 5px">맛마음 탐험소</h3>
+            <div class="muted">학생용 탐험정보와 최근 활동을 별도 탐험소 시트에서 실시간으로 불러옵니다.</div>
+          </div>
+        </div>
+        <div class="overview-actions">
+          <a class="btn primary" href="${escapeAttr(explorer.webAppUrl||'#')}" target="_blank" style="text-decoration:none">탐험소 열기</a>
+          <button class="btn secondary" onclick="copyTasteMindCode('${escapeJs(explorer.explorerCode||'')}')">코드 복사</button>
+          <button class="btn secondary" onclick="regenerateTasteMindCode('${escapeJs(caseId)}')">코드 재발급</button>
+          <button class="btn success" onclick="syncTasteMindExplorer('${escapeJs(caseId)}')">정보 동기화</button>
+          <button class="btn secondary" onclick="refreshTasteMindExplorer('${escapeJs(caseId)}')">새로고침</button>
+        </div>
+      </div>
+
+      <div class="explorer-grid">
+        <div class="explorer-item"><b>탐험가 이름</b><strong>${escapeHtml(explorer.alias||'-')}</strong></div>
+        <div class="explorer-item"><b>탐험코드</b><strong class="explorer-code">${escapeHtml(explorer.explorerCode||'-')}</strong></div>
+        <div class="explorer-item"><b>핵심 탐험 진행</b><strong>${escapeHtml(explorer.completedSessionCount||0)}/${escapeHtml(explorer.totalSessionCount||5)}</strong></div>
+        <div class="explorer-item"><b>학생용 활동명</b><strong style="font-size:14px">${escapeHtml(explorer.studentActivityLabel||'-')}</strong></div>
+        <div class="explorer-item"><b>미반영 활동</b><strong>${escapeHtml(explorer.pendingCount||0)}건</strong></div>
+      </div>
+
+      <div class="small" style="margin-top:10px">
+        계정상태 ${escapeHtml(explorer.accountStatus||'-')}
+        ${explorer.lastAccessAt?` · 최근 접속 ${escapeHtml(explorer.lastAccessAt)}`:''}
+        ${explorer.lastSyncAt?` · 최근 동기화 ${escapeHtml(explorer.lastSyncAt)}`:''}
+      </div>
+
+      ${explorer.currentMission?`<div class="goal-line"><b>탐험소 현재 미션</b><div style="margin-top:5px">${escapeHtml(explorer.currentMission)}</div></div>`:''}
+
+      ${latest?`
+        <div class="explorer-activity">
+          <div class="overview-title">
+            <div>
+              <b>최근 탐험 활동</b>
+              <div class="small" style="margin-top:4px">${escapeHtml(latest.sentAt||'')} · ${escapeHtml(latest.activityName||'')}</div>
+            </div>
+            <div class="overview-actions">
+              <span class="status ${latest.applyStatus==='반영완료'?'done':'wait'}">${escapeHtml(latest.applyStatus||'미반영')}</span>
+              ${latest.applyStatus!=='반영완료'
+                ?`<button class="btn success" onclick="loadTasteMindActivityToSession('${escapeJs(caseId)}','${escapeJs(latest.linkId||'')}')">상담기록에 불러오기</button>`
+                :''}
+            </div>
+          </div>
+          <div class="explorer-activity-grid">
+            ${explorerActivityItem('학생 주요 발언',latest.studentStatement)}
+            ${explorerActivityItem('핵심 장벽',latest.barrier)}
+            ${explorerActivityItem('선택 전략',latest.strategy)}
+            ${explorerActivityItem('실천 미션',latest.mission)}
+            ${explorerActivityItem('자신감',latest.confidence===''?'-':latest.confidence+'/10')}
+            ${explorerActivityItem('다음 추천',latest.nextSuggestion)}
+          </div>
+        </div>
+      `:'<div class="empty-box" style="margin-top:12px">아직 탐험소에서 저장된 활동이 없습니다.</div>'}
+
+      ${(explorer.pendingActivities||[]).length?`
+        <div class="card" style="margin:14px 0 0;padding:14px">
+          <div class="overview-title">
+            <div>
+              <b>미반영 활동 목록</b>
+              <div class="small">각 활동을 상담기록에 불러온 뒤 저장하면 자동으로 반영완료가 됩니다.</div>
+            </div>
+            <span class="status wait">${escapeHtml(explorer.pendingCount||0)}건</span>
+          </div>
+          <div style="display:grid;gap:8px;margin-top:10px">
+            ${(explorer.pendingActivities||[]).map(item=>`
+              <div class="explorer-activity-item" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+                <div>
+                  <b>${escapeHtml(item.activityName||'탐험 활동')}</b>
+                  <div class="small">${escapeHtml(item.sentAt||'')} ${item.mission?`· ${escapeHtml(shortText(item.mission,45))}`:''}</div>
+                </div>
+                <button class="btn success nowrap" onclick="loadTasteMindActivityToSession('${escapeJs(caseId)}','${escapeJs(item.linkId||'')}')">불러오기</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `:''}
+    </div>`;
+  }
+
+  function explorerActivityItem(label,value){
+    return `<div class="explorer-activity-item"><b>${escapeHtml(label)}</b>${escapeHtml(value||'-')}</div>`;
+  }
+
+  function syncTasteMindExplorer(caseId){
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(result=>{
+        setLoading(false);
+
+        if(result.sync&&result.sync.ok===false){
+          alert(
+            '탐험소 동기화에 실패했습니다.\n'+
+            (result.sync.error||'연결 설정을 확인하세요.')
+          );
+          return;
+        }
+
+        if(!currentOverviewData)return;
+
+        currentOverviewData.explorer=result.snapshot;
+        renderCaseOverview(currentOverviewData);
+      })
+      .withFailureHandler(showError)
+      .syncTasteMindExplorerCase(caseId);
+  }
+
+  function refreshTasteMindExplorer(caseId){
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(explorer=>{
+        setLoading(false);
+        if(!currentOverviewData)return;
+        currentOverviewData.explorer=explorer;
+        renderCaseOverview(currentOverviewData);
+      })
+      .withFailureHandler(showError)
+      .getTasteMindExplorerSnapshot(caseId);
+  }
+
+  function copyTasteMindCode(code){
+    if(!code){
+      alert('복사할 탐험코드가 없습니다.');
+      return;
+    }
+
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code)
+        .then(()=>alert('탐험코드 '+code+'를 복사했습니다.'))
+        .catch(()=>fallbackCopyTasteMindCode(code));
+    }else{
+      fallbackCopyTasteMindCode(code);
+    }
+  }
+
+  function fallbackCopyTasteMindCode(code){
+    const input=document.createElement('input');
+    input.value=code;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    input.remove();
+    alert('탐험코드 '+code+'를 복사했습니다.');
+  }
+
+  function regenerateTasteMindCode(caseId){
+    if(!confirm('탐험코드를 다시 발급할까요? 기존 코드는 더 이상 사용할 수 없습니다.'))return;
+
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(result=>{
+        setLoading(false);
+        alert('새 탐험코드는 '+result.explorerCode+'입니다.');
+        refreshTasteMindExplorer(caseId);
+      })
+      .withFailureHandler(showError)
+      .regenerateTasteMindExplorerCode(caseId);
+  }
+
+  function loadTasteMindActivityToSession(caseId,linkId){
+    const explorer=currentOverviewData&&currentOverviewData.explorer;
+
+    const activities=[
+      ...(explorer&&explorer.pendingActivities||[]),
+      ...(explorer&&explorer.latestActivity?[explorer.latestActivity]:[])
+    ];
+
+    const latest=
+      activities.find(item=>
+        String(item.linkId||'')===String(linkId||'')
+      )||
+      (explorer&&explorer.latestActivity);
+
+    if(!latest){
+      alert('불러올 탐험활동이 없습니다.');
+      return;
+    }
+
+    showPage(
+      'session',
+      document.querySelector("nav button[onclick*=\"session\"]")
+    );
+
+    document.getElementById('sessionStudentSelect').value=caseId;
+    selectCaseForForm('session',caseId);
+
+    const form=document.getElementById('sessionForm');
+
+    if(form.tasteMindLinkId){
+      form.tasteMindLinkId.value=latest.linkId||'';
+    }
+
+    if(form.mainConcern){
+      form.mainConcern.value=latest.studentStatement||'';
+    }
+
+    if(form.cause){
+      form.cause.value=latest.barrier||'';
+    }
+
+    if(form.observation){
+      form.observation.value=[
+        latest.strategy?`학생 선택 전략: ${latest.strategy}`:'',
+        latest.reflection?`학생 소감: ${latest.reflection}`:'',
+        latest.nextSuggestion?`다음 추천: ${latest.nextSuggestion}`:''
+      ].filter(Boolean).join('\n');
+    }
+
+    if(form.activityStatus){
+      form.activityStatus.value='실시';
+    }
+
+    if(form.activityNote){
+      form.activityNote.value=[
+        latest.activityName?`탐험활동: ${latest.activityName}`:'',
+        latest.sentAt?`탐험 저장일: ${latest.sentAt}`:'',
+        latest.selectedCard?`선택카드·메뉴: ${latest.selectedCard}`:'',
+        latest.studentStatement?`학생 발언: ${latest.studentStatement}`:'',
+        latest.barrier?`핵심 장벽: ${latest.barrier}`:'',
+        latest.strategy?`선택 전략: ${latest.strategy}`:''
+      ].filter(Boolean).join('\n');
+    }
+
+    if(form.goalText&&latest.mission){
+      form.goalText.value=latest.mission;
+    }
+
+    if(form.readiness&&latest.confidence!==''){
+      form.readiness.value=latest.confidence;
+    }
+
+    form.scrollIntoView({behavior:'smooth',block:'start'});
+
+    message(
+      'sessionMsg',
+      '맛마음 탐험소 활동 "'+
+      (latest.activityName||'탐험 활동')+
+      '"을 상담기록 초안에 불러왔습니다. 저장하면 해당 활동은 자동으로 반영완료 처리됩니다.',
+      'ok'
+    );
+  }
+
+  function renderSessionComparison(rows){
+    return `<table class="compact-table"><thead><tr><th>회기</th><th>상담일</th><th>주요 내용</th><th>변화 준비도</th><th>실천목표</th><th>목표/실제</th><th>결과</th><th>다음 상담</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${escapeHtml(r.sessionNo)}회기</b></td><td>${escapeHtml(r.sessionDate||'-')}</td><td>${escapeHtml(shortText(r.mainConcern||'',38)||'-')}</td><td>${escapeHtml(r.readiness||'-')}</td><td title="${escapeAttr(r.goalText||'')}">${escapeHtml(shortText(r.goalText||'',42)||'-')}</td><td>${escapeHtml(countPair(r.targetCount,r.actualCount))}</td><td>${escapeHtml(r.result||'-')}</td><td>${escapeHtml(r.nextDate||'-')}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  function renderSessionCard(item){
+    const goal=item.goal||{};
+    const prep=item.nextPreparation||null;
+    const hasCurrentActivityResult=(item.activityStatus&&item.activityStatus!=='미정')||item.activityNote;
+    const hasLegacyPlan=item.counselingTechnique||item.counselingContent||item.educationFocus||item.teacherActivity;
+    const hasNextPlan=Boolean(prep)||hasLegacyPlan;
+    return `<div class="session-card">
+      <div class="session-head">
+        <div class="session-meta"><h3 style="margin:0">${escapeHtml(item.sessionNo)}회기</h3><span class="status">${escapeHtml(item.sessionDate||'날짜 미입력')}</span>${item.minutes?`<span class="muted">${escapeHtml(item.minutes)}분</span>`:''}${item.approval?`<span class="status ${item.approval==='승인'?'done':'wait'}">${escapeHtml(item.approval)}</span>`:''}</div>
+      </div>
+      <div class="session-summary">
+        ${sessionField('학생 주요 호소',item.mainConcern)}
+        ${sessionField('학생이 말한 원인',item.cause)}
+        ${sessionField('학생 강점',item.strength)}
+        ${sessionField('교사 관찰',item.observation)}
+      </div>
+      ${hasCurrentActivityResult?`<div class="activity-line"><b>이번 회기 활동 결과</b><span class="activity-badge">${escapeHtml(item.activityStatus||'미정')}</span>${item.activityNote?`<div class="activity-text">${escapeHtml(item.activityNote)}</div>`:'<div class="activity-text muted">활동 후 메모 없음</div>'}</div>`:''}
+      ${goal.text?`<div class="goal-line"><b>SMART 목표</b><div style="margin-top:5px;line-height:1.6">${escapeHtml(goal.text)}</div><div class="small" style="margin-top:8px">기간 ${escapeHtml(dateRange(goal.startDate,goal.endDate))} · 목표 ${escapeHtml(goal.targetCount||'-')}회 · 실제 ${escapeHtml(goal.actualCount||'-')}회 · 결과 ${escapeHtml(goal.result||'진행 중')} · 확인 ${escapeHtml(goal.checkMethod||'-')}</div>${goal.studentFeedback||goal.difficulty||goal.supportFactor?`<div class="small" style="margin-top:8px;line-height:1.7">학생 소감: ${escapeHtml(goal.studentFeedback||'-')}<br>어려웠던 점: ${escapeHtml(goal.difficulty||'-')}<br>도움이 된 점: ${escapeHtml(goal.supportFactor||'-')}</div>`:''}</div>`:''}
+      <details class="record-details"><summary>SOAP·PES·연계 검토 펼쳐보기</summary>
+        <div class="record-text">
+          <b>SOAP</b>
+          ${formatStructuredRecordHtml(item.soap,['S','O','A','P'])}
+          <div style="height:12px"></div>
+          <b>PES</b>
+          ${formatStructuredRecordHtml(item.pes,['P','E','S'])}
+          <div style="height:12px"></div>
+          <b>연계 검토</b>
+          <div class="structured-record"><div class="structured-paragraph">${escapeHtml(item.referral||'기록 없음')}</div></div>
+        </div>
+      </details>
+      ${hasNextPlan?renderNextPlanDetails(prep,item):''}
+    </div>`;
+  }
+
+  function renderNextPlanDetails(prep,item){
+    if(prep){
+      return `<details class="next-session-details"><summary>${escapeHtml(prep.targetSessionNo||'다음')}회기 상담 준비안 펼쳐보기</summary>
+        <div class="small" style="margin:8px 0">상담영역 ${escapeHtml(prep.counselingArea||'-')} · 단계 ${escapeHtml(prep.counselingStage||'-')} · ${escapeHtml(prep.counselingMinutes||'-')}분 · 상태 ${escapeHtml(prep.status||'초안')}</div>
+        <div class="coaching-grid">
+          <div class="coaching-box"><b>오늘의 상담 목표</b>${escapeHtml(prep.sessionObjective||'기록 없음')}</div>
+          <div class="coaching-box"><b>학생 질문 3개</b>${escapeHtml(prep.questions||'기록 없음')}</div>
+          <div class="coaching-box"><b>추천 상담기법</b>${escapeHtml(prep.counselingTechnique||'기록 없음')}</div>
+          <div class="coaching-box"><b>추천 상담 재료</b>${escapeHtml(prep.recommendedMaterials||'기록 없음')}</div>
+          <div class="coaching-box"><b>행동실험 선택지</b>${escapeHtml(prep.behaviorExperiments||'기록 없음')}</div>
+          <div class="coaching-box"><b>다음 확인 질문</b>${escapeHtml(prep.nextCheckQuestion||'기록 없음')}</div>
+        </div>
+        <div class="activity-line"><b>상담실 체험</b><div class="activity-text">${escapeHtml(prep.experienceActivity||'기록 없음')}</div></div>
+        <div class="coaching-grid">
+          <div class="coaching-box"><b>연계 확인사항</b>${escapeHtml(prep.referralCheck||'기록 없음')}</div>
+          <div class="coaching-box"><b>시간별 진행안</b>${escapeHtml(prep.timingPlan||'기록 없음')}</div>
+          <div class="coaching-box"><b>상담기록 초안 틀</b>${escapeHtml(prep.postSessionChecklist||'기록 없음')}</div>
+        </div>
+      </details>`;
+    }
+    return `<details class="next-session-details"><summary>기존 상담기록에 저장된 다음 회기 준비안 펼쳐보기</summary>
+      <div class="coaching-grid">
+        <div class="coaching-box"><b>추천 상담기법·질문</b>${escapeHtml(item.counselingTechnique||'기록 없음')}</div>
+        <div class="coaching-box"><b>상담·교육 콘텐츠</b>${escapeHtml(item.counselingContent||'기록 없음')}</div>
+        <div class="coaching-box"><b>교육 중점·유의점</b>${escapeHtml(item.educationFocus||'기록 없음')}</div>
+      </div>
+      ${item.teacherActivity?`<div class="activity-line"><b>다음 회기 1:1 영양교육 활동 계획</b><div class="activity-text">${escapeHtml(item.teacherActivity)}</div></div>`:''}
+    </details>`;
+  }
+
+
+  function goalNumbers(goal){
+    const target=Math.max(0,Number(goal&&goal.targetCount)||0);
+    const actual=Math.max(0,Number(goal&&goal.actualCount)||0);
+    const percent=target>0?Math.min(100,Math.round(actual/target*100)):0;
+    return {target,actual,percent};
+  }
+
+  function renderGoalProgress(goal){
+    const n=goalNumbers(goal);
+    if(!n.target)return `<div class="goal-progress-wrap"><b>목표 진행</b><div class="muted" style="margin-top:6px">목표 횟수를 입력하면 진행률이 시각적으로 표시됩니다.</div></div>`;
+    const displayCount=Math.min(n.target,14);
+    const doneCount=Math.min(displayCount,Math.round((n.actual/n.target)*displayCount));
+    const steps=Array.from({length:displayCount},(_,i)=>`<span class="goal-step ${i<doneCount?'done':''}">${i<doneCount?'✓':i+1}</span>`).join('');
+    return `<div class="goal-progress-wrap"><div style="display:flex;justify-content:space-between;gap:10px"><b>목표 진행</b><strong>${n.actual}/${n.target}회 · ${n.percent}%</strong></div><div class="goal-progress-track"><div class="goal-progress-bar" style="width:${n.percent}%"></div></div><div class="goal-step-row">${steps}</div></div>`;
+  }
+
+  function openStudentGoalBoard(){
+    const data=currentOverviewData||{};
+    const s=data.student||{};
+    const g=data.currentGoal||{};
+    if(!g.text){alert('현재 실천목표가 없습니다.');return;}
+    const n=goalNumbers(g);
+    const stepCount=n.target>0?Math.min(n.target,14):7;
+    const doneCount=n.target>0?Math.min(stepCount,Math.round((n.actual/n.target)*stepCount)):0;
+    const steps=Array.from({length:stepCount},(_,i)=>`<div class="step ${i<doneCount?'done':''}">${i<doneCount?'✓':i+1}</div>`).join('');
+    const w=window.open('','_blank','width=900,height=760');
+    if(!w){alert('팝업이 차단되었습니다. 브라우저에서 팝업을 허용해 주세요.');return;}
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>학생용 목표 성장판</title><style>
+      body{font-family:Arial,'Noto Sans KR',sans-serif;margin:0;background:#f3f8f2;color:#243447}.sheet{max-width:760px;margin:24px auto;background:#fff;border:3px solid #79ad72;border-radius:22px;padding:30px;box-shadow:0 6px 20px rgba(0,0,0,.08)}h1{text-align:center;color:#2e7036;margin:0 0 8px}.sub{text-align:center;color:#60758a}.goal{font-size:22px;line-height:1.7;background:#f0f8ee;border-radius:16px;padding:22px;margin:24px 0;text-align:center;font-weight:800}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.meta div{background:#f7fafc;border:1px solid #dce7df;border-radius:12px;padding:12px;text-align:center}.track{height:24px;background:#e6edf3;border-radius:99px;overflow:hidden;margin:18px 0 8px}.bar{height:100%;width:${n.percent}%;background:linear-gradient(90deg,#58a765,#9ac96f)}.percent{text-align:center;font-size:20px;font-weight:800;color:#2e7036}.steps{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:22px 0}.step{width:46px;height:46px;border-radius:50%;border:3px solid #b9cbbb;display:flex;align-items:center;justify-content:center;font-weight:800;color:#789;background:#fff}.step.done{background:#65ae6d;border-color:#65ae6d;color:#fff}.box{border:2px dashed #a9c5a6;border-radius:14px;padding:16px;margin-top:14px;min-height:60px}.cheer{text-align:center;font-size:18px;color:#2e7036;font-weight:800;margin:20px 0}.buttons{text-align:center;margin:20px}.buttons button{border:0;border-radius:9px;background:#2e7036;color:#fff;padding:11px 18px;font-weight:800;cursor:pointer}@media print{body{background:#fff}.sheet{box-shadow:none;margin:0;border-width:2px}.buttons{display:none}}</style></head><body><div class="sheet"><h1>나의 한 걸음 목표 성장판</h1><div class="sub">${escapeHtml(s.gradeClass||'')} ${escapeHtml(s.name||'')}</div><div class="goal">${escapeHtml(g.text)}</div><div class="meta"><div><b>실천 기간</b><br>${escapeHtml(dateRange(g.startDate,g.endDate))}</div><div><b>목표</b><br>${escapeHtml(g.targetCount||'-')}회</div><div><b>현재</b><br>${escapeHtml(g.actualCount||'0')}회</div></div><div class="track"><div class="bar"></div></div><div class="percent">${n.percent}% 진행했어요</div><div class="steps">${steps}</div><div class="cheer">완벽하게 하기보다, 한 번 더 해 본 것을 칭찬해요!</div><div class="box"><b>잘된 점</b><br>${escapeHtml(g.studentFeedback||g.supportFactor||'')}</div><div class="box"><b>다음 한 걸음</b><br>${escapeHtml(g.nextDecision||'')}</div></div><div class="buttons"><button onclick="window.print()">인쇄하기</button></div></body></html>`);
+    w.document.close();
+  }
+
+  function localTodayString(){
+    const now=new Date();
+    const local=new Date(now.getTime()-now.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,10);
+  }
+
+  function openGoalCheck(){
+    const data=currentOverviewData||{};
+    const caseId=data.caseId||'';
+    if(!caseId){alert('학생 상담 이력을 먼저 열어 주세요.');return;}
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(result=>{
+        setLoading(false);
+        renderGoalCheckModal(result);
+      })
+      .withFailureHandler(showError)
+      .getGoalCheckData(caseId);
+  }
+
+  function renderGoalCheckModal(data){
+    const modal=document.getElementById('goalCheckModal');
+    const form=document.getElementById('goalCheckForm');
+    document.getElementById('goalCheckStudent').textContent=
+      `${data.gradeClass||''} ${data.studentName||''}`.trim();
+    document.getElementById('goalCheckSummary').innerHTML=`
+      <b>지난 목표</b>
+      <div style="font-size:16px;font-weight:700;line-height:1.65;margin-top:7px">${escapeHtml(data.goalText||'')}</div>
+      <div class="small" style="margin-top:8px">기간 ${escapeHtml(dateRange(data.startDate,data.endDate))} · 목표 ${escapeHtml(data.targetCount||'-')}회 · 확인방법 ${escapeHtml(data.checkMethod||'-')}</div>
+    `;
+
+    form.elements['caseId'].value=data.caseId||'';
+    form.elements['goalId'].value=data.goalId||'';
+    form.elements['checkDate'].value=localTodayString();
+    form.elements['targetCount'].value=data.targetCount||'';
+    form.elements['actualCount'].value=data.actualCount||0;
+    form.elements['result'].value='자동 계산';
+    form.elements['nextDecision'].value=data.nextDecision||'';
+    form.elements['nextDate'].value=data.nextDate||'';
+    form.elements['studentFeedback'].value=data.studentFeedback||'';
+    form.elements['difficulty'].value=data.difficulty||'';
+    form.elements['supportFactor'].value=data.supportFactor||'';
+
+    renderGoalCheckHistory(data.checks||[]);
+    updateGoalCheckPreview();
+    modal.classList.add('open');
+  }
+
+  function closeGoalCheckModal(){
+    document.getElementById('goalCheckModal').classList.remove('open');
+  }
+
+  function updateGoalCheckPreview(){
+    const form=document.getElementById('goalCheckForm');
+    const target=Math.max(0,Number(form.elements['targetCount'].value)||0);
+    const actual=Math.max(0,Number(form.elements['actualCount'].value)||0);
+    const percent=target>0?Math.round(actual/target*100):0;
+    const visualPercent=Math.min(100,Math.max(0,percent));
+    const preview=document.getElementById('goalCheckPreview');
+    preview.innerHTML=`
+      <div class="goal-progress-wrap">
+        <div style="display:flex;justify-content:space-between;gap:10px">
+          <b>저장 후 학생 성장판에 표시될 진행률</b>
+          <strong>${actual}/${target||'-'}회 · ${target?percent:0}%</strong>
+        </div>
+        <div class="goal-progress-track"><div class="goal-progress-bar" style="width:${visualPercent}%"></div></div>
+      </div>
+    `;
+  }
+
+  function renderGoalCheckHistory(checks){
+    const box=document.getElementById('goalCheckHistory');
+    if(!checks.length){
+      box.innerHTML='<div class="empty-box">아직 저장된 목표 점검 이력이 없습니다.</div>';
+      return;
+    }
+    box.innerHTML=`
+      <h3>목표 점검 이력</h3>
+      <table>
+        <thead><tr><th>점검일</th><th>실제/달성률</th><th>결과</th><th>학생 소감</th><th>다음 결정</th></tr></thead>
+        <tbody>${checks.map(c=>`<tr>
+          <td>${escapeHtml(c.checkDate||'-')}</td>
+          <td>${escapeHtml(c.actualCount||0)}회${c.achievementRate!==''?` · ${escapeHtml(c.achievementRate)}%`:''}</td>
+          <td>${escapeHtml(c.result||'-')}</td>
+          <td>${escapeHtml(shortText(c.studentFeedback||'',45)||'-')}</td>
+          <td>${escapeHtml(c.nextDecision||'-')}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    `;
+  }
+
+  function saveGoalCheckFromModal(openBoardAfter){
+    const form=document.getElementById('goalCheckForm');
+    const payload=formObject(form);
+    if(!payload.actualCount&&String(payload.actualCount)!=='0'){
+      alert('현재까지 실제 실천 횟수를 입력해 주세요.');return;
+    }
+    if(payload.nextDecision==='종결'){
+      const ok=confirm('이 상담케이스를 종결하시겠습니까? 저장하면 현재 단계가 “종결”로 바뀌고 종결일이 자동 기록됩니다.');
+      if(!ok)return;
+    }
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(overview=>{
+        setLoading(false);
+        closeGoalCheckModal();
+        renderCaseOverview(overview);
+        if(openBoardAfter)setTimeout(openStudentGoalBoard,250);
+      })
+      .withFailureHandler(showError)
+      .saveGoalCheck(payload);
+  }
+
+  function normalizeSectionedText(value,labels){
+    let text=String(value||'')
+      .replace(/\r\n/g,'\n')
+      .replace(/\r/g,'\n')
+      .trim();
+
+    if(!text)return'';
+
+    const escapedLabels=labels.map(label=>
+      String(label).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')
+    );
+
+    const regex=new RegExp(
+      '(?:^|\\s+)('+escapedLabels.join('|')+')\\s*[:：]\\s*',
+      'gi'
+    );
+
+    text=text.replace(regex,(match,label)=>
+      '\n\n'+String(label).toUpperCase()+': '
+    );
+
+    return text
+      .replace(/^\s+/,'')
+      .replace(/[ \t]+\n/g,'\n')
+      .replace(/\n{3,}/g,'\n\n')
+      .trim();
+  }
+
+  function formatStructuredRecordHtml(value,labels){
+    const normalized=normalizeSectionedText(value,labels);
+
+    if(!normalized){
+      return '<div class="structured-record"><div class="structured-paragraph">기록 없음</div></div>';
+    }
+
+    const paragraphs=normalized
+      .split(/\n{2,}/)
+      .map(part=>part.trim())
+      .filter(Boolean);
+
+    return '<div class="structured-record">'+paragraphs.map(part=>{
+      const match=part.match(/^([A-Za-z]+)\s*[:：]\s*([\s\S]*)$/);
+
+      if(match){
+        return '<div class="structured-paragraph"><b>'+
+          escapeHtml(match[1].toUpperCase()+':')+
+          '</b> '+escapeHtml(match[2])+'</div>';
+      }
+
+      return '<div class="structured-paragraph">'+
+        escapeHtml(part)+
+        '</div>';
+    }).join('')+'</div>';
+  }
+
+
+
+  function resetCleanupPage(){
+    const keyword =
+      document.getElementById(
+        'cleanupKeyword'
+      );
+
+    if (keyword) keyword.focus();
+
+    document.getElementById(
+      'cleanupSearchMsg'
+    ).innerHTML = '';
+
+    document.getElementById(
+      'cleanupResultMsg'
+    ).innerHTML = '';
+
+    updateCleanupSelectedButton();
+  }
+
+  function searchCleanupCandidates(){
+    const query =
+      document.getElementById(
+        'cleanupKeyword'
+      ).value.trim();
+
+    if (query.length < 2) {
+      message(
+        'cleanupSearchMsg',
+        '학생 이름이나 케이스번호를 2글자 이상 입력하세요.',
+        'error'
+      );
+      return;
+    }
+
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(rows => {
+        setLoading(false);
+        renderCleanupCandidates(
+          rows || []
+        );
+      })
+      .withFailureHandler(error => {
+        setLoading(false);
+        message(
+          'cleanupSearchMsg',
+          error && error.message
+            ? error.message
+            : String(error),
+          'error'
+        );
+      })
+      .searchTestDataCleanupCandidates(
+        query
+      );
+  }
+
+  function renderCleanupCandidates(rows){
+    const el =
+      document.getElementById(
+        'cleanupCandidates'
+      );
+
+    document.getElementById(
+      'cleanupResultMsg'
+    ).innerHTML = '';
+
+    if (!rows.length) {
+      el.innerHTML =
+        '<div class="empty-box">검색된 상담케이스가 없습니다.</div>';
+
+      updateCleanupSelectedButton();
+      return;
+    }
+
+    el.innerHTML = rows.map(row => `
+      <label class="cleanup-result ${row.likelyTest ? 'test' : 'real'}"
+             style="display:block;cursor:pointer">
+        <div class="overview-title">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <input
+              type="checkbox"
+              class="cleanup-case-check"
+              value="${escapeAttr(row.caseId)}"
+              data-name="${escapeAttr(row.studentName)}"
+              onchange="updateCleanupSelectedButton()"
+              style="width:20px;height:20px;margin-top:4px"
+            >
+            <div>
+              <h3>
+                ${escapeHtml(
+                  row.gradeClass + ' ' +
+                  row.studentName
+                )}
+              </h3>
+
+              <div class="muted">
+                ${escapeHtml(row.caseId)}
+                · ${escapeHtml(
+                  row.intakeId ||
+                  '접수번호 없음'
+                )}
+              </div>
+
+              <div style="margin-top:7px">
+                ${escapeHtml(
+                  row.topic || '-'
+                )}
+                · ${escapeHtml(
+                  row.status || '-'
+                )}
+              </div>
+
+              <div style="margin-top:8px">
+                <span class="status ${row.likelyTest ? 'done' : 'stop'}">
+                  ${row.likelyTest
+                    ? '테스트 표시 발견'
+                    : '테스트 표시 없음—확인 필요'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </label>
+    `).join('');
+
+    updateCleanupSelectedButton();
+  }
+
+  function getSelectedCleanupCases(){
+    return Array.from(
+      document.querySelectorAll(
+        '.cleanup-case-check:checked'
+      )
+    ).map(input => ({
+      caseId: input.value,
+      studentName:
+        input.dataset.name || ''
+    }));
+  }
+
+  function toggleAllCleanupCandidates(
+    checked
+  ){
+    document.querySelectorAll(
+      '.cleanup-case-check'
+    ).forEach(input => {
+      input.checked = checked;
+    });
+
+    updateCleanupSelectedButton();
+  }
+
+  function updateCleanupSelectedButton(){
+    const button =
+      document.getElementById(
+        'cleanupDeleteSelectedBtn'
+      );
+
+    if (!button) return;
+
+    const count =
+      getSelectedCleanupCases().length;
+
+    button.disabled = count === 0;
+
+    button.textContent = count
+      ? '체크한 ' + count +
+        '개 테스트 자료 전체 삭제'
+      : '체크한 테스트 자료 전체 삭제';
+  }
+
+  function deleteSelectedCleanupCases(){
+    const selected =
+      getSelectedCleanupCases();
+
+    if (!selected.length) {
+      alert(
+        '삭제할 테스트 케이스를 체크하세요.'
+      );
+      return;
+    }
+
+    const names = selected
+      .slice(0, 8)
+      .map(item =>
+        item.studentName +
+        ' (' + item.caseId + ')'
+      )
+      .join('\n');
+
+    const more =
+      selected.length > 8
+        ? '\n외 ' +
+          (selected.length - 8) +
+          '개'
+        : '';
+
+    const confirmed = confirm(
+      '다음 테스트 자료를 백업 없이 전체 삭제합니다.\n\n' +
+      names +
+      more +
+      '\n\n관련 시트 기록, 탐험소 자료, 보호자동의 PDF·생성문서, 상담 Drive 폴더까지 삭제합니다.\n계속할까요?'
+    );
+
+    if (!confirmed) return;
+
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(result => {
+        setLoading(false);
+
+        const deletedEntries =
+          Object.entries(
+            result.deleted || {}
+          ).filter(item =>
+            Number(item[1] || 0) > 0
+          );
+
+        document.getElementById(
+          'cleanupResultMsg'
+        ).innerHTML = `
+          <div class="notice ok">
+            <b>${Number(
+              (result.deletedCases || [])
+                .length
+            )}개 테스트 케이스를 삭제했습니다.</b>
+            <br><br>
+            ${deletedEntries.map(
+              ([name, count]) =>
+                escapeHtml(name) +
+                ': ' +
+                Number(count) +
+                '건'
+            ).join('<br>')}
+            <br>
+            Drive 파일·폴더 휴지통 이동:
+            ${Number(
+              result.driveTrashedCount || 0
+            )}개
+          </div>
+
+          ${(result.missingCaseIds || [])
+            .length
+            ? `<div class="notice warn">
+                찾지 못한 케이스:
+                ${escapeHtml(
+                  result.missingCaseIds
+                    .join(', ')
+                )}
+              </div>`
+            : ''}
+
+          ${(result.warnings || [])
+            .map(text =>
+              `<div class="notice warn">
+                ${escapeHtml(text)}
+              </div>`
+            ).join('')}
+        `;
+
+        document.getElementById(
+          'cleanupCandidates'
+        ).innerHTML = '';
+
+        updateCleanupSelectedButton();
+        refreshAll();
+      })
+      .withFailureHandler(error => {
+        setLoading(false);
+
+        message(
+          'cleanupResultMsg',
+          error && error.message
+            ? error.message
+            : String(error),
+          'error'
+        );
+      })
+      .deleteSelectedTestData(
+        selected.map(item =>
+          item.caseId
+        )
+      );
+  }
+
+
+  function summaryBox(label,value){return `<div class="summary-box"><b>${escapeHtml(label)}</b><strong>${escapeHtml(value||'-')}</strong></div>`}
+  function sessionField(label,value){return `<div class="session-field"><b>${escapeHtml(label)}</b>${escapeHtml(value||'-')}</div>`}
+  function scoreText(level,score){return [level,score!==''&&score!==null&&score!==undefined?score+'점':''].filter(Boolean).join(' · ')}
+  function dateRange(start,end){if(start&&end)return start+' ~ '+end;return start||end||'-'}
+  function countPair(target,actual){if(target!==''&&actual!=='')return target+' / '+actual+'회';if(target!=='')return target+'회 목표';if(actual!=='')return actual+'회 실천';return '-'}
+  function shortText(value,max){const text=String(value||'');return text.length>max?text.slice(0,max)+'…':text}
+
+  function makeTable(rows,cols){return `<table><thead><tr>${cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>{let v=r[c[0]]||'';if(c[0]==='folderUrl'&&v)return `<td><a href="${v}" target="_blank">폴더 열기</a></td>`;if(c[0]==='status')return `<td><span class="status">${escapeHtml(v)}</span></td>`;return `<td>${escapeHtml(v)}</td>`}).join('')}</tr>`).join('')}</tbody></table>`}
+
+  function formObject(form){const fd=new FormData(form),o={};fd.forEach((v,k)=>o[k]=v);return o}
+  function fillForm(form,values){Object.entries(values||{}).forEach(([k,v])=>{const el=form.elements[k];if(el)el.value=v??''})}
+  function message(id,text,type){document.getElementById(id).innerHTML=`<div class="notice ${type||''}">${escapeHtml(text)}</div>`}
+  function showError(err){setLoading(false);const text=err&&err.message?err.message:String(err);alert(text);message('analysisMsg',text,'error')}
+  function setLoading(v){document.getElementById('loading').style.display=v?'flex':'none'}
+  function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  function escapeAttr(v){return escapeHtml(v)}
+  function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+
+  let currentNeisRows = [];
+
+  function formatInputDateLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function setDefaultNeisDateRange() {
+    const startInput = document.getElementById('neisStartDate');
+    const endInput = document.getElementById('neisEndDate');
+    const schoolYear = Number(
+      bootstrap && bootstrap.settings && bootstrap.settings.SCHOOL_YEAR
+        ? bootstrap.settings.SCHOOL_YEAR
+        : new Date().getFullYear()
+    );
+
+    if (startInput && !startInput.value) {
+      startInput.value = `${schoolYear}-03-01`;
+    }
+
+    if (endInput && !endInput.value) {
+      endInput.value = formatInputDateLocal(new Date());
+    }
+  }
+
+  function openNeisExportFromDashboard() {
+    const navButton = document.querySelector(
+      'nav button[onclick*="showPage(\'neis\'"]'
+    );
+    showPage('neis', navButton);
+    setDefaultNeisDateRange();
+    loadNeisRows();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function loadNeisRows() {
+    const startDate = document.getElementById('neisStartDate')?.value || '';
+    const endDate = document.getElementById('neisEndDate')?.value || '';
+    const table = document.getElementById('neisTable');
+    if (!table) return;
+
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(rows => {
+        setLoading(false);
+        currentNeisRows = Array.isArray(rows) ? rows : [];
+        renderNeisRows(currentNeisRows);
+      })
+      .withFailureHandler(showError)
+      .listNeisUploadRows({ startDate, endDate });
+  }
+
+  function renderNeisRows(rows) {
+    const el = document.getElementById('neisTable');
+    const button = document.getElementById('neisDownloadBtn');
+
+    if (!rows.length) {
+      el.className = 'empty-box';
+      el.innerHTML = '조회 조건에 맞는 상담회기가 없습니다.';
+      button.disabled = true;
+      return;
+    }
+
+    el.className = '';
+    el.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="neisSelectAll" style="width:auto" onchange="toggleAllNeisRows(this.checked)"></th>
+            <th>상담일자</th>
+            <th>학생</th>
+            <th>회기</th>
+            <th>학년</th>
+            <th>성별</th>
+            <th>상담시간(분)</th>
+            <th>확인</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(row => `
+            <tr>
+              <td>
+                <input
+                  type="checkbox"
+                  class="neis-row-check"
+                  value="${escapeAttr(row.sessionId)}"
+                  style="width:auto"
+                  ${row.ready ? 'checked' : 'disabled'}
+                  onchange="updateNeisDownloadButton()"
+                >
+              </td>
+              <td>${escapeHtml(row.neisDate || row.sessionDate)}</td>
+              <td>${escapeHtml(row.studentName)}</td>
+              <td>${escapeHtml(row.sessionNo)}회기</td>
+              <td>${escapeHtml(row.grade)}</td>
+              <td>${escapeHtml(row.sex || '-')}</td>
+              <td>${escapeHtml(row.minutes)}</td>
+              <td>
+                ${row.ready
+                  ? '<span class="status done">준비 완료</span>'
+                  : `<span class="status stop">${escapeHtml((row.missing || []).join(', ') + ' 누락')}</span>`
+                }
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    updateNeisDownloadButton();
+  }
+
+  function toggleAllNeisRows(checked) {
+    document.querySelectorAll('.neis-row-check:not(:disabled)').forEach(box => {
+      box.checked = checked;
+    });
+    const all = document.getElementById('neisSelectAll');
+    if (all) all.checked = checked;
+    updateNeisDownloadButton();
+  }
+
+  function updateNeisDownloadButton() {
+    const count = document.querySelectorAll('.neis-row-check:checked').length;
+    const button = document.getElementById('neisDownloadBtn');
+    if (button) {
+      button.disabled = count === 0;
+      button.textContent = count
+        ? `선택 ${count}건 나이스 엑셀 다운로드`
+        : '선택 회기 나이스 엑셀 다운로드';
+    }
+  }
+
+  function downloadNeisExcel() {
+    const sessionIds = Array.from(
+      document.querySelectorAll('.neis-row-check:checked')
+    ).map(box => box.value);
+
+    if (!sessionIds.length) {
+      alert('내보낼 상담회기를 선택하세요.');
+      return;
+    }
+
+    setLoading(true);
+    message('neisMsg', '나이스 업로드용 엑셀을 만들고 있습니다.');
+
+    google.script.run
+      .withSuccessHandler(result => {
+        setLoading(false);
+
+        const bytes = Uint8Array.from(atob(result.base64), c => c.charCodeAt(0));
+        const blob = new Blob([bytes], {
+          type: result.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.fileName || '나이스_상담관리_업로드.xlsx';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+
+        message('neisMsg', `${result.count}건의 상담회기를 엑셀로 만들었습니다.`, 'success');
+      })
+      .withFailureHandler(error => {
+        setLoading(false);
+        message('neisMsg', error && error.message ? error.message : String(error), 'error');
+      })
+      .createNeisUploadExcel(sessionIds);
+  }
+
+</script>
+</body>
+</html>
