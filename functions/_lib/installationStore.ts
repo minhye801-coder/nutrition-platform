@@ -1,15 +1,23 @@
-/**
- * 로그인한 Google 계정이 이미 학교 작업공간을 설치했는지 조회하는 인터페이스.
- * 콜백 핸들러가 /setup(신규)과 /app(기존 설치) 중 어디로 보낼지 결정하는 데 사용한다.
- * 아직 설치 데이터 저장소(D1)가 없으므로 `stores.ts`는 항상 false를 반환하는
- * 임시 구현을 연결한다 — 이 시점에는 모든 로그인이 /setup으로 이동한다.
- */
-export interface InstallationLookup {
-  hasInstallation(googleSub: string): Promise<boolean>
+export interface InstallationRecord {
+  userId: string
+  schoolName: string
+  managerName: string
+  schoolPublicId: string
+  installedAt: number
+  updatedAt: number
 }
 
-export const devInstallationLookup: InstallationLookup = {
-  async hasInstallation() {
-    return false
-  },
+/**
+ * 학교 작업공간 설치 정보 저장소. 로그인한 Google 계정(userId=Google `sub`)마다
+ * 최초 설치 화면에서 입력한 학교명/담당자명과 발급된 schoolPublicId를 보관한다.
+ * 여기 저장된 managerName은 화면 표시용 담당자명으로 users.name(Google 프로필
+ * 이름)보다 우선하며, users.name은 인증용 기본정보로만 남는다.
+ *
+ * 로컬 개발은 `installationStore.memory.ts`(인메모리)를, 운영은
+ * `installationStore.d1.ts`(Cloudflare D1)를 `stores.ts`에서 연결해 사용한다.
+ */
+export interface InstallationStore {
+  get(userId: string): Promise<InstallationRecord | null>
+  create(record: InstallationRecord): Promise<void>
+  updateManagerName(userId: string, managerName: string): Promise<void>
 }

@@ -2,6 +2,7 @@ import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
 import { PlaceholderNotice } from '@/components/common/PlaceholderNotice'
+import { useInstallation } from '@/hooks/useInstallation'
 import type {
   IntakeRequest,
   PendingConsent,
@@ -45,12 +46,16 @@ export function AppPage() {
 }
 
 function AppContent({ user }: { user: SessionUser }) {
+  const { installation } = useInstallation()
+  // 설치 시 입력한 담당자명이 있으면 그 값을, 없으면 Google 프로필 이름을 fallback으로 표시한다.
+  const displayName = installation?.managerName || user.name
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-gray-900">영양상담 관리자</h1>
         <p className="mt-1 text-sm text-gray-600">
-          {user.name}님({user.email})의 학생정보·상담 데이터를 관리하는 화면입니다.
+          {displayName}님({user.email})의 학생정보·상담 데이터를 관리하는 화면입니다.
         </p>
       </div>
 

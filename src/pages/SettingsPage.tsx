@@ -6,6 +6,8 @@ import { Badge } from '@/components/common/Badge'
 import { PlaceholderNotice } from '@/components/common/PlaceholderNotice'
 import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
 import { logout } from '@/services/authService'
+import { updateManagerName } from '@/services/installationService'
+import { useInstallation } from '@/hooks/useInstallation'
 import type { SessionUser } from '@/types/session'
 
 export function SettingsPage() {
@@ -14,9 +16,42 @@ export function SettingsPage() {
 
 function SettingsContent({ user }: { user: SessionUser }) {
   const navigate = useNavigate()
+  const { installation, loading, refresh } = useInstallation()
   const [geminiKey, setGeminiKey] = useState('')
   const [saveClicked, setSaveClicked] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+
+  const [editingManagerName, setEditingManagerName] = useState(false)
+  const [managerNameInput, setManagerNameInput] = useState('')
+  const [managerNameError, setManagerNameError] = useState('')
+  const [savingManagerName, setSavingManagerName] = useState(false)
+
+  // 설치 시 입력한 담당자명이 있으면 그 값을, 없으면 Google 프로필 이름을 fallback으로 표시한다.
+  const displayManagerName = installation?.managerName || user.name
+
+  function startEditingManagerName() {
+    setManagerNameInput(displayManagerName)
+    setManagerNameError('')
+    setEditingManagerName(true)
+  }
+
+  async function handleSaveManagerName() {
+    if (!managerNameInput.trim()) {
+      setManagerNameError('담당자명을 입력해 주세요.')
+      return
+    }
+    setSavingManagerName(true)
+    setManagerNameError('')
+    try {
+      await updateManagerName(managerNameInput.trim())
+      await refresh()
+      setEditingManagerName(false)
+    } catch {
+      setManagerNameError('저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setSavingManagerName(false)
+    }
+  }
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -35,20 +70,68 @@ function SettingsContent({ user }: { user: SessionUser }) {
 
       <Card className="space-y-3">
         <h2 className="font-semibold text-gray-900">학교 정보</h2>
-        <dl className="space-y-2 text-sm">
-          <div className="flex items-center justify-between">
-            <dt className="text-gray-500">학교명</dt>
-            <dd className="text-gray-800">구미봉곡초등학교 (샘플)</dd>
-          </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-gray-500">담당자명</dt>
-            <dd className="text-gray-800">{user.name}</dd>
-          </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-gray-500">schoolPublicId</dt>
-            <dd className="font-mono text-xs text-gray-500">SAMPLE-9F2K1A</dd>
-          </div>
-        </dl>
+        {loading ? (
+          <p className="text-sm text-gray-500">불러오는 중입니다...</p>
+        ) : (
+          <dl className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-gray-500">학교명</dt>
+              <dd className="text-gray-800">
+                {installation?.schoolName ?? '설치 후 표시됩니다'}
+              </dd>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <dt className="text-gray-500">담당자명</dt>
+              {editingManagerName ? (
+                <dd className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={managerNameInput}
+                    onChange={(event) => setManagerNameInput(event.target.value)}
+                    className="w-32 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveManagerName}
+                    disabled={savingManagerName}
+                    className="text-xs font-semibold text-brand-700"
+                  >
+                    {savingManagerName ? '저장 중...' : '저장'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingManagerName(false)}
+                    className="text-xs text-gray-500"
+                  >
+                    취소
+                  </button>
+                </dd>
+              ) : (
+                <dd className="flex items-center gap-2 text-gray-800">
+                  {displayManagerName}
+                  {installation && (
+                    <button
+                      type="button"
+                      onClick={startEditingManagerName}
+                      className="text-xs font-semibold text-brand-700"
+                    >
+                      수정
+                    </button>
+                  )}
+                </dd>
+              )}
+            </div>
+            {managerNameError && <p className="text-xs text-red-600">{managerNameError}</p>}
+
+            <div className="flex items-center justify-between">
+              <dt className="text-gray-500">schoolPublicId</dt>
+              <dd className="font-mono text-xs text-gray-500">
+                {installation?.schoolPublicId ?? '설치 후 표시됩니다'}
+              </dd>
+            </div>
+          </dl>
+        )}
       </Card>
 
       <Card className="space-y-3">

@@ -1,9 +1,9 @@
 import type { SessionStore } from './sessionStore'
 import { memorySessionStore } from './sessionStore.memory'
 import { createD1SessionStore } from './sessionStore.d1'
-import type { InstallationLookup } from './installationStore'
-import { devInstallationLookup } from './installationStore'
-import { createD1InstallationLookup } from './installationStore.d1'
+import type { InstallationStore } from './installationStore'
+import { memoryInstallationStore } from './installationStore.memory'
+import { createD1InstallationStore } from './installationStore.d1'
 import type { Env } from './env'
 
 /**
@@ -18,9 +18,9 @@ export function getSessionStore(env: Pick<Env, 'AUTH_DB' | 'SESSION_SECRET'>): S
   return memorySessionStore
 }
 
-export function getInstallationLookup(env: Pick<Env, 'AUTH_DB'>): InstallationLookup {
+export function getInstallationStore(env: Pick<Env, 'AUTH_DB'>): InstallationStore {
   if (env.AUTH_DB) {
-    return createD1InstallationLookup(env.AUTH_DB)
+    return createD1InstallationStore(env.AUTH_DB)
   }
-  return devInstallationLookup
+  return memoryInstallationStore
 }

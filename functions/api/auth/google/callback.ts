@@ -2,7 +2,7 @@ import { verifyPayload } from '../../../_lib/signedPayload'
 import { randomString } from '../../../_lib/crypto'
 import { parseCookies, serializeCookie, expireCookie } from '../../../_lib/cookies'
 import { exchangeCodeForTokens, fetchGoogleUserInfo } from '../../../_lib/googleOAuth'
-import { getSessionStore, getInstallationLookup } from '../../../_lib/stores'
+import { getSessionStore, getInstallationStore } from '../../../_lib/stores'
 import { SESSION_TTL_SECONDS } from '../../../_lib/sessionStore'
 import { hasOAuthConfig, type Env } from '../../../_lib/env'
 
@@ -88,8 +88,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       createdAt: Date.now(),
     })
 
-    const hasInstallation = await getInstallationLookup(env).hasInstallation(profile.sub)
-    const destination = hasInstallation ? '/app' : '/setup'
+    const installation = await getInstallationStore(env).get(profile.sub)
+    const destination = installation ? '/app' : '/setup'
 
     const headers = new Headers()
     headers.append('Location', destination)

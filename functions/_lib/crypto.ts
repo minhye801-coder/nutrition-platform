@@ -51,6 +51,19 @@ export function randomString(byteLength = 32): string {
   return toBase64Url(bytes)
 }
 
+const PUBLIC_ID_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // 0/O, 1/I 등 혼동되는 문자는 제외
+
+/** schoolPublicId처럼 사람이 손으로 옮겨 적을 수 있어야 하는 공개 식별자용 랜덤 문자열. */
+export function randomPublicId(length = 6): string {
+  const bytes = new Uint8Array(length)
+  crypto.getRandomValues(bytes)
+  let result = ''
+  for (let i = 0; i < length; i += 1) {
+    result += PUBLIC_ID_CHARS[bytes[i] % PUBLIC_ID_CHARS.length]
+  }
+  return result
+}
+
 export async function sha256Base64Url(input: string): Promise<string> {
   const data = new TextEncoder().encode(input)
   const digest = await crypto.subtle.digest('SHA-256', data)

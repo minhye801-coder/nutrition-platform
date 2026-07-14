@@ -10,14 +10,14 @@
 
 ## 1. 테이블 개요
 
-마이그레이션 파일: [`migrations/0001_create_auth_tables.sql`](../migrations/0001_create_auth_tables.sql)
+마이그레이션 파일: [`migrations/0001_create_auth_tables.sql`](../migrations/0001_create_auth_tables.sql), [`migrations/0002_add_installation_profile_fields.sql`](../migrations/0002_add_installation_profile_fields.sql)
 
 | 테이블 | 용도 | 비고 |
 |---|---|---|
-| `users` | 로그인한 Google 계정의 최소 프로필 | `id`에 Google OpenID `sub`를 그대로 사용 (별도 UUID 발급 없음) |
+| `users` | 로그인한 Google 계정의 최소 프로필 | `id`에 Google OpenID `sub`를 그대로 사용 (별도 UUID 발급 없음). **화면 표시용 담당자명이 아니라 인증용 기본정보로만 쓴다** — 표시용은 `installations.manager_name` 우선 |
 | `oauth_tokens` | Google access/refresh token | **평문 저장 금지.** `SESSION_SECRET`으로 유도한 키로 AES-GCM 암호화한 `ciphertext`/`iv`만 저장 (`functions/_lib/tokenCipher.ts`) |
 | `sessions` | 로그인 세션 | `session_id_hash`(쿠키 값의 SHA-256 해시), `user_id`, `expires_at`, `created_at`, `updated_at`만 저장. 쿠키에 담기는 원본 세션 ID 자체는 저장하지 않음 |
-| `installations` | 학교 작업공간 설치 여부 | `user_id`만으로 존재 여부를 확인하는 최소 스키마 |
+| `installations` | 학교 작업공간 설치 정보 | `user_id`(설치한 로그인 계정) 1행당 `school_name`(학교명), `manager_name`(설치 시 입력한 담당자명 — 있으면 `users.name`보다 우선 표시), `school_public_id`(공개 식별자), `installed_at`, `updated_at` |
 
 `sessions` 테이블에 원본 세션 ID 대신 해시만 저장하는 이유: D1 테이블이 유출되더라도 그 값만으로는 쿠키를 재구성해 세션을 가로챌 수 없도록 하기 위함입니다.
 
@@ -25,16 +25,18 @@
 
 ```
 functions/_lib/
-  sessionStore.ts          # SessionStore 인터페이스 (변경 없음) + SESSION_TTL_SECONDS
-  sessionStore.memory.ts   # 로컬 개발 전용 인메모리 구현
-  sessionStore.d1.ts       # 운영용 D1 구현 (users/oauth_tokens/sessions에 나눠 기록)
-  installationStore.ts     # InstallationLookup 인터페이스 (변경 없음)
-  installationStore.d1.ts  # 운영용 D1 구현 (installations 조회)
-  tokenCipher.ts           # SESSION_SECRET 기반 AES-GCM 토큰 암호화/복호화
-  stores.ts                # 합성 지점 — AUTH_DB 바인딩 유무로 memory/D1 자동 전환
+  sessionStore.ts             # SessionStore 인터페이스 (변경 없음) + SESSION_TTL_SECONDS
+  sessionStore.memory.ts      # 로컬 개발 전용 인메모리 구현
+  sessionStore.d1.ts          # 운영용 D1 구현 (users/oauth_tokens/sessions에 나눠 기록)
+  installationStore.ts        # InstallationStore 인터페이스 (get/create/updateManagerName)
+  installationStore.memory.ts # 로컬 개발 전용 인메모리 구현
+  installationStore.d1.ts     # 운영용 D1 구현 (installations 조회/생성/담당자명 수정)
+  tokenCipher.ts               # SESSION_SECRET 기반 AES-GCM 토큰 암호화/복호화
+  stores.ts                    # 합성 지점 — AUTH_DB 바인딩 유무로 memory/D1 자동 전환
+functions/api/installation.ts  # GET(조회)/POST(설치 생성)/PATCH(담당자명 수정)
 ```
 
-`stores.ts`는 `env.AUTH_DB`가 있으면 D1 구현을, 없으면 인메모리 구현을 반환합니다. 라우트 핸들러(`functions/api/auth/**`)는 여전히 `getSessionStore(env)` / `getInstallationLookup(env)`만 호출하며, 어떤 구현이 쓰이는지는 신경 쓰지 않습니다. 즉 **로컬에서 `.dev.vars`만 채우고 D1 바인딩을 설정하지 않으면 지금처럼 인메모리로 동작하고, D1을 바인딩하면 자동으로 D1을 씁니다.**
+`stores.ts`는 `env.AUTH_DB`가 있으면 D1 구현을, 없으면 인메모리 구현을 반환합니다. 라우트 핸들러는 여전히 `getSessionStore(env)` / `getInstallationStore(env)`만 호출하며, 어떤 구현이 쓰이는지는 신경 쓰지 않습니다. 즉 **로컬에서 `.dev.vars`만 채우고 D1 바인딩을 설정하지 않으면 지금처럼 인메모리로 동작하고, D1을 바인딩하면 자동으로 D1을 씁니다.**
 
 ## 3. D1 데이터베이스 만들기 (무료 플랜)
 
@@ -97,3 +99,4 @@ npx wrangler d1 migrations apply AUTH_DB --remote
 4. `npm run dev:functions`로 로컬 실행 → 로그인 → `npx wrangler d1 execute AUTH_DB --local --command "SELECT id, email FROM users"`로 사용자 행이 생겼는지 확인
 5. `oauth_tokens.access_token_ciphertext`에 평문 토큰이 아니라 암호화된 문자열이 들어있는지 확인
 6. 로그아웃 후 `sessions` 테이블에서 해당 `session_id_hash` 행이 삭제됐는지 확인
+7. `/setup`에서 학교명/담당자명을 입력해 제출 → `installations` 테이블에 `school_name`/`manager_name`/`school_public_id` 행이 생겼는지 확인 → `/settings`/`/app`에서 Google 프로필 이름이 아니라 방금 입력한 담당자명이 표시되는지 확인
