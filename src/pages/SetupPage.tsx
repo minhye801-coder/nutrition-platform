@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react'
+import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { PlaceholderNotice } from '@/components/common/PlaceholderNotice'
 import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
+import type { SessionUser } from '@/types/session'
 
 const SETUP_STEPS = [
   '학교 작업공간 생성',
@@ -18,8 +20,12 @@ interface SetupResult {
 }
 
 export function SetupPage() {
+  return <AuthGuard>{(user) => <SetupContent user={user} />}</AuthGuard>
+}
+
+function SetupContent({ user }: { user: SessionUser }) {
   const [schoolName, setSchoolName] = useState('')
-  const [managerName, setManagerName] = useState('')
+  const [managerName, setManagerName] = useState(user.name)
   const [error, setError] = useState('')
   const [result, setResult] = useState<SetupResult | null>(null)
 
@@ -47,6 +53,9 @@ export function SetupPage() {
         <h1 className="text-xl font-bold text-gray-900">최초 설치</h1>
         <p className="mt-1 text-sm text-gray-600">
           처음 로그인한 선생님이 자신의 학교 작업공간을 만드는 단계입니다.
+        </p>
+        <p className="mt-1 text-xs text-gray-500">
+          로그인 계정: {user.name} ({user.email})
         </p>
       </div>
 

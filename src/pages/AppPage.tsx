@@ -1,3 +1,4 @@
+import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
 import { PlaceholderNotice } from '@/components/common/PlaceholderNotice'
@@ -7,6 +8,7 @@ import type {
   TasteVillageStat,
   TodaySession,
 } from '@/types/dashboard'
+import type { SessionUser } from '@/types/session'
 
 const TODAY_SESSIONS: TodaySession[] = [
   { time: '09:30', studentLabel: '3학년 2반 · 학생 A', topic: '체중관리 2회기' },
@@ -39,12 +41,16 @@ const SUMMARY_CARDS = [
 ]
 
 export function AppPage() {
+  return <AuthGuard>{(user) => <AppContent user={user} />}</AuthGuard>
+}
+
+function AppContent({ user }: { user: SessionUser }) {
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-gray-900">영양상담 관리자</h1>
         <p className="mt-1 text-sm text-gray-600">
-          로그인한 선생님의 학생정보·상담 데이터를 관리하는 화면입니다.
+          {user.name}님({user.email})의 학생정보·상담 데이터를 관리하는 화면입니다.
         </p>
       </div>
 

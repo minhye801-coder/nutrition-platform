@@ -1,13 +1,28 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
 import { PlaceholderNotice } from '@/components/common/PlaceholderNotice'
 import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
+import { logout } from '@/services/authService'
+import type { SessionUser } from '@/types/session'
 
 export function SettingsPage() {
+  return <AuthGuard>{(user) => <SettingsContent user={user} />}</AuthGuard>
+}
+
+function SettingsContent({ user }: { user: SessionUser }) {
+  const navigate = useNavigate()
   const [geminiKey, setGeminiKey] = useState('')
-  const [connectClicked, setConnectClicked] = useState(false)
   const [saveClicked, setSaveClicked] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  async function handleLogout() {
+    setLoggingOut(true)
+    await logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -27,7 +42,7 @@ export function SettingsPage() {
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-gray-500">담당자명</dt>
-            <dd className="text-gray-800">김영양 선생님 (샘플)</dd>
+            <dd className="text-gray-800">{user.name}</dd>
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-gray-500">schoolPublicId</dt>
@@ -39,24 +54,17 @@ export function SettingsPage() {
       <Card className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-gray-900">Google 연결 상태</h2>
-          <Badge tone="warning">연결되지 않음</Badge>
+          <Badge tone="success">연결됨</Badge>
         </div>
-        <p className="text-sm text-gray-600">
-          Google 계정을 연결하면 본인의 Sheets/Drive에 데이터를 저장할 수
-          있습니다.
-        </p>
+        <p className="text-sm text-gray-600">{user.email} 계정으로 로그인되어 있습니다.</p>
         <button
           type="button"
-          onClick={() => setConnectClicked(true)}
+          onClick={handleLogout}
+          disabled={loggingOut}
           className={secondaryButtonClass}
         >
-          Google 계정 연결
+          {loggingOut ? '로그아웃 중...' : '로그아웃'}
         </button>
-        {connectClicked && (
-          <PlaceholderNotice>
-            Google 계정 연결 기능은 아직 준비 중입니다.
-          </PlaceholderNotice>
-        )}
       </Card>
 
       <Card className="space-y-3">

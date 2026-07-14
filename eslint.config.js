@@ -31,6 +31,11 @@ export default tseslint.config(
     languageOptions: {
       globals: globals.worker,
     },
+    rules: {
+      // Workers 전역(Response, crypto.subtle 등)은 functions/tsconfig.json의
+      // @cloudflare/workers-types가 더 정확히 검사하므로 eslint 쪽 no-undef는 끈다.
+      'no-undef': 'off',
+    },
   },
   eslintConfigPrettier,
 )

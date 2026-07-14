@@ -1,0 +1,12 @@
+# Cloudflare Pages Functions 로컬 개발용 환경변수 예시 파일.
+# `wrangler pages dev`는 .env가 아니라 이 파일(.dev.vars)을 읽습니다.
+# 이 파일을 복사해 .dev.vars로 만들고 실제 값을 채우세요. .dev.vars는 절대 커밋하지 않습니다.
+#
+#   cp .dev.vars.example .dev.vars
+#
+# 값을 만드는 절차는 docs/google-oauth-setup.md 참고.
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:8788/api/auth/google/callback
+SESSION_SECRET=

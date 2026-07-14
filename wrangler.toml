@@ -1,3 +1,11 @@
-name = "nutrition-counseling-ai-plus"
+name = "nutrition-platform-axd"
 compatibility_date = "2024-09-25"
 pages_build_output_dir = "dist"
+
+# 인증/세션 전용 D1 데이터베이스. 학생 데이터는 여기 저장하지 않는다.
+# 자세한 절차는 docs/d1-auth-setup.md 참고.
+[[d1_databases]]
+binding = "AUTH_DB"
+database_name = "nutrition-platform-auth"
+database_id = "6e78dec0-1b04-4f3b-bb44-452917fd8f4d"
+migrations_dir = "migrations"
