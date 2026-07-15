@@ -30,6 +30,13 @@ interface AuthorizeUrlParams {
   state: string
   codeChallenge: string
   scopes: string[]
+  /**
+   * refresh token이 필요한 흐름(설치)에서만 true로 설정한다. 일반 로그인은 세션
+   * 쿠키(SESSION_TTL_SECONDS)로 로그인 상태를 유지하므로 Google refresh token이
+   * 필요 없고, `access_type=offline`을 매 로그인마다 요청하면 이미 동의한
+   * 사용자에게도 동의 화면이 다시 뜰 여지를 만든다.
+   */
+  offlineAccess?: boolean
   /** 이미 부여된 스코프가 있어도 다시 동의 화면을 보여줘 refresh token 재발급을 보장한다. */
   forceConsent?: boolean
 }
@@ -43,10 +50,15 @@ export function buildAuthorizationUrl(params: AuthorizeUrlParams): string {
   url.searchParams.set('state', params.state)
   url.searchParams.set('code_challenge', params.codeChallenge)
   url.searchParams.set('code_challenge_method', 'S256')
-  // 최초 동의 시점에 refresh token을 확보해 두면 이후 Drive/Sheets 스코프를
-  // 점진 동의(incremental authorization)로 추가하기 쉬워진다.
-  url.searchParams.set('access_type', 'offline')
+  // 이전에 부여된 scope(예: 설치 시 승인한 drive.file)가 있다면 이번 요청에
+  // 명시적으로 포함하지 않아도 계속 유효하다는 것을 Google이 알 수 있게 한다.
+  // 이 자체는 동의 화면을 다시 띄우지 않는다 — access_type/prompt와는 별개다.
   url.searchParams.set('include_granted_scopes', 'true')
+  if (params.offlineAccess) {
+    // 최초 동의 시점에 refresh token을 확보해 두면 이후 Drive/Sheets 스코프를
+    // 점진 동의(incremental authorization)로 추가하기 쉬워진다.
+    url.searchParams.set('access_type', 'offline')
+  }
   if (params.forceConsent) {
     // 이미 로그인 스코프에 동의한 사용자에게도 동의 화면을 다시 띄워 새 refresh
     // token을 받는다 — Google은 재동의 없이는 refresh token을 다시 내려주지 않는다.

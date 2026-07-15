@@ -42,7 +42,9 @@ const SUMMARY_CARDS = [
 ]
 
 export function AppPage() {
-  return <AuthGuard>{(user) => <AppContent user={user} />}</AuthGuard>
+  return (
+    <AuthGuard requireInstallation>{(user) => <AppContent user={user} />}</AuthGuard>
+  )
 }
 
 function AppContent({ user }: { user: SessionUser }) {

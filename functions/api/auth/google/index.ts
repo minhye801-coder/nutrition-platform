@@ -40,6 +40,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     state,
     codeChallenge,
     scopes,
+    // offline access(=refresh token 발급)와 강제 재동의는 설치(Drive) 흐름에만 필요하다.
+    // 일반 로그인에 이 둘을 걸면 이미 로그인한 적 있는 사용자에게도 동의 화면이
+    // 다시 뜰 수 있다 — 세션 유지 자체는 Google 토큰이 아니라 세션 쿠키가 담당한다.
+    offlineAccess: purpose === 'install',
     forceConsent: purpose === 'install',
   })
 
@@ -50,6 +54,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   console.log('[oauth] authorize request', {
     purpose,
     scopes,
+    offlineAccess: purpose === 'install',
     forceConsent: purpose === 'install',
   })
 
