@@ -84,6 +84,14 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       transaction.codeVerifier,
     )
 
+    // 비밀값은 포함하지 않는다 — Google이 실제로 부여한 scope 문자열만 남겨,
+    // 요청한 scope(index.ts 로그)와 실제 부여된 scope가 다른지 바로 대조할 수 있게 한다.
+    console.log('[oauth] token exchange result', {
+      purpose: transaction.purpose,
+      grantedScopes: tokens.scope ?? '',
+      hasRefreshToken: Boolean(tokens.refresh_token),
+    })
+
     const profile = await fetchGoogleUserInfo(tokens.access_token)
 
     const sessionId = randomString(32)

@@ -32,12 +32,24 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     createdAt: Date.now(),
   })
 
+  const scopes = purpose === 'install' ? GOOGLE_INSTALL_SCOPES : GOOGLE_LOGIN_SCOPES
+
   const authorizeUrl = buildAuthorizationUrl({
     clientId: env.GOOGLE_CLIENT_ID,
     redirectUri: env.GOOGLE_REDIRECT_URI,
     state,
     codeChallenge,
-    scopes: purpose === 'install' ? GOOGLE_INSTALL_SCOPES : GOOGLE_LOGIN_SCOPES,
+    scopes,
+    forceConsent: purpose === 'install',
+  })
+
+  // 비밀값(client_secret, code_verifier, access/refresh token)은 절대 포함하지 않는다.
+  // scope 목록과 purpose만 남겨, 운영 배포에서 실제로 어떤 scope를 요청하는지
+  // Cloudflare Pages Functions 로그(대시보드 Logs 또는 `wrangler pages deployment tail`)로
+  // 바로 확인할 수 있게 한다.
+  console.log('[oauth] authorize request', {
+    purpose,
+    scopes,
     forceConsent: purpose === 'install',
   })
 
