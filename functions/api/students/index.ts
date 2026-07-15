@@ -1,6 +1,6 @@
 import { isAccessError, requireInstalledAccess } from '../../_lib/requireInstalledAccess'
-import { createStudent, findActiveDuplicate, listStudents } from '../../_lib/studentSheet'
-import { GoogleApiError } from '../../_lib/googleApiError'
+import { createStudent, findPotentialDuplicate, listStudents } from '../../_lib/studentSheet'
+import { handleStudentSheetError } from '../../_lib/studentApiHelpers'
 import type { Env } from '../../_lib/env'
 
 interface CreateStudentBody {
@@ -8,8 +8,14 @@ interface CreateStudentBody {
   grade?: string
   class?: string
   studentNumber?: string
-  /** 이름·학년·반이 겹치는 재학생이 이미 있어도 강제로 새로 등록한다. */
+  /** 이름·학년·반·번호가 겹치는 재학생이 이미 있어도 강제로 새로 등록한다. */
   confirmDuplicate?: boolean
+}
+
+function toTrimmedString(value: unknown): string {
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number') return String(value).trim()
+  return ''
 }
 
 /** 학생 목록 조회 + 검색(GET /api/students?q=&grade=&class=&status=). */
@@ -29,15 +35,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     })
     return Response.json({ students })
   } catch (error) {
-    if (error instanceof GoogleApiError) {
-      console.error('[students] list failed', error.status, error.detail)
-      return Response.json({ error: 'sheets_unavailable' }, { status: 502 })
-    }
-    throw error
+    return handleStudentSheetError('list', error)
   }
 }
 
-/** 학생 등록(POST /api/students). 이름+학년+반이 겹치는 재학생이 있으면 409. */
+/** 학생 등록(POST /api/students). 이름+학년+반+번호가 겹치는 재학생이 있으면 409. */
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const access = await requireInstalledAccess(request, env)
   if (isAccessError(access)) {
@@ -54,16 +56,24 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return Response.json({ error: 'invalid_input' }, { status: 400 })
   }
 
-  const name = body.name?.trim()
-  const grade = body.grade?.trim()
-  const studentClass = body.class?.trim()
+  const name = toTrimmedString(body.name)
+  const grade = toTrimmedString(body.grade)
+  const studentClass = toTrimmedString(body.class)
+  const studentNumber = toTrimmedString(body.studentNumber)
   if (!name || !grade || !studentClass) {
     return Response.json({ error: 'invalid_input' }, { status: 400 })
   }
 
   try {
     if (!body.confirmDuplicate) {
-      const duplicate = await findActiveDuplicate(access.accessToken, access.spreadsheetId, name, grade, studentClass)
+      const duplicate = await findPotentialDuplicate(
+        access.accessToken,
+        access.spreadsheetId,
+        name,
+        grade,
+        studentClass,
+        studentNumber,
+      )
       if (duplicate) {
         return Response.json(
           { error: 'duplicate_student', existingStudentUuid: duplicate.studentUuid },
@@ -77,14 +87,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       name,
       grade,
       class: studentClass,
-      studentNumber: body.studentNumber?.trim(),
+      studentNumber,
     })
     return Response.json({ student }, { status: 201 })
   } catch (error) {
-    if (error instanceof GoogleApiError) {
-      console.error('[students] create failed', error.status, error.detail)
-      return Response.json({ error: 'sheets_unavailable' }, { status: 502 })
-    }
-    throw error
+    return handleStudentSheetError('create', error)
   }
 }

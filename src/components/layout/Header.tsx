@@ -12,6 +12,7 @@ const LOGGED_OUT_NAV: NavItem[] = [
 
 const LOGGED_IN_NAV: NavItem[] = [
   { label: '관리자', path: '/app' },
+  { label: '학생관리', path: '/app/students' },
   { label: '설정', path: '/settings' },
 ]
 

@@ -5,6 +5,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { SetupPage } from '@/pages/SetupPage'
 import { AppPage } from '@/pages/AppPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { StudentsPage } from '@/pages/StudentsPage'
 
 export const router = createBrowserRouter([
   {
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'setup', element: <SetupPage /> },
       { path: 'app', element: <AppPage /> },
+      { path: 'app/students', element: <StudentsPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },
