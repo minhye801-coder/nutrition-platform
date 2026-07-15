@@ -199,7 +199,12 @@ function StudentsContent({ user }: { user: SessionUser }) {
   }
 
   async function handleDeactivate(student: Student) {
-    if (!window.confirm(`${student.name} 학생을 비활성 처리할까요? 상담 기록 등 다른 데이터는 그대로 남습니다.`)) {
+    const confirmed = window.confirm(
+      `${student.name} 학생을 비활성 처리할까요?\n\n` +
+        '- 학생정보와 기존 상담기록은 삭제되지 않고 그대로 보존됩니다.\n' +
+        '- 기본 목록(재학생만 보기)에서만 제외되며, "전체 보기" 또는 "비활성만" 필터로 언제든 다시 확인할 수 있습니다.',
+    )
+    if (!confirmed) {
       return
     }
     setActionInFlight(student.studentUuid)
@@ -524,7 +529,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
                               disabled={actionInFlight === student.studentUuid}
                               className="text-xs font-semibold text-brand-700"
                             >
-                              복구
+                              복원
                             </button>
                           ) : (
                             <button
