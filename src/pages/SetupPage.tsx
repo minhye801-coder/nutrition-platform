@@ -92,9 +92,30 @@ function ProgressBar({ steps }: { steps: SetupStep[] }) {
  * Google 동의 화면을 거쳐 돌아와도 입력값이 사라지지 않았다는 것을 알려준다. */
 function SavedInfoNotice({ info }: { info: SavedInfo }) {
   return (
-    <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-500">
-      입력하신 학교명·담당자명은 그대로 저장되어 있습니다 — {info.schoolName} · {info.managerName}
-    </p>
+    <div className="space-y-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
+      <p className="text-xs text-gray-500">
+        입력하신 학교명과 담당자명은 그대로 저장되어 있습니다.
+      </p>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <p className="text-xs text-gray-500">🏫 학교명</p>
+          <p className="mt-0.5 break-words text-sm font-bold text-gray-900">
+            {info.schoolName}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">👤 담당자</p>
+          <p className="mt-0.5 break-words text-sm font-bold text-gray-900">
+            {info.managerName}
+          </p>
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-500">
+        권한 승인 후 위 정보로 작업공간이 생성됩니다.
+      </p>
+    </div>
   )
 }
 
