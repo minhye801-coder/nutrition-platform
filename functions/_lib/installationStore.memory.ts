@@ -31,4 +31,12 @@ export const memoryInstallationStore: InstallationStore = {
   async saveProgress(record) {
     progress.set(record.userId, record)
   },
+
+  async claimSpreadsheet(userId, spreadsheetId, updatedAt) {
+    const existing = progress.get(userId)
+    if (!existing || existing.spreadsheetId) return false
+    // get→set 사이에 await가 없어 단일 이벤트 루프 틱 안에서 원자적으로 처리된다.
+    progress.set(userId, { ...existing, spreadsheetId, headersWritten: false, updatedAt })
+    return true
+  },
 }

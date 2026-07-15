@@ -9,9 +9,22 @@ export interface SetupStep {
 export type SetupStatusResponse =
   | { status: 'not_started' }
   | { status: 'already_installed' }
-  | { status: 'needs_consent'; consentUrl: string; steps: SetupStep[] }
-  | { status: 'in_progress'; steps: SetupStep[] }
-  | { status: 'failed'; errorStep: string | null; errorMessage: string; steps: SetupStep[] }
+  | {
+      status: 'needs_consent'
+      schoolName: string
+      managerName: string
+      consentUrl: string
+      steps: SetupStep[]
+    }
+  | { status: 'in_progress'; schoolName: string; managerName: string; steps: SetupStep[] }
+  | {
+      status: 'failed'
+      schoolName: string
+      managerName: string
+      errorStep: string | null
+      errorMessage: string
+      steps: SetupStep[]
+    }
   | {
       status: 'completed'
       schoolName: string

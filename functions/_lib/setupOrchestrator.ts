@@ -2,7 +2,13 @@ import { getInstallationStore, getSessionStore } from './stores'
 import { randomPublicId } from './crypto'
 import { fetchGrantedScopes, hasDriveScope } from './googleOAuth'
 import { ensureFreshAccessToken, ReauthRequiredError } from './googleAccessToken'
-import { createFolder, fileExists, findFolderByName, moveFileToRootFolder } from './googleDrive'
+import {
+  createFolder,
+  fileExists,
+  findFolderByName,
+  moveFileToRootFolder,
+  trashFile,
+} from './googleDrive'
 import { batchWriteValues, createSpreadsheet, spreadsheetExists } from './googleSheets'
 import { GoogleApiError } from './googleApiError'
 import {
@@ -64,14 +70,27 @@ export type SetupResult =
       folderUrl: string
       steps: SetupStepState[]
     }
-  | { status: 'needs_consent'; consentUrl: string; steps: SetupStepState[] }
+  | {
+      status: 'needs_consent'
+      schoolName: string
+      managerName: string
+      consentUrl: string
+      steps: SetupStepState[]
+    }
   | {
       status: 'failed'
+      schoolName: string
+      managerName: string
       errorStep: SetupStepKey | null
       errorMessage: string
       steps: SetupStepState[]
     }
-  | { status: 'in_progress'; steps: SetupStepState[] }
+  | {
+      status: 'in_progress'
+      schoolName: string
+      managerName: string
+      steps: SetupStepState[]
+    }
   | { status: 'not_started' }
 
 export class SetupInputError extends Error {
@@ -166,7 +185,13 @@ export async function runSetup(
   }
 
   if (!hasDriveScope(session.grantedScopes)) {
-    return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
+    return {
+      status: 'needs_consent',
+      schoolName: progress.schoolName,
+      managerName: progress.managerName,
+      consentUrl: CONSENT_URL,
+      steps: buildSteps(progress, false, null),
+    }
   }
 
   let accessToken: string
@@ -174,7 +199,13 @@ export async function runSetup(
     accessToken = await ensureFreshAccessToken(env, session)
   } catch (error) {
     if (error instanceof ReauthRequiredError) {
-      return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
+      return {
+        status: 'needs_consent',
+        schoolName: progress.schoolName,
+        managerName: progress.managerName,
+        consentUrl: CONSENT_URL,
+        steps: buildSteps(progress, false, null),
+      }
     }
     throw error
   }
@@ -188,7 +219,13 @@ export async function runSetup(
   try {
     verifiedScopes = await fetchGrantedScopes(accessToken)
   } catch {
-    return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
+    return {
+      status: 'needs_consent',
+      schoolName: progress.schoolName,
+      managerName: progress.managerName,
+      consentUrl: CONSENT_URL,
+      steps: buildSteps(progress, false, null),
+    }
   }
 
   if (verifiedScopes !== session.grantedScopes) {
@@ -201,21 +238,36 @@ export async function runSetup(
   }
 
   if (!hasDriveScope(verifiedScopes)) {
-    return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
+    return {
+      status: 'needs_consent',
+      schoolName: progress.schoolName,
+      managerName: progress.managerName,
+      consentUrl: CONSENT_URL,
+      steps: buildSteps(progress, false, null),
+    }
   }
 
   try {
     progress.currentStep = 'root_folder'
-    if (!progress.rootFolderId || !(await fileExists(accessToken, progress.rootFolderId))) {
+    if (
+      !progress.rootFolderId ||
+      !(await fileExists(accessToken, progress.rootFolderId))
+    ) {
       const found = await findFolderByName(accessToken, ROOT_FOLDER_NAME, 'root')
-      progress.rootFolderId = found ?? (await createFolder(accessToken, ROOT_FOLDER_NAME, 'root'))
+      progress.rootFolderId =
+        found ?? (await createFolder(accessToken, ROOT_FOLDER_NAME, 'root'))
       await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
     }
     const rootFolderId = progress.rootFolderId
 
     progress.currentStep = 'subfolders'
     for (const name of SUBFOLDER_NAMES) {
-      const folderId = await ensureFolder(accessToken, name, rootFolderId, progress.folderIds[name] ?? null)
+      const folderId = await ensureFolder(
+        accessToken,
+        name,
+        rootFolderId,
+        progress.folderIds[name] ?? null,
+      )
       if (progress.folderIds[name] !== folderId) {
         progress.folderIds = { ...progress.folderIds, [name]: folderId }
         await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
@@ -223,12 +275,60 @@ export async function runSetup(
     }
 
     progress.currentStep = 'spreadsheet'
-    if (!progress.spreadsheetId || !(await spreadsheetExists(accessToken, progress.spreadsheetId))) {
-      const spreadsheetId = await createSpreadsheet(accessToken, SPREADSHEET_TITLE, TAB_TITLES)
-      await moveFileToRootFolder(accessToken, spreadsheetId, rootFolderId)
-      progress.spreadsheetId = spreadsheetId
-      progress.headersWritten = false
-      await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
+    if (
+      !progress.spreadsheetId ||
+      !(await spreadsheetExists(accessToken, progress.spreadsheetId))
+    ) {
+      // 이 요청이 spreadsheetId를 비어있다고 판단한 뒤에도, 동시에 실행 중인 다른
+      // 요청(중복 클릭, 재시도 경합 등)이 이미 Spreadsheet를 만들어 D1에 기록했을
+      // 수 있다. Google API를 또 부르기 전에 최신 상태를 한 번 더 읽어 확인한다.
+      const latest = await installationStore.getProgress(session.googleSub)
+      if (latest?.spreadsheetId) {
+        progress.spreadsheetId = latest.spreadsheetId
+        progress.headersWritten = latest.headersWritten
+      } else {
+        console.log('[setup] createSpreadsheet called', { userId: session.googleSub })
+        const newSpreadsheetId = await createSpreadsheet(
+          accessToken,
+          SPREADSHEET_TITLE,
+          TAB_TITLES,
+        )
+        console.log('[setup] createSpreadsheet result', {
+          userId: session.googleSub,
+          spreadsheetId: newSpreadsheetId,
+        })
+
+        // spreadsheet_id가 여전히 비어있을 때만 원자적으로 채워 넣는다(compare-and-swap).
+        // 두 요청이 동시에 여기까지 왔다면 둘 다 새 Spreadsheet를 만들었을 수 있지만,
+        // D1에 먼저 기록되는 쪽만 정본이 된다.
+        const claimed = await installationStore.claimSpreadsheet(
+          session.googleSub,
+          newSpreadsheetId,
+          Date.now(),
+        )
+        if (claimed) {
+          await moveFileToRootFolder(accessToken, newSpreadsheetId, rootFolderId)
+          progress.spreadsheetId = newSpreadsheetId
+          progress.headersWritten = false
+          await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
+        } else {
+          // 경쟁에서 졌다 — 다른 요청이 이미 정본 Spreadsheet를 등록했으므로 방금
+          // 만든 것은 중복이다. 휴지통으로 보내고(영구 삭제 아님) 정본 ID를 채택한다.
+          console.log('[setup] duplicate spreadsheet detected, trashing', {
+            userId: session.googleSub,
+            spreadsheetId: newSpreadsheetId,
+          })
+          await trashFile(accessToken, newSpreadsheetId).catch((trashError) =>
+            console.error('[setup] failed to trash duplicate spreadsheet', trashError),
+          )
+          const winner = await installationStore.getProgress(session.googleSub)
+          progress.spreadsheetId = winner?.spreadsheetId ?? null
+          progress.headersWritten = winner?.headersWritten ?? false
+        }
+      }
+    }
+    if (!progress.spreadsheetId) {
+      throw new Error('spreadsheet_claim_failed')
     }
     const spreadsheetId = progress.spreadsheetId
 
@@ -275,8 +375,17 @@ export async function runSetup(
     // 401(토큰 무효)뿐 아니라 403(스코프 부족 — Google Drive/Sheets는 권한이 부족한
     // 요청에 401이 아니라 403 PERMISSION_DENIED를 반환한다)도 재동의로 되돌린다.
     // 여기서 놓치면 사용자에게는 동의 화면 없이 알 수 없는 실패로만 보인다.
-    if (error instanceof GoogleApiError && (error.status === 401 || error.status === 403)) {
-      return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
+    if (
+      error instanceof GoogleApiError &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return {
+        status: 'needs_consent',
+        schoolName: progress.schoolName,
+        managerName: progress.managerName,
+        consentUrl: CONSENT_URL,
+        steps: buildSteps(progress, false, null),
+      }
     }
 
     console.error('[setup] step failed', progress.currentStep, error)
@@ -287,7 +396,14 @@ export async function runSetup(
     progress.errorMessage = errorMessage
     await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
 
-    return { status: 'failed', errorStep, errorMessage, steps: buildSteps(progress, true, errorStep) }
+    return {
+      status: 'failed',
+      schoolName: progress.schoolName,
+      managerName: progress.managerName,
+      errorStep,
+      errorMessage,
+      steps: buildSteps(progress, true, errorStep),
+    }
   }
 }
 
@@ -295,7 +411,10 @@ export async function runSetup(
  * GET /api/setup/status용 — Google API를 호출하지 않고 D1에 저장된 상태와 현재
  * 세션의 scope만으로 판단한다(Google API 호출 없음, 18.3절 호출 최소화 원칙).
  */
-export async function readSetupStatus(env: Env, session: SessionRecord): Promise<SetupResult> {
+export async function readSetupStatus(
+  env: Env,
+  session: SessionRecord,
+): Promise<SetupResult> {
   const installationStore = getInstallationStore(env)
 
   const existing = await installationStore.get(session.googleSub)
@@ -307,7 +426,11 @@ export async function readSetupStatus(env: Env, session: SessionRecord): Promise
       schoolPublicId: existing.schoolPublicId,
       spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${existing.spreadsheetId}/edit`,
       folderUrl: `https://drive.google.com/drive/folders/${existing.rootFolderId}`,
-      steps: SETUP_STEPS.map((key) => ({ key, label: SETUP_STEP_LABELS[key], status: 'done' })),
+      steps: SETUP_STEPS.map((key) => ({
+        key,
+        label: SETUP_STEP_LABELS[key],
+        status: 'done',
+      })),
     }
   }
 
@@ -322,6 +445,8 @@ export async function readSetupStatus(env: Env, session: SessionRecord): Promise
     const errorStep = progress.errorStep as SetupStepKey | null
     return {
       status: 'failed',
+      schoolName: progress.schoolName,
+      managerName: progress.managerName,
       errorStep,
       errorMessage: progress.errorMessage ?? resolveErrorMessage(null),
       steps: buildSteps(progress, authDone, errorStep),
@@ -329,8 +454,19 @@ export async function readSetupStatus(env: Env, session: SessionRecord): Promise
   }
 
   if (!authDone) {
-    return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
+    return {
+      status: 'needs_consent',
+      schoolName: progress.schoolName,
+      managerName: progress.managerName,
+      consentUrl: CONSENT_URL,
+      steps: buildSteps(progress, false, null),
+    }
   }
 
-  return { status: 'in_progress', steps: buildSteps(progress, true, null) }
+  return {
+    status: 'in_progress',
+    schoolName: progress.schoolName,
+    managerName: progress.managerName,
+    steps: buildSteps(progress, true, null),
+  }
 }

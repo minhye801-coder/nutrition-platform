@@ -54,4 +54,13 @@ export interface InstallationStore {
 
   getProgress(userId: string): Promise<InstallationProgressRecord | null>
   saveProgress(record: InstallationProgressRecord): Promise<void>
+
+  /**
+   * spreadsheet_id가 아직 비어있을 때만 원자적으로 채워 넣는다("compare-and-swap").
+   * 동시에 두 요청이 같은 사용자의 설치를 진행하다가 둘 다 새 Spreadsheet를
+   * 만들었더라도, 이 메서드로 D1에 먼저 기록되는 쪽만 "정본"이 된다 — 진 쪽은
+   * false를 돌려받아 자신이 방금 만든 Spreadsheet를 중복으로 판단하고 정리해야
+   * 한다(functions/_lib/setupOrchestrator.ts 참고).
+   */
+  claimSpreadsheet(userId: string, spreadsheetId: string, updatedAt: number): Promise<boolean>
 }

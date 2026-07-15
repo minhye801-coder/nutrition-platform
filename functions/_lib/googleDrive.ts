@@ -80,3 +80,14 @@ export async function moveFileToRootFolder(
     { method: 'PATCH', body: JSON.stringify({}) },
   )
 }
+
+/**
+ * 동시 요청 경쟁에서 진 쪽이 방금 만든 중복 파일을 정리할 때 쓴다(휴지통 이동,
+ * 영구 삭제 아님) — 사용자가 원하면 휴지통에서 직접 복구할 수 있게 남겨 둔다.
+ */
+export async function trashFile(accessToken: string, fileId: string): Promise<void> {
+  await driveFetch(accessToken, `/files/${fileId}?fields=id`, {
+    method: 'PATCH',
+    body: JSON.stringify({ trashed: true }),
+  })
+}

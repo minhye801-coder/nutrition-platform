@@ -7,7 +7,10 @@ import { fetchSetupStatus, retrySetup, startSetup } from '@/services/setupServic
 import type { SetupStatusResponse, SetupStep } from '@/types/setup'
 import type { SessionUser } from '@/types/session'
 
-type Phase = 'loading' | 'form' | 'running' | 'needs_consent' | 'failed' | 'completed'
+type Phase = 'loading' | 'form' | 'running' | 'redirecting' | 'needs_consent' | 'failed' | 'completed'
+
+/** Google 재동의 화면으로 실제 이동하기 전, 사용자가 안내 문구를 읽을 시간을 준다. */
+const REDIRECT_DELAY_MS = 1400
 
 interface CompletedInfo {
   schoolName: string
@@ -15,6 +18,11 @@ interface CompletedInfo {
   schoolPublicId: string
   spreadsheetUrl: string
   folderUrl: string
+}
+
+interface SavedInfo {
+  schoolName: string
+  managerName: string
 }
 
 export function SetupPage() {
@@ -47,6 +55,29 @@ function StepList({ steps }: { steps: SetupStep[] }) {
   )
 }
 
+/** 학교명/담당자명이 서버(installation_progress)에 이미 저장되어 있음을 보여줘,
+ * Google 동의 화면을 거쳐 돌아와도 입력값이 사라지지 않았다는 것을 알려준다. */
+function SavedInfoNotice({ info }: { info: SavedInfo }) {
+  return (
+    <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-500">
+      입력하신 학교명·담당자명은 그대로 저장되어 있습니다 — {info.schoolName} · {info.managerName}
+    </p>
+  )
+}
+
+function DriveConsentNotice() {
+  return (
+    <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-3 text-xs text-blue-800">
+      <p className="font-medium">설치 시작을 누르면 Google 화면이 한 번 더 열립니다.</p>
+      <ul className="mt-1.5 list-disc space-y-1 pl-4">
+        <li>방금 완료한 로그인과는 별개로, Drive 접근을 위한 추가 권한 승인 화면입니다(재로그인이 아닙니다).</li>
+        <li>이 앱이 만든 파일만 관리할 수 있는 최소 권한(drive.file)만 요청합니다.</li>
+        <li>선생님의 기존 Google Drive 파일·폴더는 열람하지 않습니다.</li>
+      </ul>
+    </div>
+  )
+}
+
 function SetupContent({ user }: { user: SessionUser }) {
   const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase>('loading')
@@ -59,8 +90,23 @@ function SetupContent({ user }: { user: SessionUser }) {
   const [errorMessage, setErrorMessage] = useState('')
   const [completed, setCompleted] = useState<CompletedInfo | null>(null)
   const [consentDenied, setConsentDenied] = useState(false)
+  const [savedInfo, setSavedInfo] = useState<SavedInfo | null>(null)
+
+  /** Google 동의 화면으로 즉시 이동하지 않고, 안내 문구를 잠깐 보여준 뒤 이동한다. */
+  function goToConsent(url: string) {
+    setConsentUrl(url)
+    setConsentDenied(false)
+    setPhase('redirecting')
+    window.setTimeout(() => {
+      window.location.href = url
+    }, REDIRECT_DELAY_MS)
+  }
 
   function applyResult(result: SetupStatusResponse, autoRedirectConsent: boolean) {
+    if ('schoolName' in result && 'managerName' in result) {
+      setSavedInfo({ schoolName: result.schoolName, managerName: result.managerName })
+    }
+
     switch (result.status) {
       case 'already_installed':
         navigate('/app', { replace: true })
@@ -78,10 +124,11 @@ function SetupContent({ user }: { user: SessionUser }) {
         return
       case 'needs_consent':
         setSteps(result.steps)
-        setConsentUrl(result.consentUrl)
-        setPhase('needs_consent')
         if (autoRedirectConsent) {
-          window.location.href = result.consentUrl
+          goToConsent(result.consentUrl)
+        } else {
+          setConsentUrl(result.consentUrl)
+          setPhase('needs_consent')
         }
         return
       case 'failed':
@@ -143,6 +190,7 @@ function SetupContent({ user }: { user: SessionUser }) {
     }
     setFormError('')
     setSubmitting(true)
+    setSavedInfo({ schoolName: schoolName.trim(), managerName: managerName.trim() })
     setPhase('running')
     try {
       const result = await startSetup({ schoolName: schoolName.trim(), managerName: managerName.trim() })
@@ -211,8 +259,10 @@ function SetupContent({ user }: { user: SessionUser }) {
 
             {formError && <p className="text-sm text-red-600">{formError}</p>}
 
+            <DriveConsentNotice />
+
             <button type="submit" disabled={submitting} className={`${primaryButtonClass} w-full`}>
-              {submitting ? '확인 중...' : '설치 시작'}
+              {submitting ? '확인 중...' : 'Google Drive 연결하고 설치하기'}
             </button>
           </form>
         </Card>
@@ -227,6 +277,16 @@ function SetupContent({ user }: { user: SessionUser }) {
         </Card>
       )}
 
+      {phase === 'redirecting' && (
+        <Card className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-gray-900">Google Drive 연결 화면으로 이동합니다</p>
+            <p className="mt-1 text-sm text-gray-600">권한 승인 후 자동으로 설치가 계속됩니다.</p>
+          </div>
+          {savedInfo && <SavedInfoNotice info={savedInfo} />}
+        </Card>
+      )}
+
       {phase === 'needs_consent' && (
         <div className="space-y-4">
           <Card className="space-y-4">
@@ -234,7 +294,7 @@ function SetupContent({ user }: { user: SessionUser }) {
               <p className="text-sm text-red-600">
                 Google 권한 요청이 거부되었거나 완료되지 않았습니다. 내 Google Drive에
                 폴더와 Spreadsheet를 만들려면 Drive 접근 권한 승인이 반드시 필요합니다.
-                아래 버튼으로 다시 시도해 주세요.
+                아래 버튼으로 다시 승인해 주세요.
               </p>
             ) : (
               <p className="text-sm text-gray-700">
@@ -242,16 +302,14 @@ function SetupContent({ user }: { user: SessionUser }) {
                 필요합니다. 아래 버튼을 눌러 Google 동의 화면에서 권한을 허용해 주세요.
               </p>
             )}
+            {savedInfo && <SavedInfoNotice info={savedInfo} />}
             <StepList steps={steps} />
             <button
               type="button"
-              onClick={() => {
-                setConsentDenied(false)
-                window.location.href = consentUrl
-              }}
+              onClick={() => goToConsent(consentUrl)}
               className={`${primaryButtonClass} w-full`}
             >
-              {consentDenied ? '다시 시도' : 'Google 권한 허용하기'}
+              {consentDenied ? 'Drive 권한 다시 승인하기' : 'Google 권한 허용하기'}
             </button>
           </Card>
         </div>
@@ -260,6 +318,7 @@ function SetupContent({ user }: { user: SessionUser }) {
       {phase === 'failed' && (
         <div className="space-y-4">
           <Card className="space-y-4">
+            {savedInfo && <SavedInfoNotice info={savedInfo} />}
             <StepList steps={steps} />
             <p className="text-sm text-red-600">{errorMessage}</p>
             <button type="button" onClick={() => void continueInstall()} className={`${primaryButtonClass} w-full`}>

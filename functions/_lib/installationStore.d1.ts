@@ -173,5 +173,21 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
         )
         .run()
     },
+
+    async claimSpreadsheet(userId, spreadsheetId, updatedAt) {
+      // WHERE spreadsheet_id IS NULL이 이 UPDATE 전체를 원자적인 compare-and-swap으로
+      // 만든다 — SQLite는 단일 UPDATE 문을 원자적으로 처리하므로, 동시에 두 요청이
+      // 같은 조건으로 실행돼도 먼저 커밋되는 쪽만 실제로 행을 바꾸고(changes=1),
+      // 나중 요청은 이미 채워진 걸 보고 0행을 바꾼다(changes=0).
+      const result = await db
+        .prepare(
+          `UPDATE installation_progress
+           SET spreadsheet_id = ?2, headers_written = 0, updated_at = ?3
+           WHERE user_id = ?1 AND spreadsheet_id IS NULL`,
+        )
+        .bind(userId, spreadsheetId, updatedAt)
+        .run()
+      return result.meta.changes > 0
+    },
   }
 }
