@@ -1,6 +1,6 @@
 import { requireSession } from './requireSession'
 import { getInstallationStore } from './stores'
-import { ensureFreshAccessToken, ReauthRequiredError } from './googleAccessToken'
+import { ensureDriveAccessToken, ReauthRequiredError } from './googleAccessToken'
 import type { SessionRecord } from './sessionStore'
 import type { InstallationRecord } from './installationStore'
 import type { Env } from './env'
@@ -43,7 +43,7 @@ export async function requireInstalledAccess(
   }
 
   try {
-    const accessToken = await ensureFreshAccessToken(env, session)
+    const accessToken = await ensureDriveAccessToken(env, session)
     return { session, installation, accessToken, spreadsheetId: installation.spreadsheetId }
   } catch (error) {
     if (error instanceof ReauthRequiredError) {

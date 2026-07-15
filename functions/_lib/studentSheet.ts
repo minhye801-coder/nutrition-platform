@@ -1,4 +1,5 @@
 import { appendValues, getValues, updateValues } from './googleSheets'
+import { recordSchemaVersion, STUDENT_SCHEMA_VERSION } from './settingsSheet'
 
 /** docs/database-schema.md 2.2절(확정)과 동일하게 유지한다. */
 export const STUDENT_SHEET_NAME = '학생정보'
@@ -88,11 +89,12 @@ async function loadSheet(accessToken: string, spreadsheetId: string): Promise<Lo
 
 /**
  * 캐노니컬 헤더 중 시트에 없는 열이 있으면 뒤에 이어붙인다. Milestone 1에서 이미
- * 설치된(구버전 헤더를 가진) 학교도 다음 쓰기 호출부터 자동으로 새 열을 갖게 된다 —
+ * 설치된(구버전 헤더를 가진) 학교도 다음 호출부터 자동으로 새 열을 갖게 된다 —
  * legacy `ensureSheetHeaders_`와 동일한 자가-치유 패턴이며, 기존 데이터 행은
- * 건드리지 않는다(파괴적 변경 없음). 등록/수정/비활성/복구처럼 실제로 쓰기가
- * 필요한 작업에서만 호출한다 — 단순 조회(GET)는 시트에 쓰기를 하지 않는다(아래
- * `loadReadOnlySheet` 참고).
+ * 건드리지 않는다(파괴적 변경 없음). 조회(GET)를 포함해 학생 API의 모든 진입점이
+ * 이 함수를 거친다 — "스키마가 낡아서 실패"하는 상태 자체를 만들지 않는 게
+ * 목표다. 실제로 헤더를 보정했을 때만 "설정" 탭의 schemaVersion도 함께 갱신한다
+ * (그 갱신 자체는 감사 기록일 뿐이며 실패해도 학생 API 결과에는 영향 없음).
  */
 async function ensureHeaders(
   accessToken: string,
@@ -106,22 +108,22 @@ async function ensureHeaders(
   const range = `${quoteSheetName(STUDENT_SHEET_NAME)}!A1:${columnLetter(newHeaders.length - 1)}1`
   await updateValues(accessToken, spreadsheetId, range, [newHeaders])
 
+  await recordSchemaVersion(accessToken, spreadsheetId, STUDENT_SCHEMA_VERSION).catch((error) => {
+    console.error('[students] schemaVersion 기록 실패(무시하고 계속 진행)', error)
+  })
+
   return { headers: newHeaders, headerIndex: buildHeaderIndex(newHeaders), rows: sheet.rows }
 }
 
+/**
+ * 학생 API의 모든 진입점(목록 조회 포함)이 쓰는 로더. 항상 먼저 스키마를
+ * 확인/보정한 뒤 데이터를 돌려주므로, 호출부는 "헤더가 없어서 실패"하는 경우를
+ * 신경 쓸 필요가 없다 — studentUuid 헤더는 ensureHeaders가 끝나면 항상 존재를
+ * 보장한다.
+ */
 async function loadWritableSheet(accessToken: string, spreadsheetId: string): Promise<LoadedSheet> {
   const sheet = await loadSheet(accessToken, spreadsheetId)
   return ensureHeaders(accessToken, spreadsheetId, sheet)
-}
-
-/** 조회 전용 경로. 시트에 쓰지 않되, 핵심 식별자 헤더(studentUuid)조차 없으면 명확한 오류를 던진다. */
-async function loadReadOnlySheet(accessToken: string, spreadsheetId: string): Promise<LoadedSheet> {
-  const sheet = await loadSheet(accessToken, spreadsheetId)
-  if (sheet.headerIndex.studentUuid === undefined) {
-    const missing = STUDENT_HEADERS.filter((header) => sheet.headerIndex[header] === undefined)
-    throw new StudentSheetSchemaError(missing)
-  }
-  return sheet
 }
 
 function rowToRecord(row: string[], headerIndex: Partial<Record<StudentHeader, number>>): StudentRecord {
@@ -193,7 +195,7 @@ export async function listStudents(
   spreadsheetId: string,
   options: ListStudentsOptions = {},
 ): Promise<StudentRecord[]> {
-  const sheet = await loadReadOnlySheet(accessToken, spreadsheetId)
+  const sheet = await loadWritableSheet(accessToken, spreadsheetId)
   let records = sheet.rows.map((row) => rowToRecord(row, sheet.headerIndex))
 
   if (!options.status || options.status === 'active') {

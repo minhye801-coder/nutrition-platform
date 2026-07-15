@@ -12,7 +12,7 @@ const LOGGED_OUT_NAV: NavItem[] = [
 
 const LOGGED_IN_NAV: NavItem[] = [
   { label: '관리자', path: '/app' },
-  { label: '학생관리', path: '/app/students' },
+  { label: '학생관리', path: '/students' },
   { label: '설정', path: '/settings' },
 ]
 
@@ -52,7 +52,12 @@ export function Header() {
 
         <nav className="flex flex-wrap items-center gap-1">
           {(isAuthenticated ? LOGGED_IN_NAV : LOGGED_OUT_NAV).map((item) => (
-            <NavLink key={item.path} to={item.path} end={item.path === '/'} className={navLinkClass}>
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path !== '/students'}
+              className={navLinkClass}
+            >
               {item.label}
             </NavLink>
           ))}

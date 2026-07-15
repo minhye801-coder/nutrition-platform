@@ -9,6 +9,7 @@ import {
   DuplicateStudentError,
   fetchStudents,
   restoreStudent,
+  StudentApiError,
   updateStudent,
 } from '@/services/studentService'
 import type { Student } from '@/types/student'
@@ -18,6 +19,41 @@ type Feedback = { type: 'success' | 'error'; message: string }
 
 const inputClass =
   'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500'
+
+/**
+ * 서버 오류 코드를 사용자에게 안전하게 보여줄 수 있는 구체적인 문구로 바꾼다.
+ * Google 원본 오류/토큰/Spreadsheet ID는 서버가 애초에 코드에 담아 보내지
+ * 않으므로 여기서도 노출할 값 자체가 없다.
+ */
+function describeStudentError(error: unknown): string {
+  if (error instanceof StudentApiError) {
+    switch (error.code) {
+      case 'student_sheet_missing_headers':
+        return '학생정보 시트에 필요한 열이 없어 자동으로 보정을 시도했지만 실패했습니다. 잠시 후 다시 시도해 주세요.'
+      case 'student_sheet_not_found':
+        return '학생정보 시트를 찾을 수 없습니다. 설정 화면에서 설치 상태를 확인해 주세요.'
+      case 'drive_access_required':
+        return 'Google Drive 접근 권한이 만료되었거나 부족합니다. 다시 로그인해 주세요.'
+      case 'sheets_unavailable':
+        return 'Google Sheets에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+      case 'not_installed':
+        return '설치가 아직 완료되지 않았습니다. 설치를 먼저 진행해 주세요.'
+      case 'unauthenticated':
+        return '로그인이 필요합니다.'
+      case 'invalid_input':
+        return '입력값을 확인해 주세요. 이름·학년·반은 필수입니다.'
+      case 'not_found':
+        return '해당 학생을 찾을 수 없습니다. 목록을 새로고침해 주세요.'
+      case 'invalid_enrollment_status':
+        return '재학상태 값이 올바르지 않습니다.'
+      case 'student_uuid_immutable':
+        return '학생 고유 ID는 변경할 수 없습니다.'
+      default:
+        return '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+    }
+  }
+  return '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+}
 
 export function StudentsPage() {
   return <AuthGuard requireInstallation>{(user) => <StudentsContent user={user} />}</AuthGuard>
@@ -65,8 +101,8 @@ function StudentsContent({ user }: { user: SessionUser }) {
         status: filters.status,
       })
       setStudents(result)
-    } catch {
-      setLoadError('학생 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    } catch (error) {
+      setLoadError(describeStudentError(error))
     } finally {
       setLoading(false)
     }
@@ -83,6 +119,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
 
   async function handleCreateSubmit(event: FormEvent<HTMLFormElement> | null, forceDuplicate = false) {
     event?.preventDefault()
+    if (createSubmitting) return // 버튼이 disabled로 리렌더되기 전의 짧은 창을 통한 중복 클릭 방지
     const name = createForm.name.trim()
     const grade = createForm.grade.trim()
     const studentClass = createForm.class.trim()
@@ -110,8 +147,9 @@ function StudentsContent({ user }: { user: SessionUser }) {
       if (error instanceof DuplicateStudentError) {
         setDuplicateWarning({ existingStudentUuid: error.existingStudentUuid })
       } else {
-        setCreateError('등록 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.')
-        setFeedback({ type: 'error', message: '학생 등록에 실패했습니다.' })
+        const message = describeStudentError(error)
+        setCreateError(message)
+        setFeedback({ type: 'error', message: `학생 등록에 실패했습니다: ${message}` })
       }
     } finally {
       setCreateSubmitting(false)
@@ -130,6 +168,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
   }
 
   async function handleEditSubmit(studentUuid: string) {
+    if (editSubmitting) return
     const name = editForm.name.trim()
     const grade = editForm.grade.trim()
     const studentClass = editForm.class.trim()
@@ -150,9 +189,10 @@ function StudentsContent({ user }: { user: SessionUser }) {
       setEditingUuid(null)
       setFeedback({ type: 'success', message: '학생 정보를 수정했습니다.' })
       await loadStudents()
-    } catch {
-      setEditError('수정 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.')
-      setFeedback({ type: 'error', message: '학생 정보 수정에 실패했습니다.' })
+    } catch (error) {
+      const message = describeStudentError(error)
+      setEditError(message)
+      setFeedback({ type: 'error', message: `학생 정보 수정에 실패했습니다: ${message}` })
     } finally {
       setEditSubmitting(false)
     }
@@ -167,8 +207,8 @@ function StudentsContent({ user }: { user: SessionUser }) {
       await deactivateStudent(student.studentUuid)
       setFeedback({ type: 'success', message: `${student.name} 학생을 비활성 처리했습니다.` })
       await loadStudents()
-    } catch {
-      setFeedback({ type: 'error', message: '비활성 처리 중 문제가 발생했습니다.' })
+    } catch (error) {
+      setFeedback({ type: 'error', message: `비활성 처리에 실패했습니다: ${describeStudentError(error)}` })
     } finally {
       setActionInFlight(null)
     }
@@ -180,8 +220,8 @@ function StudentsContent({ user }: { user: SessionUser }) {
       await restoreStudent(student.studentUuid)
       setFeedback({ type: 'success', message: `${student.name} 학생을 다시 재학 상태로 되돌렸습니다.` })
       await loadStudents()
-    } catch {
-      setFeedback({ type: 'error', message: '복구 중 문제가 발생했습니다.' })
+    } catch (error) {
+      setFeedback({ type: 'error', message: `복구에 실패했습니다: ${describeStudentError(error)}` })
     } finally {
       setActionInFlight(null)
     }
@@ -211,6 +251,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
       )}
 
       <Card className="space-y-4">
+        <h2 className="text-sm font-semibold text-gray-500">검색 및 필터</h2>
         <form className="grid grid-cols-1 gap-3 sm:grid-cols-5" onSubmit={applyFilters}>
           <div className="sm:col-span-2">
             <label htmlFor="q" className="block text-xs font-medium text-gray-500">
@@ -284,8 +325,8 @@ function StudentsContent({ user }: { user: SessionUser }) {
       </Card>
 
       {showCreateForm && (
-        <Card className="space-y-3">
-          <h2 className="font-semibold text-gray-900">학생 등록</h2>
+        <Card className="space-y-3 border-l-4 border-l-brand-500 bg-brand-50/40">
+          <h2 className="font-semibold text-brand-800">✏️ 새 학생 등록</h2>
           <form className="grid grid-cols-1 gap-3 sm:grid-cols-4" onSubmit={(event) => void handleCreateSubmit(event)}>
             <div>
               <label htmlFor="createName" className="block text-xs font-medium text-gray-500">
