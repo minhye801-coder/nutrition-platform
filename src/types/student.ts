@@ -1,6 +1,7 @@
 export interface Student {
   studentUuid: string
   tenantId: string
+  schoolYear: string
   name: string
   grade: string
   class: string
@@ -12,6 +13,7 @@ export interface Student {
 
 export interface StudentListFilters {
   q?: string
+  schoolYear?: string
   grade?: string
   class?: string
   /** 생략/'active' = 재학생만(기본), 'all' = 전체, 그 외 = enrollmentStatus 정확히 일치(예: '비활성'). */
@@ -20,6 +22,7 @@ export interface StudentListFilters {
 
 export interface CreateStudentInput {
   name: string
+  schoolYear: string
   grade: string
   class: string
   studentNumber?: string
@@ -28,6 +31,7 @@ export interface CreateStudentInput {
 
 export interface UpdateStudentInput {
   name?: string
+  schoolYear?: string
   grade?: string
   class?: string
   studentNumber?: string

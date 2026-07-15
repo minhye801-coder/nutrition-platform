@@ -42,6 +42,7 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
     headers: [
       'studentUuid',
       'tenantId',
+      'schoolYear',
       'name',
       'grade',
       'class',
@@ -53,7 +54,7 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
   },
   {
     name: '상담접수',
-    headers: ['intakeId', 'tenantId', 'studentId', 'status', 'submittedAt', 'updatedAt'],
+    headers: ['intakeId', 'tenantId', 'studentUuid', 'status', 'submittedAt', 'updatedAt'],
   },
   {
     name: '보호자동의',
@@ -70,7 +71,7 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
   },
   {
     name: '상담케이스',
-    headers: ['caseId', 'tenantId', 'studentId', 'status', 'openedAt', 'closedAt'],
+    headers: ['caseId', 'tenantId', 'studentUuid', 'status', 'openedAt', 'closedAt'],
   },
   {
     name: '진단결과',
@@ -102,7 +103,7 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
   },
   {
     name: '맛마을검사',
-    headers: ['assessmentId', 'tenantId', 'studentId', 'submittedAt'],
+    headers: ['assessmentId', 'tenantId', 'studentUuid', 'submittedAt'],
   },
   {
     name: '맛마을결과',
@@ -110,7 +111,7 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
       'resultId',
       'tenantId',
       'assessmentId',
-      'studentId',
+      'studentUuid',
       'summary',
       'createdAt',
     ],

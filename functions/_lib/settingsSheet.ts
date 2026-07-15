@@ -2,8 +2,8 @@ import { appendValues, getValues, updateValues } from './googleSheets'
 
 export const SETTINGS_SHEET_NAME = '설정'
 
-/** docs/database-schema.md 2.1절 — 학생정보 탭이 studentUuid/studentNumber/enrollmentStatus를 갖는 구조의 버전. */
-export const STUDENT_SCHEMA_VERSION = '2'
+/** docs/database-schema.md 2.1절 — 학생정보 탭이 studentUuid/studentNumber/enrollmentStatus/schoolYear를 갖는 구조의 버전. */
+export const STUDENT_SCHEMA_VERSION = '3'
 
 function quoteSheetName(name: string): string {
   return `'${name}'`

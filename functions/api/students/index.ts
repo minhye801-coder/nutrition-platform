@@ -5,10 +5,11 @@ import type { Env } from '../../_lib/env'
 
 interface CreateStudentBody {
   name?: string
+  schoolYear?: string
   grade?: string
   class?: string
   studentNumber?: string
-  /** 이름·학년·반·번호가 겹치는 재학생이 이미 있어도 강제로 새로 등록한다. */
+  /** 이름·학년도·학년·반·번호가 겹치는 재학생이 이미 있어도 강제로 새로 등록한다. */
   confirmDuplicate?: boolean
 }
 
@@ -29,6 +30,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   try {
     const students = await listStudents(access.accessToken, access.spreadsheetId, {
       q: url.searchParams.get('q') ?? undefined,
+      schoolYear: url.searchParams.get('schoolYear') ?? undefined,
       grade: url.searchParams.get('grade') ?? undefined,
       class: url.searchParams.get('class') ?? undefined,
       status: url.searchParams.get('status') ?? undefined,
@@ -57,10 +59,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const name = toTrimmedString(body.name)
+  const schoolYear = toTrimmedString(body.schoolYear)
   const grade = toTrimmedString(body.grade)
   const studentClass = toTrimmedString(body.class)
   const studentNumber = toTrimmedString(body.studentNumber)
-  if (!name || !grade || !studentClass) {
+  if (!name || !schoolYear || !grade || !studentClass) {
     return Response.json({ error: 'invalid_input' }, { status: 400 })
   }
 
@@ -70,6 +73,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         access.accessToken,
         access.spreadsheetId,
         name,
+        schoolYear,
         grade,
         studentClass,
         studentNumber,
@@ -85,6 +89,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const student = await createStudent(access.accessToken, access.spreadsheetId, {
       tenantId: access.installation.schoolPublicId,
       name,
+      schoolYear,
       grade,
       class: studentClass,
       studentNumber,

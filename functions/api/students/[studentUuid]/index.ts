@@ -6,6 +6,7 @@ import type { Env } from '../../../_lib/env'
 interface UpdateStudentBody {
   studentUuid?: string
   name?: string
+  schoolYear?: string
   grade?: string
   class?: string
   studentNumber?: string
@@ -40,6 +41,7 @@ export const onRequestPatch: PagesFunction<Env, 'studentUuid'> = async ({ reques
 
   const patch: StudentPatch = {}
   if (typeof body.name === 'string' && body.name.trim()) patch.name = body.name.trim()
+  if (typeof body.schoolYear === 'string' && body.schoolYear.trim()) patch.schoolYear = body.schoolYear.trim()
   if (typeof body.grade === 'string' && body.grade.trim()) patch.grade = body.grade.trim()
   if (typeof body.class === 'string' && body.class.trim()) patch.class = body.class.trim()
   if (typeof body.studentNumber === 'string') patch.studentNumber = body.studentNumber.trim()

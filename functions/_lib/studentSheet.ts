@@ -7,6 +7,7 @@ export const STUDENT_SHEET_NAME = '학생정보'
 export const STUDENT_HEADERS = [
   'studentUuid',
   'tenantId',
+  'schoolYear',
   'name',
   'grade',
   'class',
@@ -21,6 +22,9 @@ type StudentHeader = (typeof STUDENT_HEADERS)[number]
 export interface StudentRecord {
   studentUuid: string
   tenantId: string
+  /** legacy 학년도. 매년 같은 학년/반이 반복되므로(예: 매년 "1학년 3반") 학생을 유일하게
+   * 구분하려면 학년/반만으로는 부족하다 — docs/student-info-verification.md 7.1절. */
+  schoolYear: string
   name: string
   grade: string
   class: string
@@ -136,6 +140,7 @@ function rowToRecord(row: string[], headerIndex: Partial<Record<StudentHeader, n
   return {
     studentUuid: get('studentUuid'),
     tenantId: get('tenantId'),
+    schoolYear: get('schoolYear'),
     name: get('name'),
     grade: get('grade'),
     class: get('class'),
@@ -170,10 +175,11 @@ function enrollmentStatusRank(status: string): number {
   return index === -1 ? ENROLLMENT_STATUS_VALUES.length : index
 }
 
-/** 기본 정렬: 재학상태 → 학년 → 반 → 번호 → 이름. */
+/** 기본 정렬: 재학상태 → 학년도 → 학년 → 반 → 번호 → 이름. */
 function compareStudents(a: StudentRecord, b: StudentRecord): number {
   return (
     enrollmentStatusRank(a.enrollmentStatus) - enrollmentStatusRank(b.enrollmentStatus) ||
+    compareNatural(a.schoolYear, b.schoolYear) ||
     compareNatural(a.grade, b.grade) ||
     compareNatural(a.class, b.class) ||
     compareNatural(a.studentNumber, b.studentNumber) ||
@@ -184,6 +190,7 @@ function compareStudents(a: StudentRecord, b: StudentRecord): number {
 export interface ListStudentsOptions {
   /** 이름 부분 일치 검색(공백 무시, 대소문자 무시). */
   q?: string
+  schoolYear?: string
   grade?: string
   class?: string
   /** 생략 또는 'active' = 비활성 제외. 'all' = 전체(비활성 포함). 그 외 값 = enrollmentStatus 정확히 일치. */
@@ -204,6 +211,7 @@ export async function listStudents(
     records = records.filter((student) => student.enrollmentStatus === options.status)
   }
 
+  if (options.schoolYear) records = records.filter((student) => student.schoolYear === options.schoolYear)
   if (options.grade) records = records.filter((student) => student.grade === options.grade)
   if (options.class) records = records.filter((student) => student.class === options.class)
   if (options.q) {
@@ -217,13 +225,16 @@ export async function listStudents(
 }
 
 /**
- * name+grade+class+studentNumber가 모두 같고 재학 중인 학생이 이미 있는지 확인한다
+ * name+schoolYear+grade+class+studentNumber가 모두 같고 재학 중인 학생이 이미 있는지 확인한다
  * (중복 등록 경고용 — 이름만으로 학생을 자동 연결/병합하지 않는다, database-schema.md 3절).
+ * legacy `findStudent_`(docs/student-info-verification.md 3절)와 동일하게 학년도를 매칭
+ * 조건에 포함한다 — 학년/반만으로는 해마다 반복되는 값이라 다른 해의 학생과 구분되지 않는다.
  */
 export async function findPotentialDuplicate(
   accessToken: string,
   spreadsheetId: string,
   name: string,
+  schoolYear: string,
   grade: string,
   studentClass: string,
   studentNumber: string,
@@ -235,6 +246,7 @@ export async function findPotentialDuplicate(
     active.find(
       (student) =>
         normalizeName(student.name) === normalizedName &&
+        student.schoolYear === schoolYear &&
         student.grade === grade &&
         student.class === studentClass &&
         student.studentNumber === normalizedNumber,
@@ -245,6 +257,7 @@ export async function findPotentialDuplicate(
 export interface CreateStudentInput {
   tenantId: string
   name: string
+  schoolYear: string
   grade: string
   class: string
   studentNumber: string
@@ -260,6 +273,7 @@ export async function createStudent(
   const record: StudentRecord = {
     studentUuid: crypto.randomUUID(),
     tenantId: input.tenantId,
+    schoolYear: input.schoolYear,
     name: input.name,
     grade: input.grade,
     class: input.class,
@@ -275,7 +289,7 @@ export async function createStudent(
 
 /** studentUuid는 포함하지 않는다 — 영구 식별자는 변경 불가(호출부인 API 라우트에서도 별도로 막는다). */
 export type StudentPatch = Partial<
-  Pick<StudentRecord, 'name' | 'grade' | 'class' | 'studentNumber' | 'enrollmentStatus'>
+  Pick<StudentRecord, 'name' | 'schoolYear' | 'grade' | 'class' | 'studentNumber' | 'enrollmentStatus'>
 >
 
 export async function updateStudent(

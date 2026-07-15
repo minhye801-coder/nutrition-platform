@@ -52,24 +52,26 @@
 - **탭 이름 확정**: `설정`으로 그대로 유지한다(리네임하지 않음, 확정).
 - **확인 필요**: legacy 설정 시트의 3번째 열(코드에서 이름이 한 번도 안 나오고 `'자동 생성'` 리터럴만 써짐) 용도 불명.
 
-### 2.2 학생정보 (필드 확정 — Milestone 2 첫 CRUD 구현 대상)
+### 2.2 학생정보 (필드 확정 — Milestone 2 첫 CRUD 구현 대상, schoolYear 추가로 스키마 v3)
 
 | 열 순서 | 헤더(fieldName) | 자료형 | 필수 | 고유 | 개인정보 | 설명 |
 |---|---|---|---|---|---|---|
 | 1 | `studentUuid` | string(UUID) | Y | Y(PK) | N | **학생 영구 식별자(확정, `studentId`에서 개명).** `crypto.randomUUID()`로 생성. 모든 하위 엔터티가 이 값으로만 학생을 참조한다 — 이름·학년·반으로 연결 금지(1·3절) |
 | 2 | `tenantId` | string | Y | N | N | = schoolPublicId |
-| 3 | `name` | string | Y | N | **Y** | 학생 성명 |
-| 4 | `grade` | string(**확정**) | Y | N | Y(준식별자) | 학년 |
-| 5 | `class` | string(**확정**) | Y | N | Y(준식별자) | 반 |
-| 6 | `studentNumber` | string(**확정**) | N | N | Y(준식별자) | 반 내 번호(legacy `번호`) |
-| 7 | `enrollmentStatus` | string(enum, **확정**) | Y | N | N | 재학상태. 신규 등록 시 기본값 `재학`, 비활성 처리 시 `비활성`으로 변경(행을 삭제하지 않는 소프트 삭제) |
-| 8 | `createdAt` | string(ISO datetime) | Y | N | N | 등록일시 |
-| 9 | `updatedAt` | string(ISO datetime) | Y | N | N | 수정일시 |
+| 3 | `schoolYear` | string(**확정, 신규**) | Y | N | N | 학년도(legacy `학년도`). legacy `findStudent_`의 1차 매칭 조건이었다 — 학년/반만으로는 해마다 반복되는 값이라 다른 해의 학생과 구분되지 않는다(`docs/student-info-verification.md` 7.1절) |
+| 4 | `name` | string | Y | N | **Y** | 학생 성명 |
+| 5 | `grade` | string(**확정**) | Y | N | Y(준식별자) | 학년 |
+| 6 | `class` | string(**확정**) | Y | N | Y(준식별자) | 반 |
+| 7 | `studentNumber` | string(**확정**) | N | N | Y(준식별자) | 반 내 번호(legacy `번호`) |
+| 8 | `enrollmentStatus` | string(enum, **확정**) | Y | N | N | 재학상태. 신규 등록 시 기본값 `재학`, 비활성 처리 시 `비활성`으로 변경(행을 삭제하지 않는 소프트 삭제) |
+| 9 | `createdAt` | string(ISO datetime) | Y | N | N | 등록일시 |
+| 10 | `updatedAt` | string(ISO datetime) | Y | N | N | 수정일시 |
 
-- **자료형 결정**: `grade`/`class`/`studentNumber`는 **string으로 통일**한다(구현 시점 결정) — Google Sheets API가 값을 기본적으로 문자열로 반환하고, "05반"처럼 앞자리 0이 있는 표기를 다룰 수 있어 숫자 강제 변환을 하지 않는다.
-- **사용 API**: `GET/POST /api/students`, `PATCH/DELETE /api/students/:studentUuid`(아래 5절 API 문서 참고). **사용 화면**: 없음(API만 구현, 화면은 후속).
-- **기존 필드 출처**: legacy `학생정보`(`학생코드, 학년도, 학년, 반, 번호, 학생명, 재학상태, 등록일, 비고`)에서 `학생코드→studentUuid`(ID 생성 방식은 legacy의 순번 카운터 대신 UUID로 교체), `학년→grade`, `반→class`, `번호→studentNumber`, `재학상태→enrollmentStatus`, `학생명→name`, `등록일→createdAt`로 대응.
-- **확인 필요**: `학년도`(school year) 추가 여부(이번 확정 범위엔 포함 안 됨), `enrollmentStatus`의 `재학`/`비활성` 외 세부 값(휴학/전출/자퇴 등) 확장 여부.
+- **자료형 결정**: `schoolYear`/`grade`/`class`/`studentNumber`는 **string으로 통일**한다(구현 시점 결정) — Google Sheets API가 값을 기본적으로 문자열로 반환하고, "05반"처럼 앞자리 0이 있는 표기를 다룰 수 있어 숫자 강제 변환을 하지 않는다.
+- **사용 API**: `GET/POST /api/students`(`schoolYear` 필터/필수 입력 포함), `PATCH /api/students/:studentUuid`, `POST /api/students/:studentUuid/deactivate`, `POST /api/students/:studentUuid/restore`(아래 5절 API 문서 참고). **사용 화면**: `src/pages/StudentsPage.tsx`(검색 필터·등록/수정 폼·목록 테이블 모두 `schoolYear` 반영).
+- **기존 필드 출처**: legacy `학생정보`(`학생코드, 학년도, 학년, 반, 번호, 학생명, 재학상태, 등록일, 비고`)에서 `학생코드→studentUuid`(ID 생성 방식은 legacy의 순번 카운터 대신 UUID로 교체), `학년도→schoolYear`, `학년→grade`, `반→class`, `번호→studentNumber`, `재학상태→enrollmentStatus`, `학생명→name`, `등록일→createdAt`로 대응.
+- **중복 등록 경고(`findPotentialDuplicate`)**: `name`+`schoolYear`+`grade`+`class`+`studentNumber`가 모두 같은 재학생이 있으면 409 — legacy `findStudent_`의 매칭 조건(1차: 학년도)을 그대로 반영했다.
+- **확인 필요**: `enrollmentStatus`의 `재학`/`비활성` 외 세부 값(휴학/전출/자퇴 등) 확장 여부.
 
 ### 2.3 상담접수
 
@@ -77,7 +79,7 @@
 |---|---|---|---|---|---|---|
 | 1 | `intakeId` | string(UUID) | Y | Y(PK) | N | 접수 식별자 |
 | 2 | `tenantId` | string | Y | N | N | = schoolPublicId |
-| 3 | `studentUuid` | string | N | N | N(FK) | 승인 전에는 비어 있을 수 있음 → `학생정보.studentUuid` |
+| 3 | `studentUuid` | string | N | N | N(FK) | 승인 전에는 비어 있을 수 있음 → `학생정보.studentUuid`(`installTemplate.ts`의 헤더명을 `studentId`에서 `studentUuid`로 통일함) |
 | 4 | `status` | string(enum, 값 미정) | Y | N | N | 접수 처리 상태 |
 | 5 | `submittedAt` | string(ISO datetime) | Y | N | N | 신청 제출 시각 |
 | 6 | `updatedAt` | string(ISO datetime) | Y | N | N | 상태 변경 시각 |
@@ -109,7 +111,7 @@
 |---|---|---|---|---|---|---|
 | 1 | `caseId` | string(UUID) | Y | Y(PK) | N | 상담 케이스 식별자(허브 테이블) |
 | 2 | `tenantId` | string | Y | N | N | = schoolPublicId |
-| 3 | `studentUuid` | string | Y | N | N(FK) | `학생정보.studentUuid` |
+| 3 | `studentUuid` | string | Y | N | N(FK) | `학생정보.studentUuid`(`installTemplate.ts`의 헤더명을 `studentId`에서 `studentUuid`로 통일함) |
 | 4 | `status` | string(enum: `진행중`/`보류`/`종결`, **확정**) | Y | N | N | 케이스 진행 상태 |
 | 5 | `openedAt` | string(ISO datetime) | Y | N | N | 개설일 |
 | 6 | `closedAt` | string(ISO datetime) | N | N | N | 종결일 |
@@ -130,8 +132,8 @@
 | 6 | `createdAt` | string(ISO datetime) | Y | N | N | 기록 시각 |
 
 - **사용 API/화면**: 없음.
-- **기존 필드 출처**: legacy `진단결과`는 신체계측(신장/체중/BMI 등)·식습관·수면·정신건강·스마트폰 의존도까지 47개 컬럼을 가진 이 시스템에서 **가장 민감한** 탭이다(3·4절). v1은 식별자 4개뿐이라 실제 진단 데이터를 넣을 자리가 없음 — Milestone 2 이후 최우선 확장 후보.
-- **확인 필요**: 47개 legacy 컬럼 중 실제로 필요한 것만 추리는 작업이 별도로 필요(이번 문서에서 추측으로 확정하지 않음).
+- **기존 필드 출처**: legacy `진단결과`는 신체계측(신장/체중/BMI 등)·식습관·수면·정신건강·스마트폰 의존도까지 **54개 컬럼**(재조사로 확정, 전체 목록은 `docs/legacy-header-comparison.md` 참고)을 가진 이 시스템에서 **가장 민감한** 탭이다(3·4절). v1은 식별자 4개뿐이라 실제 진단 데이터를 넣을 자리가 없음 — Milestone 2 이후 최우선 확장 후보.
+- **확인 필요**: 54개 legacy 컬럼 중 실제로 필요한 것만 추리는 작업이 별도로 필요(이번 문서에서 추측으로 확정하지 않음).
 
 ### 2.7 상담회기 — **보류 (SOAP/PES 필드 구성은 상담기록 구현 단계에서 재검토)**
 
@@ -236,7 +238,7 @@ SOAP/PES 구조 자체(주관적/객관적/평가/계획 4단, 문제/원인/징
 |---|---|---|---|---|---|---|
 | 1 | `assessmentId` | string(UUID) | Y | Y(PK) | N | 맛마을 검사 제출 식별자 |
 | 2 | `tenantId` | string | Y | N | N | = schoolPublicId |
-| 3 | `studentUuid` | string | N | N | N(FK) | 제출 시점에 연결(비어 있을 수 있음) |
+| 3 | `studentUuid` | string | N | N | N(FK) | 제출 시점에 연결(비어 있을 수 있음). `installTemplate.ts`의 헤더명을 `studentId`에서 `studentUuid`로 통일함 |
 | 4 | `submittedAt` | string(ISO datetime) | Y | N | N | 제출 시각 |
 
 - **사용 API/화면**: 없음.
@@ -250,7 +252,7 @@ SOAP/PES 구조 자체(주관적/객관적/평가/계획 4단, 문제/원인/징
 | 1 | `resultId` | string(UUID) | Y | Y(PK) | N | 결과 레코드 식별자 |
 | 2 | `tenantId` | string | Y | N | N | = schoolPublicId |
 | 3 | `assessmentId` | string | Y | N | N(FK) | `맛마을검사.assessmentId` |
-| 4 | `studentUuid` | string | N | N | N(FK) | `학생정보.studentUuid` |
+| 4 | `studentUuid` | string | N | N | N(FK) | `학생정보.studentUuid`(`installTemplate.ts`의 헤더명을 `studentId`에서 `studentUuid`로 통일함) |
 | 5 | `summary` | string(자유서술) | N | N | **Y** | 결과 요약 |
 | 6 | `createdAt` | string(ISO datetime) | Y | N | N | 기록 시각 |
 
@@ -323,7 +325,8 @@ legacy `findStudent_`(학생 자동 매칭 함수)는 **학년도+학년+반+정
 | 항목 | 확정 내용 |
 |---|---|
 | 학생 영구 식별자 | `studentId` → **`studentUuid`**로 개명, UUID 기반. 모든 관계는 `studentUuid → caseId → sessionId`로만 연결(이름/학년/반 매칭 금지) |
-| **학생정보 필드(Milestone 2 CRUD 구현 기준)** | `studentUuid, tenantId, name, grade, class, studentNumber, enrollmentStatus, createdAt, updatedAt` 확정. `grade`/`class`/`studentNumber`는 string 통일 |
+| **학생정보 필드(Milestone 2 CRUD 구현 기준, schoolYear 추가로 스키마 v3)** | `studentUuid, tenantId, schoolYear, name, grade, class, studentNumber, enrollmentStatus, createdAt, updatedAt` 확정. `schoolYear`/`grade`/`class`/`studentNumber`는 string 통일 |
+| `installTemplate.ts`의 `studentId` 전체 정리 | `상담접수`/`상담케이스`/`맛마을검사`/`맛마을결과` 헤더가 학생정보와 다르게 `studentId`로 남아있던 불일치를 **`studentUuid`로 통일**해 해소함(`docs/student-info-verification.md` 7.2절에서 발견) |
 | 상담케이스.status | `진행중`/`보류`/`종결` 3값 확정 |
 | 실천목표.currentStatus | `진행중`/`완료`/`중단` 3값으로 신규 추가(화면 표시명: 현재상태) |
 | 설정 탭 | 탭 이름은 `설정`으로 **유지(리네임 안 함)**. `schemaVersion`, `updatedAt` 키 추가. `installationVersion`은 앱 버전으로 유지 |
@@ -339,7 +342,6 @@ legacy `findStudent_`(학생 자동 매칭 함수)는 **학년도+학년+반+정
 | 항목 | 내용 |
 |---|---|
 | 헤더 언어 | 현재 SSOT는 영문 카멜케이스 헤더(fieldName과 동일). 원래 설계 원칙(한글 표시 헤더/영문 fieldName 분리)과 다름 — 유지할지 바꿀지 결정 필요(바꾸면 기존 설치본 마이그레이션 필요) |
-| `학년도` | 학생정보에 추가할지(legacy엔 있음, 이번 확정 범위엔 포함 안 됨) |
 | `enrollmentStatus` 세부 값 | `재학`/`비활성` 외 휴학/전출/자퇴 등 세분화 여부 |
 | `상담접수`/`보호자동의`의 `status` enum 값 목록 | 아직 미정(Milestone 4·5 범위) |
 | `생성문서` 탭 존속 여부 | legacy에서도 쓰기 코드가 확인되지 않음 — 유지/삭제/용도 재정의 결정 필요 |

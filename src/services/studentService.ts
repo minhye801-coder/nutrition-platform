@@ -42,6 +42,7 @@ async function throwStudentApiError(response: Response): Promise<never> {
 export async function fetchStudents(filters: StudentListFilters = {}): Promise<Student[]> {
   const params = new URLSearchParams()
   if (filters.q) params.set('q', filters.q)
+  if (filters.schoolYear) params.set('schoolYear', filters.schoolYear)
   if (filters.grade) params.set('grade', filters.grade)
   if (filters.class) params.set('class', filters.class)
   if (filters.status) params.set('status', filters.status)

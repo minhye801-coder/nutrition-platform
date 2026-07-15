@@ -61,12 +61,21 @@ export function StudentsPage() {
 
 interface StudentFormValues {
   name: string
+  schoolYear: string
   grade: string
   class: string
   studentNumber: string
 }
 
-const EMPTY_FORM: StudentFormValues = { name: '', grade: '', class: '', studentNumber: '' }
+const CURRENT_SCHOOL_YEAR = String(new Date().getFullYear())
+
+const EMPTY_FORM: StudentFormValues = {
+  name: '',
+  schoolYear: CURRENT_SCHOOL_YEAR,
+  grade: '',
+  class: '',
+  studentNumber: '',
+}
 
 function StudentsContent({ user }: { user: SessionUser }) {
   const [students, setStudents] = useState<Student[]>([])
@@ -74,7 +83,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
   const [loadError, setLoadError] = useState('')
   const [feedback, setFeedback] = useState<Feedback | null>(null)
 
-  const [filters, setFilters] = useState({ q: '', grade: '', class: '', status: 'active' })
+  const [filters, setFilters] = useState({ q: '', schoolYear: '', grade: '', class: '', status: 'active' })
   const [filterInputs, setFilterInputs] = useState(filters)
 
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -96,6 +105,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
     try {
       const result = await fetchStudents({
         q: filters.q || undefined,
+        schoolYear: filters.schoolYear || undefined,
         grade: filters.grade || undefined,
         class: filters.class || undefined,
         status: filters.status,
@@ -106,7 +116,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
     } finally {
       setLoading(false)
     }
-  }, [filters.q, filters.grade, filters.class, filters.status])
+  }, [filters.q, filters.schoolYear, filters.grade, filters.class, filters.status])
 
   useEffect(() => {
     void loadStudents()
@@ -121,10 +131,11 @@ function StudentsContent({ user }: { user: SessionUser }) {
     event?.preventDefault()
     if (createSubmitting) return // 버튼이 disabled로 리렌더되기 전의 짧은 창을 통한 중복 클릭 방지
     const name = createForm.name.trim()
+    const schoolYear = createForm.schoolYear.trim()
     const grade = createForm.grade.trim()
     const studentClass = createForm.class.trim()
-    if (!name || !grade || !studentClass) {
-      setCreateError('이름, 학년, 반은 필수입니다.')
+    if (!name || !schoolYear || !grade || !studentClass) {
+      setCreateError('이름, 학년도, 학년, 반은 필수입니다.')
       return
     }
 
@@ -133,6 +144,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
     try {
       const student = await createStudent({
         name,
+        schoolYear,
         grade,
         class: studentClass,
         studentNumber: createForm.studentNumber.trim() || undefined,
@@ -160,6 +172,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
     setEditingUuid(student.studentUuid)
     setEditForm({
       name: student.name,
+      schoolYear: student.schoolYear,
       grade: student.grade,
       class: student.class,
       studentNumber: student.studentNumber,
@@ -170,10 +183,11 @@ function StudentsContent({ user }: { user: SessionUser }) {
   async function handleEditSubmit(studentUuid: string) {
     if (editSubmitting) return
     const name = editForm.name.trim()
+    const schoolYear = editForm.schoolYear.trim()
     const grade = editForm.grade.trim()
     const studentClass = editForm.class.trim()
-    if (!name || !grade || !studentClass) {
-      setEditError('이름, 학년, 반은 필수입니다.')
+    if (!name || !schoolYear || !grade || !studentClass) {
+      setEditError('이름, 학년도, 학년, 반은 필수입니다.')
       return
     }
 
@@ -182,6 +196,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
     try {
       await updateStudent(studentUuid, {
         name,
+        schoolYear,
         grade,
         class: studentClass,
         studentNumber: editForm.studentNumber.trim(),
@@ -257,7 +272,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
 
       <Card className="space-y-4">
         <h2 className="text-sm font-semibold text-gray-500">검색 및 필터</h2>
-        <form className="grid grid-cols-1 gap-3 sm:grid-cols-5" onSubmit={applyFilters}>
+        <form className="grid grid-cols-1 gap-3 sm:grid-cols-6" onSubmit={applyFilters}>
           <div className="sm:col-span-2">
             <label htmlFor="q" className="block text-xs font-medium text-gray-500">
               이름 검색
@@ -268,6 +283,18 @@ function StudentsContent({ user }: { user: SessionUser }) {
               value={filterInputs.q}
               onChange={(event) => setFilterInputs({ ...filterInputs, q: event.target.value })}
               placeholder="학생 이름"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label htmlFor="schoolYear" className="block text-xs font-medium text-gray-500">
+              학년도
+            </label>
+            <input
+              id="schoolYear"
+              type="text"
+              value={filterInputs.schoolYear}
+              onChange={(event) => setFilterInputs({ ...filterInputs, schoolYear: event.target.value })}
               className={inputClass}
             />
           </div>
@@ -310,7 +337,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
               <option value="비활성">비활성만</option>
             </select>
           </div>
-          <div className="flex items-end gap-2 sm:col-span-5">
+          <div className="flex items-end gap-2 sm:col-span-6">
             <button type="submit" className={secondaryButtonClass}>
               검색/필터 적용
             </button>
@@ -332,7 +359,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
       {showCreateForm && (
         <Card className="space-y-3 border-l-4 border-l-brand-500 bg-brand-50/40">
           <h2 className="font-semibold text-brand-800">✏️ 새 학생 등록</h2>
-          <form className="grid grid-cols-1 gap-3 sm:grid-cols-4" onSubmit={(event) => void handleCreateSubmit(event)}>
+          <form className="grid grid-cols-1 gap-3 sm:grid-cols-5" onSubmit={(event) => void handleCreateSubmit(event)}>
             <div>
               <label htmlFor="createName" className="block text-xs font-medium text-gray-500">
                 이름 *
@@ -342,6 +369,18 @@ function StudentsContent({ user }: { user: SessionUser }) {
                 type="text"
                 value={createForm.name}
                 onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="createSchoolYear" className="block text-xs font-medium text-gray-500">
+                학년도 *
+              </label>
+              <input
+                id="createSchoolYear"
+                type="text"
+                value={createForm.schoolYear}
+                onChange={(event) => setCreateForm({ ...createForm, schoolYear: event.target.value })}
                 className={inputClass}
               />
             </div>
@@ -382,11 +421,11 @@ function StudentsContent({ user }: { user: SessionUser }) {
               />
             </div>
 
-            {createError && <p className="text-sm text-red-600 sm:col-span-4">{createError}</p>}
+            {createError && <p className="text-sm text-red-600 sm:col-span-5">{createError}</p>}
 
             {duplicateWarning && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 sm:col-span-4">
-                이름·학년·반·번호가 같은 재학생이 이미 있습니다. 그래도 새로 등록할까요?
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 sm:col-span-5">
+                이름·학년도·학년·반·번호가 같은 재학생이 이미 있습니다. 그래도 새로 등록할까요?
                 <div className="mt-2 flex gap-2">
                   <button
                     type="button"
@@ -403,7 +442,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
               </div>
             )}
 
-            <div className="sm:col-span-4">
+            <div className="sm:col-span-5">
               <button type="submit" disabled={createSubmitting} className={`${primaryButtonClass} w-full`}>
                 {createSubmitting ? '등록 중...' : '등록'}
               </button>
@@ -426,10 +465,11 @@ function StudentsContent({ user }: { user: SessionUser }) {
           <p className="py-8 text-center text-sm text-gray-500">조건에 맞는 학생이 없습니다.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-xs text-gray-500">
                   <th className="py-2 pr-2">이름</th>
+                  <th className="py-2 pr-2">학년도</th>
                   <th className="py-2 pr-2">학년</th>
                   <th className="py-2 pr-2">반</th>
                   <th className="py-2 pr-2">번호</th>
@@ -448,6 +488,14 @@ function StudentsContent({ user }: { user: SessionUser }) {
                           value={editForm.name}
                           onChange={(event) => setEditForm({ ...editForm, name: event.target.value })}
                           className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          type="text"
+                          value={editForm.schoolYear}
+                          onChange={(event) => setEditForm({ ...editForm, schoolYear: event.target.value })}
+                          className="w-16 rounded-md border border-gray-300 px-2 py-1 text-sm"
                         />
                       </td>
                       <td className="py-2 pr-2">
@@ -502,6 +550,7 @@ function StudentsContent({ user }: { user: SessionUser }) {
                   ) : (
                     <tr key={student.studentUuid} className="border-b border-gray-100">
                       <td className="py-2 pr-2 text-gray-900">{student.name}</td>
+                      <td className="py-2 pr-2 text-gray-700">{student.schoolYear || '-'}</td>
                       <td className="py-2 pr-2 text-gray-700">{student.grade}</td>
                       <td className="py-2 pr-2 text-gray-700">{student.class}</td>
                       <td className="py-2 pr-2 text-gray-700">{student.studentNumber || '-'}</td>
