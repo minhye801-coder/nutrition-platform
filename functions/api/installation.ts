@@ -7,10 +7,11 @@ interface UpdateManagerNameBody {
 }
 
 /**
- * 설치 프로필(학교명/담당자명/schoolPublicId) 조회. 실제 설치 실행(Drive/Sheets
- * 생성)은 /api/setup/*(functions/_lib/setupOrchestrator.ts)가 담당하며, 이
- * 라우트는 완료된 설치의 표시용 정보만 다룬다. rootFolderId/spreadsheetId는
- * 여기서 절대 반환하지 않는다(security-principles.md 4절).
+ * 설치 프로필(학교명/담당자명/schoolPublicId) + Google 리소스 바로가기 URL 조회.
+ * 실제 설치 실행(Drive/Sheets 생성)은 /api/setup/*(functions/_lib/setupOrchestrator.ts)가
+ * 담당하며, 이 라우트는 완료된 설치의 표시용 정보만 다룬다. rootFolderId/spreadsheetId
+ * 원문은 여기서 절대 반환하지 않는다(security-principles.md 4절) — 항상 완성된
+ * Google URL(driveFolderUrl/spreadsheetUrl)로만 내려준다.
  */
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const session = await requireSession(request, env)
@@ -28,6 +29,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     schoolName: installation.schoolName,
     managerName: installation.managerName,
     schoolPublicId: installation.schoolPublicId,
+    driveFolderUrl: installation.rootFolderId
+      ? `https://drive.google.com/drive/folders/${installation.rootFolderId}`
+      : null,
+    spreadsheetUrl: installation.spreadsheetId
+      ? `https://docs.google.com/spreadsheets/d/${installation.spreadsheetId}/edit`
+      : null,
   })
 }
 

@@ -14,6 +14,31 @@ export function SettingsPage() {
   return <AuthGuard>{(user) => <SettingsContent user={user} />}</AuthGuard>
 }
 
+function ResourceLinkRow({
+  label,
+  description,
+  href,
+}: {
+  label: string
+  description: string
+  href: string | null
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      {href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer" className={secondaryButtonClass}>
+          {label}
+        </a>
+      ) : (
+        <button type="button" disabled className={secondaryButtonClass}>
+          {label}
+        </button>
+      )}
+      <span className="text-xs text-gray-500">{href ? description : '설치를 완료하면 열 수 있습니다.'}</span>
+    </div>
+  )
+}
+
 function SettingsContent({ user }: { user: SessionUser }) {
   const navigate = useNavigate()
   const { installation, loading, refresh } = useInstallation()
@@ -131,6 +156,21 @@ function SettingsContent({ user }: { user: SessionUser }) {
               </dd>
             </div>
           </dl>
+        )}
+
+        {!loading && (
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <ResourceLinkRow
+              label="내 Google Drive 작업공간 열기"
+              description="Google Drive에서 열기"
+              href={installation?.driveFolderUrl ?? null}
+            />
+            <ResourceLinkRow
+              label="데이터 Spreadsheet 열기"
+              description="Google Sheets에서 열기"
+              href={installation?.spreadsheetUrl ?? null}
+            />
+          </div>
         )}
       </Card>
 

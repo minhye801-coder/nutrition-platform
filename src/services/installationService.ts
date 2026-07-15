@@ -5,6 +5,8 @@ interface InstallationResponse {
   schoolName?: string
   managerName?: string
   schoolPublicId?: string
+  driveFolderUrl?: string | null
+  spreadsheetUrl?: string | null
   error?: string
 }
 
@@ -21,6 +23,8 @@ export async function fetchInstallation(): Promise<Installation | null> {
     schoolName: data.schoolName ?? '',
     managerName: data.managerName ?? '',
     schoolPublicId: data.schoolPublicId ?? '',
+    driveFolderUrl: data.driveFolderUrl ?? null,
+    spreadsheetUrl: data.spreadsheetUrl ?? null,
   }
 }
 
