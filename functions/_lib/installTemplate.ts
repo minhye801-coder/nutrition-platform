@@ -40,11 +40,13 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
   {
     name: '학생정보',
     headers: [
-      'studentId',
+      'studentUuid',
       'tenantId',
       'name',
       'grade',
       'class',
+      'studentNumber',
+      'enrollmentStatus',
       'createdAt',
       'updatedAt',
     ],

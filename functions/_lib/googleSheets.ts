@@ -60,3 +60,44 @@ export async function spreadsheetExists(accessToken: string, spreadsheetId: stri
     throw error
   }
 }
+
+/** 지정한 범위의 값을 한 번에 읽는다. 데이터가 없으면 빈 배열. */
+export async function getValues(
+  accessToken: string,
+  spreadsheetId: string,
+  range: string,
+): Promise<string[][]> {
+  const data = (await sheetsFetch(
+    accessToken,
+    `/${spreadsheetId}/values/${encodeURIComponent(range)}`,
+  )) as { values?: string[][] }
+  return data.values ?? []
+}
+
+/** 범위 끝에 새 행을 추가한다(행 번호를 직접 계산하지 않음 — Sheets가 다음 빈 행에 붙인다). */
+export async function appendValues(
+  accessToken: string,
+  spreadsheetId: string,
+  range: string,
+  values: (string | number)[][],
+): Promise<void> {
+  await sheetsFetch(
+    accessToken,
+    `/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    { method: 'POST', body: JSON.stringify({ values }) },
+  )
+}
+
+/** 지정한 범위(예: 헤더 행, 특정 데이터 행)의 값을 덮어쓴다. */
+export async function updateValues(
+  accessToken: string,
+  spreadsheetId: string,
+  range: string,
+  values: (string | number)[][],
+): Promise<void> {
+  await sheetsFetch(
+    accessToken,
+    `/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,
+    { method: 'PUT', body: JSON.stringify({ range, values }) },
+  )
+}
