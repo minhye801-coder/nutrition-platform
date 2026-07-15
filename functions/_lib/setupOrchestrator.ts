@@ -56,7 +56,8 @@ const DEFAULT_ERROR_MESSAGE = '설치 중 문제가 발생했습니다.'
 export interface SetupStepState {
   key: SetupStepKey
   label: string
-  status: 'done' | 'pending' | 'error'
+  /** active = 지금 이 순간 진행 중인 단계(폴링 시 노란색으로 표시). */
+  status: 'done' | 'active' | 'pending' | 'error'
 }
 
 export type SetupResult =
@@ -113,11 +114,14 @@ function buildSteps(
     headers: progress.headersWritten,
     save_metadata: progress.status === 'completed',
   }
-  return SETUP_STEPS.map((key) => ({
-    key,
-    label: SETUP_STEP_LABELS[key],
-    status: errorStep === key ? 'error' : done[key] ? 'done' : 'pending',
-  }))
+  return SETUP_STEPS.map((key) => {
+    let status: SetupStepState['status']
+    if (errorStep === key) status = 'error'
+    else if (done[key]) status = 'done'
+    else if (progress.currentStep === key) status = 'active'
+    else status = 'pending'
+    return { key, label: SETUP_STEP_LABELS[key], status }
+  })
 }
 
 function resolveErrorMessage(step: SetupStepKey | null): string {
@@ -249,6 +253,10 @@ export async function runSetup(
 
   try {
     progress.currentStep = 'root_folder'
+    // 실제 작업을 시작하기 전에 currentStep 전환을 먼저 D1에 남긴다 — 이 요청이
+    // 아직 실행 중인 동안 GET /api/setup/status로 폴링하는 클라이언트가 "지금
+    // 진행 중인 단계"(active, 노란색)를 실시간에 가깝게 볼 수 있게 하기 위함이다.
+    await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
     if (
       !progress.rootFolderId ||
       !(await fileExists(accessToken, progress.rootFolderId))
@@ -261,6 +269,7 @@ export async function runSetup(
     const rootFolderId = progress.rootFolderId
 
     progress.currentStep = 'subfolders'
+    await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
     for (const name of SUBFOLDER_NAMES) {
       const folderId = await ensureFolder(
         accessToken,
@@ -275,6 +284,7 @@ export async function runSetup(
     }
 
     progress.currentStep = 'spreadsheet'
+    await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
     if (
       !progress.spreadsheetId ||
       !(await spreadsheetExists(accessToken, progress.spreadsheetId))
@@ -333,6 +343,7 @@ export async function runSetup(
     const spreadsheetId = progress.spreadsheetId
 
     progress.currentStep = 'headers'
+    await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
     if (!progress.headersWritten) {
       const ranges = buildInitialValueRanges({
         schoolName: progress.schoolName,
@@ -346,6 +357,7 @@ export async function runSetup(
     }
 
     progress.currentStep = 'save_metadata'
+    await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
     const now = Date.now()
     await installationStore.complete({
       userId: session.googleSub,

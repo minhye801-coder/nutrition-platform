@@ -1,4 +1,5 @@
-export type SetupStepStatus = 'done' | 'pending' | 'error'
+/** active = 지금 이 순간 진행 중인 단계. */
+export type SetupStepStatus = 'done' | 'active' | 'pending' | 'error'
 
 export interface SetupStep {
   key: string

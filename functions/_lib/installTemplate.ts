@@ -3,13 +3,17 @@ import type { ValueRange } from './googleSheets'
 /** 설치 시 사용자 Drive에 생성하는 루트 폴더명. */
 export const ROOT_FOLDER_NAME = '영양상담 AI+'
 
-/** 루트 폴더 바로 아래에 생성하는 하위 폴더 6종. */
+/**
+ * 루트 폴더 바로 아래에 생성하는 하위 폴더 5종. 사용자에게 의미가 없는
+ * "임시파일" 폴더(NEIS 업로드 등 내부 작업용으로 legacy에서만 쓰이던 폴더)는
+ * 만들지 않는다 — 이미 설치된 기존 학교의 임시파일 폴더는 그대로 두고, 새 설치
+ * 부터만 제외한다.
+ */
 export const SUBFOLDER_NAMES = [
   '보호자동의서',
   '상담생성문서',
   '검사파일',
   '맛마을결과',
-  '임시파일',
   '백업',
 ] as const
 
@@ -35,7 +39,15 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
   { name: '설정', headers: ['키', '값'] },
   {
     name: '학생정보',
-    headers: ['studentId', 'tenantId', 'name', 'grade', 'class', 'createdAt', 'updatedAt'],
+    headers: [
+      'studentId',
+      'tenantId',
+      'name',
+      'grade',
+      'class',
+      'createdAt',
+      'updatedAt',
+    ],
   },
   {
     name: '상담접수',
@@ -43,7 +55,16 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
   },
   {
     name: '보호자동의',
-    headers: ['consentId', 'tenantId', 'intakeId', 'caseId', 'consentToken', 'status', 'requestedAt', 'respondedAt'],
+    headers: [
+      'consentId',
+      'tenantId',
+      'intakeId',
+      'caseId',
+      'consentToken',
+      'status',
+      'requestedAt',
+      'respondedAt',
+    ],
   },
   {
     name: '상담케이스',
@@ -83,7 +104,14 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
   },
   {
     name: '맛마을결과',
-    headers: ['resultId', 'tenantId', 'assessmentId', 'studentId', 'summary', 'createdAt'],
+    headers: [
+      'resultId',
+      'tenantId',
+      'assessmentId',
+      'studentId',
+      'summary',
+      'createdAt',
+    ],
   },
   {
     name: '생성문서',

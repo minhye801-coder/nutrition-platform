@@ -12,6 +12,9 @@ type Phase = 'loading' | 'form' | 'running' | 'redirecting' | 'needs_consent' | 
 /** Google 재동의 화면으로 실제 이동하기 전, 사용자가 안내 문구를 읽을 시간을 준다. */
 const REDIRECT_DELAY_MS = 1400
 
+/** 설치가 진행되는 동안 GET /api/setup/status를 이 주기로 폴링해 단계 상태를 실시간에 가깝게 보여준다. */
+const POLL_INTERVAL_MS = 1200
+
 interface CompletedInfo {
   schoolName: string
   managerName: string
@@ -35,23 +38,53 @@ function StepList({ steps }: { steps: SetupStep[] }) {
       {steps.map((step) => (
         <li
           key={step.key}
-          className="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+          className={`flex items-center gap-3 rounded-md border px-3 py-2 text-sm ${
+            step.status === 'active'
+              ? 'border-amber-200 bg-amber-50 text-amber-900'
+              : 'border-gray-200 bg-gray-50 text-gray-700'
+          }`}
         >
           <span
             className={`flex h-5 w-5 flex-none items-center justify-center rounded-full text-xs font-bold text-white ${
               step.status === 'done'
-                ? 'bg-brand-600'
-                : step.status === 'error'
-                  ? 'bg-red-500'
-                  : 'bg-gray-300'
+                ? 'bg-green-500'
+                : step.status === 'active'
+                  ? 'animate-pulse bg-amber-500'
+                  : step.status === 'error'
+                    ? 'bg-red-500'
+                    : 'bg-gray-300'
             }`}
           >
-            {step.status === 'done' ? '✓' : step.status === 'error' ? '!' : '·'}
+            {step.status === 'done' ? '✓' : step.status === 'error' ? '!' : step.status === 'active' ? '…' : '·'}
           </span>
-          <span className={step.status === 'pending' ? 'text-gray-400' : ''}>{step.label}</span>
+          <span className={step.status === 'pending' ? 'text-gray-400' : 'font-medium'}>
+            {step.label}
+          </span>
         </li>
       ))}
     </ul>
+  )
+}
+
+function ProgressBar({ steps }: { steps: SetupStep[] }) {
+  if (steps.length === 0) return null
+  const doneCount = steps.filter((step) => step.status === 'done').length
+  const percent = Math.round((doneCount / steps.length) * 100)
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+        <span>설치 진행률</span>
+        <span>
+          {doneCount}/{steps.length}
+        </span>
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+        <div
+          className="h-2 rounded-full bg-green-500 transition-all duration-500"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -170,6 +203,28 @@ function SetupContent({ user }: { user: SessionUser }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // 설치가 실제로 진행되는 동안(POST가 응답을 기다리는 동안), 서버가 이미 D1에
+  // 단계별로 기록해 둔 진행 상태를 짧은 주기로 폴링해 화면에 반영한다. 최종
+  // 결과는 여전히 POST 응답(applyResult)이 확정한다 — 이 폴링은 그 사이의
+  // "지금 몇 번째 단계인지"만 보여주는 보조 표시다.
+  useEffect(() => {
+    if (phase !== 'running') return
+    let cancelled = false
+    const interval = window.setInterval(() => {
+      fetchSetupStatus()
+        .then((result) => {
+          if (!cancelled && 'steps' in result) setSteps(result.steps)
+        })
+        .catch(() => {
+          // 폴링 실패는 무시한다 — 최종 결과는 원래의 POST 요청이 책임진다.
+        })
+    }, POLL_INTERVAL_MS)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [phase])
+
   async function continueInstall() {
     setPhase('running')
     setErrorMessage('')
@@ -270,9 +325,13 @@ function SetupContent({ user }: { user: SessionUser }) {
 
       {phase === 'running' && (
         <Card className="space-y-4">
-          <p className="text-sm text-gray-600">
-            내 Google Drive에 학교 작업공간을 만들고 있습니다. 잠시만 기다려 주세요...
-          </p>
+          <div>
+            <p className="text-sm font-medium text-gray-900">학교 작업공간을 만들고 있습니다</p>
+            <p className="mt-1 text-sm text-gray-600">
+              내 Google Drive에 폴더와 Spreadsheet를 생성하는 중입니다. 잠시만 기다려 주세요...
+            </p>
+          </div>
+          <ProgressBar steps={steps} />
           {steps.length > 0 && <StepList steps={steps} />}
         </Card>
       )}
@@ -303,6 +362,7 @@ function SetupContent({ user }: { user: SessionUser }) {
               </p>
             )}
             {savedInfo && <SavedInfoNotice info={savedInfo} />}
+            <ProgressBar steps={steps} />
             <StepList steps={steps} />
             <button
               type="button"
@@ -319,6 +379,7 @@ function SetupContent({ user }: { user: SessionUser }) {
         <div className="space-y-4">
           <Card className="space-y-4">
             {savedInfo && <SavedInfoNotice info={savedInfo} />}
+            <ProgressBar steps={steps} />
             <StepList steps={steps} />
             <p className="text-sm text-red-600">{errorMessage}</p>
             <button type="button" onClick={() => void continueInstall()} className={`${primaryButtonClass} w-full`}>
@@ -332,17 +393,27 @@ function SetupContent({ user }: { user: SessionUser }) {
         <div className="space-y-4">
           <Card className="space-y-4">
             <div>
-              <p className="text-sm font-semibold text-brand-700">설치가 완료되었습니다</p>
-              <p className="mt-1 text-sm text-gray-600">
-                {completed.schoolName} · {completed.managerName}
-              </p>
+              <p className="text-sm font-semibold text-green-700">✓ 설치가 완료되었습니다</p>
+              <p className="mt-1 text-sm text-gray-600">학교 작업공간이 정상적으로 만들어졌습니다.</p>
             </div>
 
+            <ProgressBar steps={steps} />
             <StepList steps={steps} />
 
-            <div className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-500">
-              schoolPublicId: <span className="font-mono">{completed.schoolPublicId}</span>
-            </div>
+            <dl className="space-y-2 rounded-md bg-gray-50 px-3 py-3 text-sm">
+              <div className="flex items-center justify-between">
+                <dt className="text-gray-500">학교명</dt>
+                <dd className="font-medium text-gray-900">{completed.schoolName}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-gray-500">담당자명</dt>
+                <dd className="font-medium text-gray-900">{completed.managerName}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-gray-500">schoolPublicId</dt>
+                <dd className="font-mono text-xs text-gray-500">{completed.schoolPublicId}</dd>
+              </div>
+            </dl>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <a
@@ -365,7 +436,7 @@ function SetupContent({ user }: { user: SessionUser }) {
           </Card>
 
           <button type="button" onClick={() => navigate('/app')} className={`${primaryButtonClass} w-full`}>
-            관리자 화면으로 이동
+            관리자로 이동
           </button>
         </div>
       )}
