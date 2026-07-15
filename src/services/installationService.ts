@@ -14,36 +14,13 @@ export async function fetchInstallation(): Promise<Installation | null> {
 
   const data = (await response.json()) as InstallationResponse
   // 설치 여부는 서버가 내려주는 installed 플래그를 그대로 신뢰한다 — 필드 값의
-  // 빈 문자열 여부로 재판정하면 서버(POST의 "이미 설치됨" 판정)와 기준이 어긋날 수 있다.
+  // 빈 문자열 여부로 재판정하면 서버(installations 테이블 행 존재 여부) 판정과 어긋날 수 있다.
   if (!data.installed) return null
 
   return {
     schoolName: data.schoolName ?? '',
     managerName: data.managerName ?? '',
     schoolPublicId: data.schoolPublicId ?? '',
-  }
-}
-
-export async function createInstallation(input: {
-  schoolName: string
-  managerName: string
-}): Promise<Installation> {
-  const response = await fetch('/api/installation', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  })
-
-  const data = (await response.json()) as InstallationResponse
-  if (!response.ok || !data.schoolName || !data.managerName || !data.schoolPublicId) {
-    throw new Error(data.error ?? 'installation_failed')
-  }
-
-  return {
-    schoolName: data.schoolName,
-    managerName: data.managerName,
-    schoolPublicId: data.schoolPublicId,
   }
 }
 

@@ -10,14 +10,15 @@
 
 ## 1. 테이블 개요
 
-마이그레이션 파일: [`migrations/0001_create_auth_tables.sql`](../migrations/0001_create_auth_tables.sql), [`migrations/0002_add_installation_profile_fields.sql`](../migrations/0002_add_installation_profile_fields.sql)
+마이그레이션 파일: [`migrations/0001_create_auth_tables.sql`](../migrations/0001_create_auth_tables.sql), [`migrations/0002_add_installation_profile_fields.sql`](../migrations/0002_add_installation_profile_fields.sql), [`migrations/0003_add_oauth_granted_scopes.sql`](../migrations/0003_add_oauth_granted_scopes.sql), [`migrations/0004_add_setup_resources.sql`](../migrations/0004_add_setup_resources.sql)
 
 | 테이블 | 용도 | 비고 |
 |---|---|---|
 | `users` | 로그인한 Google 계정의 최소 프로필 | `id`에 Google OpenID `sub`를 그대로 사용 (별도 UUID 발급 없음). **화면 표시용 담당자명이 아니라 인증용 기본정보로만 쓴다** — 표시용은 `installations.manager_name` 우선 |
-| `oauth_tokens` | Google access/refresh token | **평문 저장 금지.** `SESSION_SECRET`으로 유도한 키로 AES-GCM 암호화한 `ciphertext`/`iv`만 저장 (`functions/_lib/tokenCipher.ts`) |
+| `oauth_tokens` | Google access/refresh token + 부여된 scope | **토큰은 평문 저장 금지.** `SESSION_SECRET`으로 유도한 키로 AES-GCM 암호화한 `ciphertext`/`iv`만 저장 (`functions/_lib/tokenCipher.ts`). `granted_scopes`는 토큰이 아니므로 평문 저장하며, `/setup`이 Drive 권한 보유 여부를 판정하는 데 쓴다(`functions/_lib/googleOAuth.ts`의 `hasDriveScope`) |
 | `sessions` | 로그인 세션 | `session_id_hash`(쿠키 값의 SHA-256 해시), `user_id`, `expires_at`, `created_at`, `updated_at`만 저장. 쿠키에 담기는 원본 세션 ID 자체는 저장하지 않음 |
-| `installations` | 학교 작업공간 설치 정보 | `user_id`(설치한 로그인 계정) 1행당 `school_name`(학교명), `manager_name`(설치 시 입력한 담당자명 — 있으면 `users.name`보다 우선 표시), `school_public_id`(공개 식별자), `installed_at`, `updated_at` |
+| `installations` | **완료된** 학교 작업공간 설치 | `user_id`(설치한 로그인 계정) 1행당 `school_name`, `manager_name`, `school_public_id`, `root_folder_id`/`spreadsheet_id`(서버 내부 참조 전용, 클라이언트에는 절대 원본 ID를 내려주지 않음), `installed_at`, `updated_at`. **행이 존재한다는 것 자체가 설치 완료를 의미**하며 `GET /api/installation`이 그대로 사용 |
+| `installation_progress` | 설치 진행 중(Drive/Sheets 생성 도중) 체크포인트 | 완료 판정에는 쓰이지 않는 임시 테이블. 재시도 시 이미 만든 폴더/Spreadsheet를 다시 만들지 않기 위해 단계별 상태와 리소스 ID를 기록한다(`functions/_lib/setupOrchestrator.ts`) |
 
 `sessions` 테이블에 원본 세션 ID 대신 해시만 저장하는 이유: D1 테이블이 유출되더라도 그 값만으로는 쿠키를 재구성해 세션을 가로챌 수 없도록 하기 위함입니다.
 
@@ -25,15 +26,24 @@
 
 ```
 functions/_lib/
-  sessionStore.ts             # SessionStore 인터페이스 (변경 없음) + SESSION_TTL_SECONDS
+  sessionStore.ts             # SessionStore 인터페이스 + SESSION_TTL_SECONDS
   sessionStore.memory.ts      # 로컬 개발 전용 인메모리 구현
   sessionStore.d1.ts          # 운영용 D1 구현 (users/oauth_tokens/sessions에 나눠 기록)
-  installationStore.ts        # InstallationStore 인터페이스 (get/create/updateManagerName)
+  installationStore.ts        # InstallationStore 인터페이스 (완료 레코드 get/complete/updateManagerName + 진행 체크포인트 getProgress/saveProgress)
   installationStore.memory.ts # 로컬 개발 전용 인메모리 구현
-  installationStore.d1.ts     # 운영용 D1 구현 (installations 조회/생성/담당자명 수정)
+  installationStore.d1.ts     # 운영용 D1 구현 (installations/installation_progress)
   tokenCipher.ts               # SESSION_SECRET 기반 AES-GCM 토큰 암호화/복호화
+  googleDrive.ts / googleSheets.ts / googleApiError.ts  # Drive v3 / Sheets v4 REST 최소 래퍼
+  googleAccessToken.ts         # access token 만료 시 refresh token으로 자동 갱신
+  installTemplate.ts           # 루트/하위 폴더명, 18개 탭 헤더, 설정 탭 초기값
+  setupOrchestrator.ts         # 최초 설치 흐름 전체(runSetup) + 상태 조회(readSetupStatus)
+  requireSession.ts            # 쿠키 세션 조회 공통 헬퍼
   stores.ts                    # 합성 지점 — AUTH_DB 바인딩 유무로 memory/D1 자동 전환
-functions/api/installation.ts  # GET(조회)/POST(설치 생성)/PATCH(담당자명 수정)
+functions/api/installation.ts  # GET(설치 프로필 조회)/PATCH(담당자명 수정)
+functions/api/setup/
+  start.ts   # POST — 최초 설치 시작(학교명/담당자명 필요)
+  retry.ts   # POST — 실패/중단된 설치 재시도(body 불필요)
+  status.ts  # GET  — 현재 설치 진행 상태 조회(Google API 호출 없음)
 ```
 
 `stores.ts`는 `env.AUTH_DB`가 있으면 D1 구현을, 없으면 인메모리 구현을 반환합니다. 라우트 핸들러는 여전히 `getSessionStore(env)` / `getInstallationStore(env)`만 호출하며, 어떤 구현이 쓰이는지는 신경 쓰지 않습니다. 즉 **로컬에서 `.dev.vars`만 채우고 D1 바인딩을 설정하지 않으면 지금처럼 인메모리로 동작하고, D1을 바인딩하면 자동으로 D1을 씁니다.**

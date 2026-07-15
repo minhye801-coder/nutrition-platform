@@ -1,25 +1,17 @@
-import { parseCookies } from '../_lib/cookies'
-import { getSessionStore, getInstallationStore } from '../_lib/stores'
-import { randomPublicId } from '../_lib/crypto'
-import type { SessionRecord } from '../_lib/sessionStore'
+import { requireSession } from '../_lib/requireSession'
+import { getInstallationStore } from '../_lib/stores'
 import type { Env } from '../_lib/env'
-
-async function requireSession(request: Request, env: Env): Promise<SessionRecord | null> {
-  const cookies = parseCookies(request.headers.get('Cookie'))
-  const sessionId = cookies['session']
-  if (!sessionId) return null
-  return getSessionStore(env).get(sessionId)
-}
-
-interface CreateInstallationBody {
-  schoolName?: string
-  managerName?: string
-}
 
 interface UpdateManagerNameBody {
   managerName?: string
 }
 
+/**
+ * 설치 프로필(학교명/담당자명/schoolPublicId) 조회. 실제 설치 실행(Drive/Sheets
+ * 생성)은 /api/setup/*(functions/_lib/setupOrchestrator.ts)가 담당하며, 이
+ * 라우트는 완료된 설치의 표시용 정보만 다룬다. rootFolderId/spreadsheetId는
+ * 여기서 절대 반환하지 않는다(security-principles.md 4절).
+ */
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const session = await requireSession(request, env)
   if (!session) {
@@ -37,48 +29,6 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     managerName: installation.managerName,
     schoolPublicId: installation.schoolPublicId,
   })
-}
-
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  const session = await requireSession(request, env)
-  if (!session) {
-    return Response.json({ error: 'unauthenticated' }, { status: 401 })
-  }
-
-  const store = getInstallationStore(env)
-  if (await store.get(session.googleSub)) {
-    return Response.json({ error: 'already_installed' }, { status: 409 })
-  }
-
-  let body: CreateInstallationBody
-  try {
-    body = await request.json()
-  } catch {
-    return Response.json({ error: 'invalid_input' }, { status: 400 })
-  }
-  if (!body || typeof body !== 'object') {
-    return Response.json({ error: 'invalid_input' }, { status: 400 })
-  }
-
-  const schoolName = body.schoolName?.trim()
-  const managerName = body.managerName?.trim()
-  if (!schoolName || !managerName) {
-    return Response.json({ error: 'invalid_input' }, { status: 400 })
-  }
-
-  const now = Date.now()
-  const schoolPublicId = `SCH-${randomPublicId(6)}`
-
-  await store.create({
-    userId: session.googleSub,
-    schoolName,
-    managerName,
-    schoolPublicId,
-    installedAt: now,
-    updatedAt: now,
-  })
-
-  return Response.json({ installed: true, schoolName, managerName, schoolPublicId })
 }
 
 export const onRequestPatch: PagesFunction<Env> = async ({ request, env }) => {

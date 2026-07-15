@@ -17,4 +17,16 @@ export const memorySessionStore: SessionStore = {
   async delete(sessionId) {
     sessions.delete(sessionId)
   },
+  async updateAccessToken(userId, update) {
+    for (const [sessionId, record] of sessions) {
+      if (record.googleSub !== userId) continue
+      sessions.set(sessionId, {
+        ...record,
+        accessToken: update.accessToken,
+        accessTokenExpiresAt: update.accessTokenExpiresAt,
+        refreshToken: update.refreshToken !== undefined ? update.refreshToken : record.refreshToken,
+        grantedScopes: update.grantedScopes ?? record.grantedScopes,
+      })
+    }
+  },
 }

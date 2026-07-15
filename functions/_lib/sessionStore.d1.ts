@@ -14,6 +14,7 @@ interface SessionRow {
   refresh_token_ciphertext: string | null
   refresh_token_iv: string | null
   access_token_expires_at: number | null
+  granted_scopes: string | null
 }
 
 /**
@@ -53,14 +54,15 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
             `INSERT INTO oauth_tokens (
                user_id, access_token_ciphertext, access_token_iv,
                refresh_token_ciphertext, refresh_token_iv,
-               access_token_expires_at, created_at, updated_at
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)
+               access_token_expires_at, granted_scopes, created_at, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)
              ON CONFLICT(user_id) DO UPDATE SET
                access_token_ciphertext = excluded.access_token_ciphertext,
                access_token_iv = excluded.access_token_iv,
                refresh_token_ciphertext = excluded.refresh_token_ciphertext,
                refresh_token_iv = excluded.refresh_token_iv,
                access_token_expires_at = excluded.access_token_expires_at,
+               granted_scopes = excluded.granted_scopes,
                updated_at = excluded.updated_at`,
           )
           .bind(
@@ -70,6 +72,7 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
             refreshToken?.ciphertext ?? null,
             refreshToken?.iv ?? null,
             record.accessTokenExpiresAt,
+            record.grantedScopes,
             record.createdAt,
           ),
 
@@ -96,7 +99,7 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
              u.id AS user_id, u.email AS email, u.name AS name, u.picture AS picture,
              t.access_token_ciphertext, t.access_token_iv,
              t.refresh_token_ciphertext, t.refresh_token_iv,
-             t.access_token_expires_at
+             t.access_token_expires_at, t.granted_scopes
            FROM sessions s
            JOIN users u ON u.id = s.user_id
            LEFT JOIN oauth_tokens t ON t.user_id = u.id
@@ -133,6 +136,7 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
         accessToken,
         refreshToken,
         accessTokenExpiresAt: row.access_token_expires_at ?? 0,
+        grantedScopes: row.granted_scopes ?? '',
         createdAt: row.session_created_at,
       }
       return record
@@ -141,6 +145,47 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
     async delete(sessionId) {
       const sessionIdHash = await sha256Base64Url(sessionId)
       await db.prepare(`DELETE FROM sessions WHERE session_id_hash = ?1`).bind(sessionIdHash).run()
+    },
+
+    async updateAccessToken(userId, update) {
+      const accessToken = await encryptToken(sessionSecret, update.accessToken)
+      const now = Date.now()
+
+      if (update.refreshToken !== undefined) {
+        const refreshToken = update.refreshToken ? await encryptToken(sessionSecret, update.refreshToken) : null
+        await db
+          .prepare(
+            `UPDATE oauth_tokens SET
+               access_token_ciphertext = ?2, access_token_iv = ?3,
+               refresh_token_ciphertext = ?4, refresh_token_iv = ?5,
+               access_token_expires_at = ?6, granted_scopes = COALESCE(?7, granted_scopes),
+               updated_at = ?8
+             WHERE user_id = ?1`,
+          )
+          .bind(
+            userId,
+            accessToken.ciphertext,
+            accessToken.iv,
+            refreshToken?.ciphertext ?? null,
+            refreshToken?.iv ?? null,
+            update.accessTokenExpiresAt,
+            update.grantedScopes ?? null,
+            now,
+          )
+          .run()
+        return
+      }
+
+      await db
+        .prepare(
+          `UPDATE oauth_tokens SET
+             access_token_ciphertext = ?2, access_token_iv = ?3,
+             access_token_expires_at = ?4, granted_scopes = COALESCE(?5, granted_scopes),
+             updated_at = ?6
+           WHERE user_id = ?1`,
+        )
+        .bind(userId, accessToken.ciphertext, accessToken.iv, update.accessTokenExpiresAt, update.grantedScopes ?? null, now)
+        .run()
     },
   }
 }

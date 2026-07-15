@@ -86,14 +86,30 @@ npx wrangler pages secret put SESSION_SECRET
 
 ## 5. 필요한 Google API 및 scope
 
-Milestone 1(로그인만) 기준으로는 별도 API를 Cloud Console에서 "사용 설정"할 필요가 없습니다. `openid`, `email`, `profile` 스코프와 표준 OpenID Connect 사용자 정보 엔드포인트(`https://www.googleapis.com/oauth2/v3/userinfo`)는 OAuth 클라이언트를 만들면 기본으로 사용할 수 있습니다.
+로그인(`/login`)과 최초 설치(`/setup`)는 요청하는 스코프가 다르고, 설치 흐름에서만
+Cloud Console에서 API를 사용 설정해야 합니다.
 
 | 시점 | 요청 스코프 | Cloud Console에서 API 활성화 필요 여부 |
 |---|---|---|
-| Milestone 1(현재, 로그인만) | `openid email profile` | 불필요 |
-| 후속 단계(설치 흐름에서 Drive/Sheets 생성) | Drive/Sheets 관련 최소 범위 스코프 추가 예정(`platform-v1-architecture.md` 9절) | **Google Drive API**, **Google Sheets API**를 Cloud Console의 "API 및 서비스 → 라이브러리"에서 사용 설정해야 함 |
+| 로그인(`/login`, `GOOGLE_LOGIN_SCOPES`) | `openid email profile` | 불필요 |
+| 설치 흐름(`/setup`, `GOOGLE_INSTALL_SCOPES` = 로그인 스코프 + Drive) | `openid email profile` + `https://www.googleapis.com/auth/drive.file` | **Google Drive API**, **Google Sheets API**를 Cloud Console의 "API 및 서비스 → 라이브러리"에서 사용 설정해야 함 |
 
-지금은 로그인 전용 스코프만 요청하므로, Drive/Sheets API를 미리 활성화할 필요는 없습니다. 후속 마일스톤에서 설치 흐름을 구현할 때 이 문서를 갱신합니다.
+**`drive.file` 하나로 Drive와 Sheets를 모두 처리합니다.** `drive.file`은 "이 앱이
+만들었거나 사용자가 이 앱과 명시적으로 공유한 파일"에만 접근을 허용하는 최소 범위이며,
+Google Sheets API v4도 이 스코프로 생성한 스프레드시트에 대해서는 `spreadsheets.create`
+/`values.batchUpdate` 등을 동일하게 허용합니다. 그래서 별도의
+`https://www.googleapis.com/auth/spreadsheets` 스코프를 추가하지 않습니다
+(`functions/_lib/googleOAuth.ts`의 `GOOGLE_DRIVE_FILE_SCOPE`, 9절 "최소 권한 원칙").
+
+설치 흐름은 로그인 시점에는 이 스코프를 요청하지 않고, 사용자가 `/setup`에서 "설치
+시작"을 눌렀을 때 서버가 기존 세션의 scope를 확인해 부족하면 점진 동의(incremental
+authorization, `GET /api/auth/google?purpose=install`)로 추가 요청합니다
+(`functions/_lib/setupOrchestrator.ts`). 이때 `prompt=consent`를 함께 보내
+refresh token 재발급을 보장합니다.
+
+Cloud Console에서 활성화해야 하는 API는 **Google Drive API**와 **Google Sheets API**
+두 가지이며, 둘 다 무료 할당량 안에서 동작합니다(결제 계정 불필요, `platform-v1-architecture.md`
+18.9절).
 
 ## 6. 테스트 사용자 설정
 

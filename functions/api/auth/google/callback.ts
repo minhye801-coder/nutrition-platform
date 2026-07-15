@@ -13,6 +13,7 @@ const TRANSACTION_TTL_MS = 10 * 60 * 1000
 interface TransactionPayload {
   state: string
   codeVerifier: string
+  purpose: 'login' | 'install'
   createdAt: number
 }
 
@@ -85,11 +86,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token ?? null,
       accessTokenExpiresAt: Date.now() + tokens.expires_in * 1000,
+      grantedScopes: tokens.scope ?? '',
       createdAt: Date.now(),
     })
 
-    const installation = await getInstallationStore(env).get(profile.sub)
-    const destination = installation ? '/app' : '/setup'
+    // install 목적 동의는 설치 흐름 중간에 발생하므로, 완료 여부와 무관하게 항상
+    // /setup으로 돌아가 설치를 이어간다(진행 상태는 installation_progress에 남아있다).
+    let destination = '/setup'
+    if (transaction.purpose !== 'install') {
+      const installation = await getInstallationStore(env).get(profile.sub)
+      destination = installation ? '/app' : '/setup'
+    }
 
     const headers = new Headers()
     headers.append('Location', destination)

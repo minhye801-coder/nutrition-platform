@@ -7,7 +7,16 @@ export interface SessionRecord {
   accessToken: string
   refreshToken: string | null
   accessTokenExpiresAt: number
+  /** 토큰 교환/갱신 시 Google이 내려준 공백 구분 scope 문자열. functions/_lib/googleOAuth.ts의 hasDriveScope 참고. */
+  grantedScopes: string
   createdAt: number
+}
+
+export interface AccessTokenUpdate {
+  accessToken: string
+  accessTokenExpiresAt: number
+  refreshToken?: string | null
+  grantedScopes?: string
 }
 
 /** 세션 쿠키/D1 sessions.expires_at에 공통으로 쓰는 세션 유효기간. */
@@ -23,4 +32,6 @@ export interface SessionStore {
   create(record: SessionRecord): Promise<void>
   get(sessionId: string): Promise<SessionRecord | null>
   delete(sessionId: string): Promise<void>
+  /** access token 갱신(및 필요 시 refresh token 교체) 결과를 저장소에 반영한다. userId=Google `sub`. */
+  updateAccessToken(userId: string, update: AccessTokenUpdate): Promise<void>
 }
