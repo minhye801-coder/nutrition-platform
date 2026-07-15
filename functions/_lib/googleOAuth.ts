@@ -2,6 +2,7 @@ const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 const USERINFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v3/userinfo'
 const REVOKE_ENDPOINT = 'https://oauth2.googleapis.com/revoke'
+const TOKENINFO_ENDPOINT = 'https://oauth2.googleapis.com/tokeninfo'
 
 /** 로그인 전용 최소 스코프. */
 export const GOOGLE_LOGIN_SCOPES = ['openid', 'email', 'profile']
@@ -126,6 +127,22 @@ export async function refreshAccessToken(
   }
 
   return response.json()
+}
+
+/**
+ * D1에 캐시된 `granted_scopes`를 그대로 신뢰하지 않고, 지금 이 access token이
+ * Google 기준으로 실제 어떤 scope를 갖고 있는지 확인한다. 캐시는 로그인/토큰
+ * 갱신 시점의 스냅샷일 뿐이라 refresh token 유실 등으로 실제 토큰과 어긋날 수
+ * 있으므로, Drive/Sheets를 호출하기 직전에 이 함수로 한 번 더 확인한다
+ * (설치 흐름 요구사항 "권한 승인 없이 Drive API를 먼저 호출하지 않음").
+ */
+export async function fetchGrantedScopes(accessToken: string): Promise<string> {
+  const response = await fetch(`${TOKENINFO_ENDPOINT}?access_token=${encodeURIComponent(accessToken)}`)
+  if (!response.ok) {
+    throw new Error(`Google tokeninfo failed: ${response.status}`)
+  }
+  const data = (await response.json()) as { scope?: string }
+  return data.scope ?? ''
 }
 
 export interface GoogleUserInfo {

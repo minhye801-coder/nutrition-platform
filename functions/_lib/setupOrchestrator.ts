@@ -1,6 +1,6 @@
-import { getInstallationStore } from './stores'
+import { getInstallationStore, getSessionStore } from './stores'
 import { randomPublicId } from './crypto'
-import { hasDriveScope } from './googleOAuth'
+import { fetchGrantedScopes, hasDriveScope } from './googleOAuth'
 import { ensureFreshAccessToken, ReauthRequiredError } from './googleAccessToken'
 import { createFolder, fileExists, findFolderByName, moveFileToRootFolder } from './googleDrive'
 import { batchWriteValues, createSpreadsheet, spreadsheetExists } from './googleSheets'
@@ -179,6 +179,31 @@ export async function runSetup(
     throw error
   }
 
+  // D1에 저장된 grantedScopes는 로그인/토큰 갱신 시점의 스냅샷일 뿐이다. 예를 들어
+  // 설치 동의 이후 사용자가 별도로 다시 로그인하면 그 교환에서 refresh token이
+  // 오지 않을 수 있고, 그 경우 저장된 값이 실제 토큰 권한과 어긋날 수 있다.
+  // 그래서 Drive/Sheets를 호출하기 전에 이 access token이 실제로 어떤 scope를
+  // 갖고 있는지 Google에 직접 확인하고, 캐시가 낡았으면 여기서 바로잡는다.
+  let verifiedScopes: string
+  try {
+    verifiedScopes = await fetchGrantedScopes(accessToken)
+  } catch {
+    return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
+  }
+
+  if (verifiedScopes !== session.grantedScopes) {
+    await getSessionStore(env).updateAccessToken(session.googleSub, {
+      accessToken,
+      accessTokenExpiresAt: session.accessTokenExpiresAt,
+      grantedScopes: verifiedScopes,
+    })
+    session.grantedScopes = verifiedScopes
+  }
+
+  if (!hasDriveScope(verifiedScopes)) {
+    return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
+  }
+
   try {
     progress.currentStep = 'root_folder'
     if (!progress.rootFolderId || !(await fileExists(accessToken, progress.rootFolderId))) {
@@ -247,7 +272,10 @@ export async function runSetup(
       steps: buildSteps(progress, true, null),
     }
   } catch (error) {
-    if (error instanceof GoogleApiError && error.status === 401) {
+    // 401(토큰 무효)뿐 아니라 403(스코프 부족 — Google Drive/Sheets는 권한이 부족한
+    // 요청에 401이 아니라 403 PERMISSION_DENIED를 반환한다)도 재동의로 되돌린다.
+    // 여기서 놓치면 사용자에게는 동의 화면 없이 알 수 없는 실패로만 보인다.
+    if (error instanceof GoogleApiError && (error.status === 401 || error.status === 403)) {
       return { status: 'needs_consent', consentUrl: CONSENT_URL, steps: buildSteps(progress, false, null) }
     }
 

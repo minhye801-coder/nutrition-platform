@@ -58,6 +58,7 @@ function SetupContent({ user }: { user: SessionUser }) {
   const [consentUrl, setConsentUrl] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [completed, setCompleted] = useState<CompletedInfo | null>(null)
+  const [consentDenied, setConsentDenied] = useState(false)
 
   function applyResult(result: SetupStatusResponse, autoRedirectConsent: boolean) {
     switch (result.status) {
@@ -100,6 +101,14 @@ function SetupContent({ user }: { user: SessionUser }) {
   }
 
   useEffect(() => {
+    // Google 동의 화면에서 거부하고 돌아오면 콜백이 /setup?consent=access_denied로
+    // 리다이렉트한다. 이 신호를 한 번만 소비하고 주소창에서는 지운다.
+    const consentParam = new URLSearchParams(window.location.search).get('consent')
+    if (consentParam) {
+      setConsentDenied(true)
+      window.history.replaceState(null, '', '/setup')
+    }
+
     let cancelled = false
     fetchSetupStatus()
       .then((result) => {
@@ -221,19 +230,28 @@ function SetupContent({ user }: { user: SessionUser }) {
       {phase === 'needs_consent' && (
         <div className="space-y-4">
           <Card className="space-y-4">
-            <p className="text-sm text-gray-700">
-              내 Google Drive에 폴더와 Spreadsheet를 만들려면 Drive 접근 권한이
-              필요합니다. 아래 버튼을 눌러 Google 동의 화면에서 권한을 허용해 주세요.
-            </p>
+            {consentDenied ? (
+              <p className="text-sm text-red-600">
+                Google 권한 요청이 거부되었거나 완료되지 않았습니다. 내 Google Drive에
+                폴더와 Spreadsheet를 만들려면 Drive 접근 권한 승인이 반드시 필요합니다.
+                아래 버튼으로 다시 시도해 주세요.
+              </p>
+            ) : (
+              <p className="text-sm text-gray-700">
+                내 Google Drive에 폴더와 Spreadsheet를 만들려면 Drive 접근 권한이
+                필요합니다. 아래 버튼을 눌러 Google 동의 화면에서 권한을 허용해 주세요.
+              </p>
+            )}
             <StepList steps={steps} />
             <button
               type="button"
               onClick={() => {
+                setConsentDenied(false)
                 window.location.href = consentUrl
               }}
               className={`${primaryButtonClass} w-full`}
             >
-              Google 권한 허용하기
+              {consentDenied ? '다시 시도' : 'Google 권한 허용하기'}
             </button>
           </Card>
         </div>

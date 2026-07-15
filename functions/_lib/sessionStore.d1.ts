@@ -59,8 +59,8 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
              ON CONFLICT(user_id) DO UPDATE SET
                access_token_ciphertext = excluded.access_token_ciphertext,
                access_token_iv = excluded.access_token_iv,
-               refresh_token_ciphertext = excluded.refresh_token_ciphertext,
-               refresh_token_iv = excluded.refresh_token_iv,
+               refresh_token_ciphertext = COALESCE(excluded.refresh_token_ciphertext, refresh_token_ciphertext),
+               refresh_token_iv = COALESCE(excluded.refresh_token_iv, refresh_token_iv),
                access_token_expires_at = excluded.access_token_expires_at,
                granted_scopes = excluded.granted_scopes,
                updated_at = excluded.updated_at`,

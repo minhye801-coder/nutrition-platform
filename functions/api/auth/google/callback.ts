@@ -17,50 +17,60 @@ interface TransactionPayload {
   createdAt: number
 }
 
-function redirectToLogin(reason: string): Response {
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: `/login?error=${encodeURIComponent(reason)}`,
-      'Set-Cookie': expireCookie(OAUTH_TRANSACTION_COOKIE, '/api/auth'),
-    },
-  })
-}
-
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!hasOAuthConfig(env)) {
     return Response.json({ error: 'oauth_not_configured' }, { status: 500 })
   }
 
   const url = new URL(request.url)
+  const cookies = parseCookies(request.headers.get('Cookie'))
+  const transactionToken = cookies[OAUTH_TRANSACTION_COOKIE]
+  // 서명 검증까지 먼저 끝내 둔다 — 아래 오류 분기들이 purpose를 안전하게(위조 불가능하게)
+  // 참고해 install 흐름은 /setup으로, login 흐름은 /login으로 되돌릴 수 있게 하기 위함이다.
+  const transaction = transactionToken
+    ? await verifyPayload<TransactionPayload>(env.SESSION_SECRET, transactionToken)
+    : null
 
+  function redirectBack(reason: string): Response {
+    const destination =
+      transaction?.purpose === 'install'
+        ? `/setup?consent=${encodeURIComponent(reason)}`
+        : `/login?error=${encodeURIComponent(reason)}`
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: destination,
+        'Set-Cookie': expireCookie(OAUTH_TRANSACTION_COOKIE, '/api/auth'),
+      },
+    })
+  }
+
+  // 사용자가 Google 동의 화면에서 거부했을 때: install 목적이면 /setup으로 돌려보내
+  // 명확한 안내와 재시도 버튼을 보여주고, login 목적이면 기존처럼 /login으로 보낸다.
   if (url.searchParams.get('error')) {
-    return redirectToLogin('access_denied')
+    return redirectBack('access_denied')
   }
 
   const code = url.searchParams.get('code')
   const state = url.searchParams.get('state')
   if (!code || !state) {
-    return redirectToLogin('missing_code_or_state')
+    return redirectBack('missing_code_or_state')
   }
 
-  const cookies = parseCookies(request.headers.get('Cookie'))
-  const transactionToken = cookies[OAUTH_TRANSACTION_COOKIE]
   if (!transactionToken) {
-    return redirectToLogin('missing_transaction')
+    return redirectBack('missing_transaction')
   }
 
-  const transaction = await verifyPayload<TransactionPayload>(env.SESSION_SECRET, transactionToken)
   if (!transaction) {
-    return redirectToLogin('invalid_transaction')
+    return redirectBack('invalid_transaction')
   }
 
   if (Date.now() - transaction.createdAt > TRANSACTION_TTL_MS) {
-    return redirectToLogin('transaction_expired')
+    return redirectBack('transaction_expired')
   }
 
   if (transaction.state !== state) {
-    return redirectToLogin('state_mismatch')
+    return redirectBack('state_mismatch')
   }
 
   try {
@@ -109,6 +119,6 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(null, { status: 302, headers })
   } catch (error) {
     console.error('Google OAuth callback failed', error)
-    return redirectToLogin('token_exchange_failed')
+    return redirectBack('token_exchange_failed')
   }
 }
