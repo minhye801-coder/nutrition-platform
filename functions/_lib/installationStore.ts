@@ -48,6 +48,8 @@ export interface InstallationProgressRecord {
  */
 export interface InstallationStore {
   get(userId: string): Promise<InstallationRecord | null>
+  /** 공개 라우트(상담신청 등)가 schoolPublicId만으로 설치를 찾을 때 쓴다(docs/public-intake-auth-design.md 3.1절). */
+  getBySchoolPublicId(schoolPublicId: string): Promise<InstallationRecord | null>
   updateManagerName(userId: string, managerName: string): Promise<void>
   /** 설치 완료 시 단 한 번 호출되어 installations 행을 만든다. */
   complete(record: InstallationRecord): Promise<void>

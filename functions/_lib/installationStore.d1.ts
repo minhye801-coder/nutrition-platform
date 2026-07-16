@@ -85,6 +85,27 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
       return row ? toRecord(row) : null
     },
 
+    async getBySchoolPublicId(schoolPublicId) {
+      const { results } = await db
+        .prepare(
+          `SELECT user_id, school_name, manager_name, school_public_id,
+                  root_folder_id, spreadsheet_id, installed_at, updated_at
+           FROM installations WHERE school_public_id = ?1 LIMIT 2`,
+        )
+        .bind(schoolPublicId)
+        .all<InstallationRow>()
+      if (results.length !== 1) {
+        // 0건이면 존재하지 않는 것과 동일하게 처리하고, 2건 이상(중복, idx_installations_school_public_id에는
+        // 유니크 제약이 없다)이면 어느 쪽으로 연결할지 판단할 근거가 없으므로 안전하게 찾지 못한 것으로 처리한다
+        // (docs/public-intake-auth-design.md 3.1절 — 실패를 열어두기보다 닫아두는 쪽을 택함).
+        if (results.length > 1) {
+          console.error(`[installationStore] duplicate schoolPublicId`, results.length)
+        }
+        return null
+      }
+      return toRecord(results[0])
+    },
+
     async updateManagerName(userId, managerName) {
       await db
         .prepare(`UPDATE installations SET manager_name = ?2, updated_at = ?3 WHERE user_id = ?1`)

@@ -1,4 +1,4 @@
-import { SESSION_TTL_SECONDS, type SessionRecord, type SessionStore } from './sessionStore'
+import { SESSION_TTL_SECONDS, type AccountTokens, type SessionRecord, type SessionStore } from './sessionStore'
 import { sha256Base64Url } from './crypto'
 import { decryptToken, encryptToken } from './tokenCipher'
 
@@ -145,6 +145,47 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
     async delete(sessionId) {
       const sessionIdHash = await sha256Base64Url(sessionId)
       await db.prepare(`DELETE FROM sessions WHERE session_id_hash = ?1`).bind(sessionIdHash).run()
+    },
+
+    async getTokensByUserId(userId): Promise<AccountTokens | null> {
+      const row = await db
+        .prepare(
+          `SELECT access_token_ciphertext, access_token_iv,
+                  refresh_token_ciphertext, refresh_token_iv,
+                  access_token_expires_at, granted_scopes
+           FROM oauth_tokens WHERE user_id = ?1`,
+        )
+        .bind(userId)
+        .first<Pick<
+          SessionRow,
+          | 'access_token_ciphertext'
+          | 'access_token_iv'
+          | 'refresh_token_ciphertext'
+          | 'refresh_token_iv'
+          | 'access_token_expires_at'
+          | 'granted_scopes'
+        >>()
+
+      if (!row || !row.access_token_ciphertext || !row.access_token_iv) return null
+
+      const accessToken = await decryptToken(sessionSecret, {
+        ciphertext: row.access_token_ciphertext,
+        iv: row.access_token_iv,
+      })
+      const refreshToken =
+        row.refresh_token_ciphertext && row.refresh_token_iv
+          ? await decryptToken(sessionSecret, {
+              ciphertext: row.refresh_token_ciphertext,
+              iv: row.refresh_token_iv,
+            })
+          : null
+
+      return {
+        accessToken,
+        refreshToken,
+        accessTokenExpiresAt: row.access_token_expires_at ?? 0,
+        grantedScopes: row.granted_scopes ?? '',
+      }
     },
 
     async updateAccessToken(userId, update) {

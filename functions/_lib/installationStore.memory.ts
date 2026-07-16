@@ -16,6 +16,12 @@ export const memoryInstallationStore: InstallationStore = {
   async get(userId) {
     return installations.get(userId) ?? null
   },
+  async getBySchoolPublicId(schoolPublicId) {
+    const matches = [...installations.values()].filter(
+      (record) => record.schoolPublicId === schoolPublicId,
+    )
+    return matches.length === 1 ? matches[0] : null
+  },
   async updateManagerName(userId, managerName) {
     const existing = installations.get(userId)
     if (!existing) return

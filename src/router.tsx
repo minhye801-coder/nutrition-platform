@@ -6,6 +6,9 @@ import { SetupPage } from '@/pages/SetupPage'
 import { AppPage } from '@/pages/AppPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { StudentsPage } from '@/pages/StudentsPage'
+import { PublicIntakePage } from '@/pages/PublicIntakePage'
+import { IntakesPage } from '@/pages/IntakesPage'
+import { IntakeDetailPage } from '@/pages/IntakeDetailPage'
 
 export const router = createBrowserRouter([
   {
@@ -16,6 +19,9 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'setup', element: <SetupPage /> },
       { path: 'app', element: <AppPage /> },
+      { path: 'intakes', element: <IntakesPage /> },
+      { path: 'intakes/:intakeId', element: <IntakeDetailPage /> },
+      { path: 'intake/:schoolPublicId', element: <PublicIntakePage /> },
       { path: 'students', element: <StudentsPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
