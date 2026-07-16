@@ -1,4 +1,4 @@
-import type { Consent, ConsentListItem, PublicConsentInfo, SubmitConsentInput } from '@/types/consent'
+import type { Consent, ConsentDetail, ConsentListItem, PublicConsentInfo, SubmitConsentInput } from '@/types/consent'
 
 /** 서버가 내려준 오류 코드를 그대로 담아 던진다(intakeService.ts의 IntakeApiError와 동일한 원칙). */
 export class ConsentApiError extends Error {
@@ -32,6 +32,29 @@ export async function fetchConsents(): Promise<ConsentListItem[]> {
   }
   const data = (await response.json()) as { consents?: ConsentListItem[] }
   return data.consents ?? []
+}
+
+export async function fetchConsentDetail(caseId: string): Promise<ConsentDetail> {
+  const response = await fetch(`/api/consents/${encodeURIComponent(caseId)}`, { credentials: 'include' })
+  if (!response.ok) {
+    return throwConsentApiError(response)
+  }
+  return response.json()
+}
+
+/** 학생 참여 의사 저장(POST /api/cases/:caseId/consent/assent) — 보호자 제출/교사 확인과 독립된 액션. */
+export async function saveStudentAssent(caseId: string, studentAssent: string): Promise<Consent> {
+  const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/consent/assent`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ studentAssent }),
+  })
+  if (!response.ok) {
+    return throwConsentApiError(response)
+  }
+  const data = (await response.json()) as { consent: Consent }
+  return data.consent
 }
 
 /** 링크 생성 + 발송(POST /api/cases/:caseId/consent/send). 이미 보냈으면 alreadySent=true로 기존 값만 돌아온다. */

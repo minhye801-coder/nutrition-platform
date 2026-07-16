@@ -91,3 +91,64 @@ export async function trashFile(accessToken: string, fileId: string): Promise<vo
     body: JSON.stringify({ trashed: true }),
   })
 }
+
+/** AI 자동확인 단계에서 이미 업로드된 PDF 원본을 다시 읽어올 때 쓴다(fileId 기준). */
+export async function downloadFile(accessToken: string, fileId: string): Promise<ArrayBuffer> {
+  const response = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) {
+    throw new GoogleApiError('drive', response.status, await readErrorDetail(response))
+  }
+  return response.arrayBuffer()
+}
+
+const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files'
+
+export interface UploadedFile {
+  id: string
+  webViewLink: string
+}
+
+/**
+ * multipart/related 업로드로 메타데이터+파일 본문을 한 번에 올린다(Drive v3
+ * `uploadType=multipart`) — 검사결과 PDF 한 장(수 MB 이내)처럼 작은 파일에 적합하다.
+ * 더 큰 파일은 resumable 업로드가 필요하지만 이번 범위(교사가 직접 올리는 PDF 1건)엔
+ * 과한 설계라 다루지 않는다.
+ */
+export async function uploadFile(
+  accessToken: string,
+  name: string,
+  parentId: string,
+  mimeType: string,
+  content: ArrayBuffer,
+): Promise<UploadedFile> {
+  const boundary = `-------${crypto.randomUUID()}`
+  const metadata = JSON.stringify({ name, parents: [parentId] })
+  const encoder = new TextEncoder()
+  const parts: Uint8Array[] = [
+    encoder.encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`),
+    encoder.encode(`--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`),
+    new Uint8Array(content),
+    encoder.encode(`\r\n--${boundary}--`),
+  ]
+  const body = new Uint8Array(parts.reduce((sum, part) => sum + part.byteLength, 0))
+  let offset = 0
+  for (const part of parts) {
+    body.set(part, offset)
+    offset += part.byteLength
+  }
+
+  const response = await fetch(`${DRIVE_UPLOAD_API}?uploadType=multipart&fields=id,webViewLink`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': `multipart/related; boundary=${boundary}`,
+    },
+    body,
+  })
+  if (!response.ok) {
+    throw new GoogleApiError('drive', response.status, await readErrorDetail(response))
+  }
+  return response.json()
+}

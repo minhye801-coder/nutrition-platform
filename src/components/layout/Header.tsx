@@ -13,12 +13,12 @@ const LOGGED_OUT_NAV: NavItem[] = [
 const LOGGED_IN_NAV: NavItem[] = [
   { label: '관리자', path: '/app' },
   { label: '상담접수', path: '/intakes' },
-  { label: '학생관리', path: '/students' },
+  { label: '학생·상담 검색', path: '/cases' },
   { label: '설정', path: '/settings' },
 ]
 
 /** 하위 상세 라우트를 가진 메뉴는 그 하위 경로에서도 계속 활성화되어야 한다(route-and-menu-plan.md 5절). */
-const NAV_PATHS_WITH_SUBROUTES = ['/students', '/intakes']
+const NAV_PATHS_WITH_SUBROUTES = ['/cases', '/intakes']
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${

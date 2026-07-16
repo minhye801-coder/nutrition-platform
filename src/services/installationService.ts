@@ -39,3 +39,25 @@ export async function updateManagerName(managerName: string): Promise<void> {
     throw new Error('update_manager_name_failed')
   }
 }
+
+export async function fetchGeminiKeyStatus(): Promise<{ hasKey: boolean }> {
+  const response = await fetch('/api/settings/gemini-key', { credentials: 'include' })
+  if (!response.ok) {
+    throw new Error('fetch_gemini_key_status_failed')
+  }
+  return response.json()
+}
+
+/** 빈 문자열을 넘기면 저장된 키를 삭제한다. */
+export async function saveGeminiKey(apiKey: string): Promise<{ hasKey: boolean }> {
+  const response = await fetch('/api/settings/gemini-key', {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey }),
+  })
+  if (!response.ok) {
+    throw new Error('save_gemini_key_failed')
+  }
+  return response.json()
+}

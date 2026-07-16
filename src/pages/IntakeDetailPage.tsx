@@ -61,6 +61,7 @@ function IntakeDetailContent() {
   const [loadError, setLoadError] = useState('')
   const [actionError, setActionError] = useState('')
   const [actionPending, setActionPending] = useState(false)
+  const [justApproved, setJustApproved] = useState(false)
 
   const load = useCallback(async () => {
     if (!intakeId) return
@@ -80,13 +81,14 @@ function IntakeDetailContent() {
     void load()
   }, [load])
 
-  async function runAction(action: (id: string) => Promise<Intake>) {
+  async function runAction(action: (id: string) => Promise<Intake>, isApprove = false) {
     if (!intakeId || actionPending) return
     setActionPending(true)
     setActionError('')
     try {
       const updated = await action(intakeId)
       setIntake(updated)
+      if (isApprove) setJustApproved(true)
     } catch (error) {
       setActionError(describeIntakeActionError(error))
     } finally {
@@ -166,6 +168,15 @@ function IntakeDetailContent() {
 
             {actionError && <p className="text-sm text-red-600">{actionError}</p>}
 
+            {justApproved && intake.status === INTAKE_STATUS_APPROVED && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-200 bg-brand-50 p-3 text-sm text-brand-800">
+                <span>승인되었습니다. 이제 보호자동의 링크를 발송할 수 있습니다.</span>
+                <Link to="/consents" className={primaryButtonClass}>
+                  보호자동의 관리로 이동
+                </Link>
+              </div>
+            )}
+
             {(intake.status === INTAKE_STATUS_NEW || intake.status === INTAKE_STATUS_REVIEWING) && (
               <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-4">
                 {intake.status === INTAKE_STATUS_NEW && (
@@ -181,7 +192,7 @@ function IntakeDetailContent() {
                 <button
                   type="button"
                   disabled={actionPending}
-                  onClick={() => void runAction(approveIntake)}
+                  onClick={() => void runAction(approveIntake, true)}
                   className={primaryButtonClass}
                 >
                   승인

@@ -4,14 +4,17 @@ import {
   CONSENT_DECISION_DECLINE,
   CONSENT_STATUS_REQUESTED,
   findConsentByToken,
+  setConsentPdfUrl,
   submitConsent,
 } from '../../../../_lib/consentSheet'
 import { getCase } from '../../../../_lib/caseSheet'
 import { getStudentByUuid } from '../../../../_lib/studentSheet'
+import { ensureConsentFolder, extractFolderIdFromUrl } from '../../../../_lib/caseFolder'
+import { createTextPdf } from '../../../../_lib/googleDocs'
 import { getConsentTokenParam, handleConsentSheetError, parseConsentToken } from '../../../../_lib/consentApiHelpers'
 import type { Env } from '../../../../_lib/env'
 
-/** legacy Consent.html이 학생 이름을 "홍○동"처럼 가운데만 가려 보여주던 것과 동일. */
+/** legacy Consent.html/maskName_이 학생 이름을 "홍○동"처럼 가운데만 가려 보여주던 것과 동일. */
 function maskStudentName(name: string): string {
   const trimmed = name.trim()
   if (trimmed.length <= 1) return trimmed
@@ -41,7 +44,12 @@ function toTrimmedString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-/** 공개 보호자동의 페이지 데이터 조회(GET /api/public/consents/:token). 로그인 불필요. */
+/**
+ * 공개 보호자동의 페이지 데이터 조회(GET /api/public/consents/:token). 로그인 불필요.
+ * legacy `getConsentPageData`(intake-consent/code.gs.txt:82-108)와 동일하게 상태와 무관하게
+ * 조회는 항상 되고, 이미 제출된 경우엔 `alreadySubmitted`로만 구분한다(제출 폼 자체는
+ * `submitConsent`가 상태로 막는다). 토큰이 아예 발급되지 않은 경우(아직 미발송)만 404.
+ */
 export const onRequestGet: PagesFunction<Env, 'token'> = async ({ params, env }) => {
   const token = getConsentTokenParam(params)
   const parsed = token ? parseConsentToken(token) : null
@@ -57,9 +65,7 @@ export const onRequestGet: PagesFunction<Env, 'token'> = async ({ params, env })
 
   try {
     const consent = await findConsentByToken(access.accessToken, access.spreadsheetId, token)
-    // 아직 발송 전(토큰 없음)이거나 이미 제출된 토큰은 유효하지 않은 것과 동일하게 취급한다
-    // (intake-migration-spec.md 11.4절 "유효하지 않거나 이미 제출된 토큰으로는 조회 불가").
-    if (!consent || consent.status !== CONSENT_STATUS_REQUESTED) {
+    if (!consent) {
       return Response.json({ error: 'not_found' }, { status: 404 })
     }
     const caseRecord = await getCase(access.accessToken, access.spreadsheetId, consent.caseId)
@@ -68,6 +74,8 @@ export const onRequestGet: PagesFunction<Env, 'token'> = async ({ params, env })
     return Response.json({
       studentName: maskStudentName(student?.name ?? ''),
       topic: caseRecord?.topic ?? '',
+      status: consent.status,
+      alreadySubmitted: consent.status !== CONSENT_STATUS_REQUESTED,
     })
   } catch (error) {
     handleConsentSheetError('public get', error)
@@ -135,6 +143,41 @@ export const onRequestPost: PagesFunction<Env, 'token'> = async ({ request, para
       // signature_mismatch / items_incomplete — 입력값 문제이지 상태 충돌이 아니다.
       return Response.json({ error: result.error }, { status: 400 })
     }
+
+    // PDF 생성은 best-effort다(legacy도 동일 — intake-consent/code.gs.txt:160-168).
+    // 실패해도 위에서 이미 저장된 동의 데이터에는 영향이 없다.
+    try {
+      const caseRecord = await getCase(access.accessToken, access.spreadsheetId, result.consent.caseId)
+      const student = await getStudentByUuid(access.accessToken, access.spreadsheetId, result.consent.studentUuid)
+      const caseFolderId = caseRecord ? extractFolderIdFromUrl(caseRecord.driveFolderUrl) : null
+      if (caseRecord && caseFolderId) {
+        const consentFolderId = await ensureConsentFolder(access.accessToken, caseFolderId)
+        const { pdfUrl } = await createTextPdf(
+          access.accessToken,
+          consentFolderId,
+          `${result.consent.caseId}_보호자동의_전자제출기록`,
+          [
+            '학교 영양상담 보호자 동의 전자제출 기록',
+            '※ 본 문서는 공개 웹페이지에서 제출된 동의 내용을 학교 내부 보관용으로 기록한 것입니다.',
+            `학생: ${student?.name ?? ''} (${student?.grade ?? ''}학년 ${student?.class ?? ''}반)`,
+            `상담 주제: ${caseRecord.topic}`,
+            `보호자: ${guardianName} / 관계: ${relationToStudent}`,
+            `연락처: ${guardianContact}`,
+            `상담 참여 동의: ${result.consent.counselingConsent}`,
+            `개인정보 수집·이용 동의: ${result.consent.personalInfoConsent}`,
+            `건강·식생활 민감정보 처리 동의: ${result.consent.sensitiveInfoConsent}`,
+            `교육부 식생활·생활습관 진단결과 활용 동의: ${result.consent.diagnosisUseConsent}`,
+            `AI 보조도구 활용 안내 확인: ${result.consent.aiNoticeConfirmed}`,
+            `제출일시: ${result.consent.respondedAt}`,
+            `전자서명(이름 입력): ${signatureName}`,
+          ],
+        )
+        await setConsentPdfUrl(access.accessToken, access.spreadsheetId, result.consent.caseId, pdfUrl)
+      }
+    } catch (error) {
+      console.error('[public consents] consent pdf generation failed(무시하고 계속 진행)', error)
+    }
+
     return Response.json({ ok: true })
   } catch (error) {
     handleConsentSheetError('public submit', error)

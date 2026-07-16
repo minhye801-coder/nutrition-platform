@@ -1,12 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
-import { PlaceholderNotice } from '@/components/common/PlaceholderNotice'
 import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
 import { logout } from '@/services/authService'
-import { updateManagerName } from '@/services/installationService'
+import { fetchGeminiKeyStatus, saveGeminiKey, updateManagerName } from '@/services/installationService'
 import { useInstallation } from '@/hooks/useInstallation'
 import type { SessionUser } from '@/types/session'
 
@@ -43,8 +42,18 @@ function SettingsContent({ user }: { user: SessionUser }) {
   const navigate = useNavigate()
   const { installation, loading, refresh } = useInstallation()
   const [geminiKey, setGeminiKey] = useState('')
-  const [saveClicked, setSaveClicked] = useState(false)
+  const [hasGeminiKey, setHasGeminiKey] = useState(false)
+  const [geminiKeyLoading, setGeminiKeyLoading] = useState(true)
+  const [savingGeminiKey, setSavingGeminiKey] = useState(false)
+  const [geminiKeyMessage, setGeminiKeyMessage] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
+
+  useEffect(() => {
+    fetchGeminiKeyStatus()
+      .then((result) => setHasGeminiKey(result.hasKey))
+      .catch(() => setGeminiKeyMessage('Gemini API Key 상태를 불러오지 못했습니다.'))
+      .finally(() => setGeminiKeyLoading(false))
+  }, [])
 
   const [editingManagerName, setEditingManagerName] = useState(false)
   const [managerNameInput, setManagerNameInput] = useState('')
@@ -82,6 +91,21 @@ function SettingsContent({ user }: { user: SessionUser }) {
     setLoggingOut(true)
     await logout()
     navigate('/login', { replace: true })
+  }
+
+  async function handleSaveGeminiKey(value: string) {
+    setSavingGeminiKey(true)
+    setGeminiKeyMessage('')
+    try {
+      const result = await saveGeminiKey(value.trim())
+      setHasGeminiKey(result.hasKey)
+      setGeminiKey('')
+      setGeminiKeyMessage(result.hasKey ? '저장되었습니다.' : '삭제되었습니다.')
+    } catch {
+      setGeminiKeyMessage('저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setSavingGeminiKey(false)
+    }
   }
 
   return (
@@ -191,16 +215,18 @@ function SettingsContent({ user }: { user: SessionUser }) {
       </Card>
 
       <Card className="space-y-3">
-        <h2 className="font-semibold text-gray-900">Gemini API 설정</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-900">Gemini API 설정</h2>
+          {!geminiKeyLoading && (
+            <Badge tone={hasGeminiKey ? 'success' : 'neutral'}>{hasGeminiKey ? '설정됨' : '미설정'}</Badge>
+          )}
+        </div>
         <p className="text-sm text-gray-600">
-          선생님 본인의 Gemini API Key를 등록하면 AI 상담 보조 기능을 사용할 수
-          있습니다.
+          선생님 본인의 Gemini API Key를 등록하면 검사 결과 PDF 자동분석 등 AI 보조 기능을 사용할 수 있습니다.
+          저장된 키는 다시 화면에 표시되지 않습니다.
         </p>
         <div>
-          <label
-            htmlFor="geminiKey"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="geminiKey" className="block text-sm font-medium text-gray-700">
             Gemini API Key
           </label>
           <input
@@ -208,23 +234,31 @@ function SettingsContent({ user }: { user: SessionUser }) {
             type="password"
             value={geminiKey}
             onChange={(event) => setGeminiKey(event.target.value)}
-            placeholder="아직 저장되지 않습니다"
+            placeholder={hasGeminiKey ? '변경하려면 새 키를 입력하세요' : '키를 입력하세요'}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setSaveClicked(true)}
-          className={primaryButtonClass}
-        >
-          저장
-        </button>
-        {saveClicked && (
-          <PlaceholderNotice>
-            Gemini API Key 저장 기능은 아직 연결되지 않았습니다. 입력한 값은
-            어디에도 저장되지 않습니다.
-          </PlaceholderNotice>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void handleSaveGeminiKey(geminiKey)}
+            disabled={savingGeminiKey || !geminiKey.trim()}
+            className={primaryButtonClass}
+          >
+            {savingGeminiKey ? '저장 중...' : '저장'}
+          </button>
+          {hasGeminiKey && (
+            <button
+              type="button"
+              onClick={() => void handleSaveGeminiKey('')}
+              disabled={savingGeminiKey}
+              className={secondaryButtonClass}
+            >
+              삭제
+            </button>
+          )}
+        </div>
+        {geminiKeyMessage && <p className="text-xs text-gray-500">{geminiKeyMessage}</p>}
       </Card>
     </div>
   )

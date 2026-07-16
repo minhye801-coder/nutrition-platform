@@ -3,6 +3,7 @@ import type {
   InstallationRecord,
   InstallationStore,
 } from './installationStore'
+import type { EncryptedSecret } from './tokenCipher'
 
 /**
  * 임시 개발용 구현. Cloudflare Pages Functions의 단일 isolate 메모리에만 저장되므로,
@@ -11,6 +12,7 @@ import type {
  */
 const installations = new Map<string, InstallationRecord>()
 const progress = new Map<string, InstallationProgressRecord>()
+const geminiApiKeys = new Map<string, EncryptedSecret>()
 
 export const memoryInstallationStore: InstallationStore = {
   async get(userId) {
@@ -36,6 +38,17 @@ export const memoryInstallationStore: InstallationStore = {
   },
   async saveProgress(record) {
     progress.set(record.userId, record)
+  },
+
+  async getGeminiApiKey(userId) {
+    return geminiApiKeys.get(userId) ?? null
+  },
+  async updateGeminiApiKey(userId, encrypted) {
+    if (encrypted) {
+      geminiApiKeys.set(userId, encrypted)
+    } else {
+      geminiApiKeys.delete(userId)
+    }
   },
 
   async claimSpreadsheet(userId, spreadsheetId, updatedAt) {

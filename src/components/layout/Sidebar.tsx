@@ -10,12 +10,12 @@ const MENU_ITEMS: NavItem[] = [
   { label: '홈 대시보드', path: '/app' },
   { label: '상담 접수 관리', path: '/intakes' },
   { label: '보호자 동의 관리', path: '/consents' },
-  { label: '공식 진단 PDF', path: '/diagnosis', comingSoon: true },
+  { label: '진단·검사', path: '/assessments' },
   { label: '상담 기록', path: '/sessions', comingSoon: true },
   { label: '다음 회기 준비', path: '/preparation', comingSoon: true },
   { label: 'NEIS 업로드', path: '/neis', comingSoon: true },
   { label: '효과평가·성장', path: '/evaluation', comingSoon: true },
-  { label: '학생·상담 검색', path: '/students' },
+  { label: '학생·상담 검색', path: '/cases' },
   { label: '테스트 데이터 정리', path: '/cleanup', comingSoon: true },
 ]
 

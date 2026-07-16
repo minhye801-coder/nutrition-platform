@@ -1,3 +1,5 @@
+import type { EncryptedSecret } from './tokenCipher'
+
 /**
  * 완료된 학교 작업공간 설치 1건. 이 레코드가 존재한다는 것 자체가 "설치 완료"를
  * 의미한다(GET /api/installation, useInstallation이 그대로 사용). rootFolderId/
@@ -56,6 +58,13 @@ export interface InstallationStore {
 
   getProgress(userId: string): Promise<InstallationProgressRecord | null>
   saveProgress(record: InstallationProgressRecord): Promise<void>
+
+  /**
+   * 암호화된 형태로만 주고받는다(functions/_lib/tokenCipher.ts) — 평문 API 키는 저장소
+   * 계층을 통과하지 않는다. null은 "키 삭제"를 의미한다.
+   */
+  getGeminiApiKey(userId: string): Promise<EncryptedSecret | null>
+  updateGeminiApiKey(userId: string, encrypted: EncryptedSecret | null): Promise<void>
 
   /**
    * spreadsheet_id가 아직 비어있을 때만 원자적으로 채워 넣는다("compare-and-swap").

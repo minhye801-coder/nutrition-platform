@@ -14,6 +14,9 @@ export const CASE_SCHEMA_VERSION = '1'
 /** 보호자동의 탭이 legacy 21개 필드(보호자명/동의 항목별 상태/제출·확인 일시 등)를 갖춘 구조의 버전. */
 export const CONSENT_SCHEMA_VERSION = '1'
 
+/** 진단결과 탭이 PDF 업로드+상태관리 필드(파일 URL/검토상태/Gemini 추출요약 등)를 갖춘 구조의 버전. */
+export const ASSESSMENT_SCHEMA_VERSION = '1'
+
 function quoteSheetName(name: string): string {
   return `'${name}'`
 }

@@ -195,6 +195,26 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
         .run()
     },
 
+    async getGeminiApiKey(userId) {
+      const row = await db
+        .prepare(`SELECT gemini_api_key_ciphertext, gemini_api_key_iv FROM installations WHERE user_id = ?1`)
+        .bind(userId)
+        .first<{ gemini_api_key_ciphertext: string | null; gemini_api_key_iv: string | null }>()
+      if (!row || !row.gemini_api_key_ciphertext || !row.gemini_api_key_iv) return null
+      return { ciphertext: row.gemini_api_key_ciphertext, iv: row.gemini_api_key_iv }
+    },
+
+    async updateGeminiApiKey(userId, encrypted) {
+      await db
+        .prepare(
+          `UPDATE installations
+           SET gemini_api_key_ciphertext = ?2, gemini_api_key_iv = ?3, updated_at = ?4
+           WHERE user_id = ?1`,
+        )
+        .bind(userId, encrypted?.ciphertext ?? null, encrypted?.iv ?? null, Date.now())
+        .run()
+    },
+
     async claimSpreadsheet(userId, spreadsheetId, updatedAt) {
       // WHERE spreadsheet_id IS NULL이 이 UPDATE 전체를 원자적인 compare-and-swap으로
       // 만든다 — SQLite는 단일 UPDATE 문을 원자적으로 처리하므로, 동시에 두 요청이

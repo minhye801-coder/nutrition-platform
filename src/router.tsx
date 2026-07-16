@@ -11,7 +11,12 @@ import { PublicIntakePage } from '@/pages/PublicIntakePage'
 import { IntakesPage } from '@/pages/IntakesPage'
 import { IntakeDetailPage } from '@/pages/IntakeDetailPage'
 import { ConsentsPage } from '@/pages/ConsentsPage'
+import { ConsentDetailPage } from '@/pages/ConsentDetailPage'
 import { PublicConsentPage } from '@/pages/PublicConsentPage'
+import { AssessmentsPage } from '@/pages/AssessmentsPage'
+import { AssessmentDetailPage } from '@/pages/AssessmentDetailPage'
+import { CasesPage } from '@/pages/CasesPage'
+import { CaseDetailPage } from '@/pages/CaseDetailPage'
 import { ComingSoonPage } from '@/pages/ComingSoonPage'
 
 export const router = createBrowserRouter([
@@ -35,7 +40,11 @@ export const router = createBrowserRouter([
       { path: 'students', element: <StudentsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'consents', element: <ConsentsPage /> },
-      { path: 'diagnosis', element: <ComingSoonPage title="공식 진단 PDF" /> },
+      { path: 'consents/:caseId', element: <ConsentDetailPage /> },
+      { path: 'assessments', element: <AssessmentsPage /> },
+      { path: 'assessments/:assessmentId', element: <AssessmentDetailPage /> },
+      { path: 'cases', element: <CasesPage /> },
+      { path: 'cases/:caseId', element: <CaseDetailPage /> },
       { path: 'sessions', element: <ComingSoonPage title="상담 기록" /> },
       { path: 'preparation', element: <ComingSoonPage title="다음 회기 준비" /> },
       { path: 'neis', element: <ComingSoonPage title="NEIS 업로드" /> },

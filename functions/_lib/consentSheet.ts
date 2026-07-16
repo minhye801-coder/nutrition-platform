@@ -93,6 +93,18 @@ export const CONSENT_ITEM_UNCONFIRMED = '미확인'
 export const CONSENT_ITEM_AGREED = '동의'
 export const CONSENT_ITEM_DECLINED = '비동의'
 
+/** legacy `saveStudentAssent`(counseling-manager/code.gs.txt:3682, Index.html:1623)와 동일한 4개 값. */
+export const STUDENT_ASSENT_UNCONFIRMED = '미확인'
+export const STUDENT_ASSENT_WILLING = '참여 희망'
+export const STUDENT_ASSENT_PENDING_EXPLANATION = '설명 후 결정'
+export const STUDENT_ASSENT_UNWILLING = '참여하지 않음'
+export const STUDENT_ASSENT_VALUES = [
+  STUDENT_ASSENT_UNCONFIRMED,
+  STUDENT_ASSENT_WILLING,
+  STUDENT_ASSENT_PENDING_EXPLANATION,
+  STUDENT_ASSENT_UNWILLING,
+] as const
+
 /** 보호자 제출 시 선택하는 두 값(intake-consent/code.gs.txt:110-181 `decision`). */
 export const CONSENT_DECISION_AGREE = '동의'
 export const CONSENT_DECISION_DECLINE = '비동의'
@@ -501,4 +513,58 @@ export async function confirmConsent(
   const range = `${quoteSheetName(CONSENT_SHEET_NAME)}!A${sheetRowNumber}:${columnLetter(sheet.headers.length - 1)}${sheetRowNumber}`
   await updateValues(accessToken, spreadsheetId, range, [row])
   return { ok: true, consent: updated, alreadyConfirmed: false }
+}
+
+export type SaveStudentAssentResult = { ok: true; consent: ConsentRecord } | { ok: false; error: 'not_found' }
+
+/**
+ * "학생 참여 의사" 저장(POST /api/cases/:caseId/consent/assent) — legacy `saveStudentAssent`
+ * (counseling-manager/code.gs.txt:3682-3702)와 동일하게 보호자 제출/교사 확인과 완전히
+ * 독립적인 액션이다. 상태 전이나 다른 필드에는 영향을 주지 않는다.
+ */
+export async function saveStudentAssent(
+  accessToken: string,
+  spreadsheetId: string,
+  caseId: string,
+  studentAssent: string,
+): Promise<SaveStudentAssentResult> {
+  const sheet = await loadWritableSheet(accessToken, spreadsheetId)
+  const caseColumn = sheet.headerIndex.caseId
+  if (caseColumn === undefined) return { ok: false, error: 'not_found' }
+  const rowOffset = sheet.rows.findIndex((row) => row[caseColumn] === caseId)
+  if (rowOffset === -1) return { ok: false, error: 'not_found' }
+
+  const current = rowToRecord(sheet.rows[rowOffset], sheet.headerIndex)
+  const updated: ConsentRecord = { ...current, studentAssent, updatedAt: new Date().toISOString() }
+  const row = recordToRow(updated, sheet.headers)
+  const sheetRowNumber = rowOffset + 2
+  const range = `${quoteSheetName(CONSENT_SHEET_NAME)}!A${sheetRowNumber}:${columnLetter(sheet.headers.length - 1)}${sheetRowNumber}`
+  await updateValues(accessToken, spreadsheetId, range, [row])
+  return { ok: true, consent: updated }
+}
+
+/**
+ * 제출 직후 PDF 생성이 끝난 뒤(best-effort) 결과만 따로 기록한다 — legacy도 PDF 생성
+ * 실패 시 동의 데이터 자체는 그대로 저장되는 것과 같은 원칙(intake-consent/
+ * code.gs.txt:160-168). 토큰이 아니라 caseId로 찾는다(제출 직후 호출부가 caseId를
+ * 이미 알고 있음).
+ */
+export async function setConsentPdfUrl(
+  accessToken: string,
+  spreadsheetId: string,
+  caseId: string,
+  consentPdfUrl: string,
+): Promise<void> {
+  const sheet = await loadWritableSheet(accessToken, spreadsheetId)
+  const caseColumn = sheet.headerIndex.caseId
+  if (caseColumn === undefined) return
+  const rowOffset = sheet.rows.findIndex((row) => row[caseColumn] === caseId)
+  if (rowOffset === -1) return
+
+  const current = rowToRecord(sheet.rows[rowOffset], sheet.headerIndex)
+  const updated: ConsentRecord = { ...current, consentPdfUrl, updatedAt: new Date().toISOString() }
+  const row = recordToRow(updated, sheet.headers)
+  const sheetRowNumber = rowOffset + 2
+  const range = `${quoteSheetName(CONSENT_SHEET_NAME)}!A${sheetRowNumber}:${columnLetter(sheet.headers.length - 1)}${sheetRowNumber}`
+  await updateValues(accessToken, spreadsheetId, range, [row])
 }

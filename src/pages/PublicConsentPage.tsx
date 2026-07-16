@@ -84,7 +84,7 @@ export function PublicConsentPage() {
         if (!cancelled) setInfo(result)
       })
       .catch(() => {
-        if (!cancelled) setLoadError('링크가 유효하지 않거나 이미 처리된 동의서입니다. 학교로 문의해 주세요.')
+        if (!cancelled) setLoadError('링크가 유효하지 않습니다. 학교로 문의해 주세요.')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -159,6 +159,17 @@ export function PublicConsentPage() {
       <Card className="mx-auto max-w-xl space-y-2 text-center">
         <h1 className="text-lg font-semibold text-gray-900">제출이 완료되었습니다</h1>
         <p className="text-sm text-gray-600">담당 선생님이 확인 후 다음 절차를 안내드립니다. 이 화면은 닫으셔도 됩니다.</p>
+      </Card>
+    )
+  }
+
+  if (info.alreadySubmitted) {
+    return (
+      <Card className="mx-auto max-w-xl space-y-2 text-center">
+        <h1 className="text-lg font-semibold text-gray-900">이미 제출된 동의서입니다</h1>
+        <p className="text-sm text-gray-600">
+          {info.studentName} 학생의 동의서는 이미 제출되었습니다(현재 상태: {info.status}). 변경이 필요하면 학교로 문의해 주세요.
+        </p>
       </Card>
     )
   }
