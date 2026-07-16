@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
-import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
+import { secondaryButtonClass } from '@/components/common/buttonStyles'
 import { fetchIntakes, IntakeApiError } from '@/services/intakeService'
 import { useInstallation } from '@/hooks/useInstallation'
 import {
@@ -48,64 +48,64 @@ function describeIntakeListError(error: unknown): string {
   return '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
 }
 
+const compactButtonBase =
+  'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors'
+const compactPrimaryButtonClass = `${compactButtonBase} bg-brand-600 text-white hover:bg-brand-700`
+const compactSecondaryButtonClass = `${compactButtonBase} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50`
+
 /**
  * schoolPublicId 1개당 공개 상담신청 URL은 정확히 하나다(설치 시 1회 생성, 재로그인/개명 시
  * 재생성되지 않음 — functions/_lib/setupOrchestrator.ts:176). 이 카드는 그 값을 그대로
- * 읽기 전용으로 보여주고 열기/복사만 제공한다. URL을 새로 만들거나 저장하지 않는다.
+ * 내부적으로만 사용해 열기/복사만 제공한다(URL 자체는 화면에 노출하지 않는다). URL을
+ * 새로 만들거나 저장하지 않는다.
  */
 function PublicIntakeCard({ schoolPublicId, loading }: { schoolPublicId: string | null; loading: boolean }) {
-  const [copied, setCopied] = useState(false)
-  const [copyError, setCopyError] = useState(false)
+  const [message, setMessage] = useState('')
 
   const publicUrl = schoolPublicId ? `${window.location.origin}/intake/${schoolPublicId}` : ''
+
+  function showMessage(text: string) {
+    setMessage(text)
+    setTimeout(() => setMessage(''), 2000)
+  }
 
   async function handleCopy() {
     if (!publicUrl) return
     try {
       await navigator.clipboard.writeText(publicUrl)
-      setCopyError(false)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      showMessage('링크가 복사되었습니다.')
     } catch {
-      setCopyError(true)
+      showMessage('복사에 실패했습니다. 잠시 후 다시 시도해 주세요.')
     }
   }
 
+  function handleShowQr() {
+    showMessage('QR 기능은 준비 중입니다.')
+  }
+
   return (
-    <Card className="w-full space-y-3 lg:max-w-sm">
+    <Card className="w-full space-y-2 lg:max-w-sm">
       <div>
-        <h2 className="text-sm font-semibold text-gray-900">공개 상담신청</h2>
-        <p className="mt-1 text-xs text-gray-500">학생·보호자가 로그인 없이 상담을 신청하는 페이지입니다.</p>
+        <h2 className="text-sm font-semibold text-gray-900">우리학교 공개 상담신청</h2>
+        <p className="mt-0.5 text-xs text-gray-500">학생·보호자가 로그인 없이 상담을 신청하는 페이지입니다.</p>
       </div>
 
       {loading ? (
         <p className="text-xs text-gray-400">링크를 불러오는 중...</p>
       ) : publicUrl ? (
         <>
-          <input
-            type="text"
-            readOnly
-            value={publicUrl}
-            onFocus={(event) => event.currentTarget.select()}
-            className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700"
-          />
-          <div className="flex flex-wrap gap-2">
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${primaryButtonClass} text-xs`}
-            >
-              상담신청 페이지 열기
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+            <a href={publicUrl} target="_blank" rel="noopener noreferrer" className={compactPrimaryButtonClass}>
+              신청 페이지 열기
             </a>
-            <button type="button" onClick={() => void handleCopy()} className={`${secondaryButtonClass} text-xs`}>
-              {copied ? '복사됨' : '링크 복사'}
+            <button type="button" onClick={() => void handleCopy()} className={compactSecondaryButtonClass}>
+              링크 복사
             </button>
-            <button type="button" disabled className={`${secondaryButtonClass} text-xs`}>
-              QR 보기(준비 중)
+            <button type="button" onClick={handleShowQr} className={compactSecondaryButtonClass}>
+              QR 보기
             </button>
           </div>
-          {copyError && <p className="text-xs text-red-600">복사에 실패했습니다. 위 입력창에서 직접 선택해 복사해 주세요.</p>}
+          {message && <p className="text-xs text-gray-500">{message}</p>}
         </>
       ) : (
         <p className="text-xs text-gray-400">설치를 완료하면 링크가 표시됩니다.</p>
