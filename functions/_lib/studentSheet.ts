@@ -254,6 +254,39 @@ export async function findPotentialDuplicate(
   )
 }
 
+/**
+ * 상담접수 승인 시 학생을 자동으로 매칭할 때만 쓴다(functions/api/intakes/[intakeId]/approve.ts).
+ * `findPotentialDuplicate`(직접등록 화면의 "중복일 수도 있습니다" 경고용, 사용자가 최종
+ * 판단)와는 목적이 다르다 — 여기서는 매칭되면 그 학생코드로 자동 연결하고 새로 만들지
+ * 않으므로, legacy `findStudent_`(counseling-manager/code.gs.txt:5842)의 느슨한 번호
+ * 매칭 규칙을 그대로 따른다: 번호는 신청서와 기존 학생 레코드 중 하나라도 비어 있으면
+ * 조건에서 제외하고, 둘 다 있을 때만 정확히 일치해야 한다(공개 상담신청에서 번호는
+ * 선택 입력이라 비어 있는 경우가 흔하다 — intake-migration-spec.md 1.2절).
+ */
+export async function findStudentForCaseApproval(
+  accessToken: string,
+  spreadsheetId: string,
+  name: string,
+  schoolYear: string,
+  grade: string,
+  studentClass: string,
+  studentNumber: string,
+): Promise<StudentRecord | null> {
+  const active = await listStudents(accessToken, spreadsheetId, { status: ENROLLMENT_STATUS_ACTIVE })
+  const normalizedName = normalizeName(name)
+  const normalizedNumber = studentNumber.trim()
+  return (
+    active.find(
+      (student) =>
+        normalizeName(student.name) === normalizedName &&
+        student.schoolYear === schoolYear &&
+        student.grade === grade &&
+        student.class === studentClass &&
+        (!normalizedNumber || !student.studentNumber || student.studentNumber === normalizedNumber),
+    ) ?? null
+  )
+}
+
 export interface CreateStudentInput {
   tenantId: string
   name: string

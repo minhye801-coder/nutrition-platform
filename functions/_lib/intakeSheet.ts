@@ -334,3 +334,51 @@ export async function transitionIntakeStatus(
   await updateValues(accessToken, spreadsheetId, range, [row])
   return { ok: true, intake: updated }
 }
+
+export type ApproveIntakeResult =
+  | { ok: true; intake: IntakeRecord; alreadyApproved: boolean }
+  | { ok: false; error: 'not_found' }
+  | { ok: false; error: 'invalid_transition'; currentStatus: string }
+
+/**
+ * 상담접수 승인 전용 갱신 — `status`와 `studentUuid`를 한 번에 쓴다(승인 시 학생
+ * 매칭/생성 결과를 상담접수 행에도 남겨야 하므로 `transitionIntakeStatus`만으로는
+ * 부족하다). 이미 `승인` 상태면 다시 쓰지 않고 그대로 반환한다(alreadyApproved=true) —
+ * 승인 재시도 시 학생/케이스/동의를 다시 만들지 않는다는 원칙(counseling-workflow-v1.md
+ * 5절 규칙5)을 상담접수 행 자체의 갱신에도 동일하게 적용한다. `반려`된 접수는 승인할
+ * 수 없다.
+ */
+export async function approveIntakeWithStudent(
+  accessToken: string,
+  spreadsheetId: string,
+  intakeId: string,
+  studentUuid: string,
+): Promise<ApproveIntakeResult> {
+  const sheet = await loadWritableSheet(accessToken, spreadsheetId)
+  const idColumn = sheet.headerIndex.intakeId
+  if (idColumn === undefined) return { ok: false, error: 'not_found' }
+
+  const rowOffset = sheet.rows.findIndex((row) => row[idColumn] === intakeId)
+  if (rowOffset === -1) return { ok: false, error: 'not_found' }
+
+  const current = rowToRecord(sheet.rows[rowOffset], sheet.headerIndex)
+
+  if (current.status === INTAKE_STATUS_APPROVED) {
+    return { ok: true, intake: current, alreadyApproved: true }
+  }
+  if (!(INTAKE_STATUS_NEW === current.status || INTAKE_STATUS_REVIEWING === current.status)) {
+    return { ok: false, error: 'invalid_transition', currentStatus: current.status }
+  }
+
+  const updated: IntakeRecord = {
+    ...current,
+    status: INTAKE_STATUS_APPROVED,
+    studentUuid,
+    updatedAt: new Date().toISOString(),
+  }
+  const row = recordToRow(updated, sheet.headers)
+  const sheetRowNumber = rowOffset + 2
+  const range = `${quoteSheetName(INTAKE_SHEET_NAME)}!A${sheetRowNumber}:${columnLetter(sheet.headers.length - 1)}${sheetRowNumber}`
+  await updateValues(accessToken, spreadsheetId, range, [row])
+  return { ok: true, intake: updated, alreadyApproved: false }
+}

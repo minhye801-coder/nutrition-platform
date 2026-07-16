@@ -8,6 +8,12 @@ export const STUDENT_SCHEMA_VERSION = '3'
 /** docs/database-schema.md 2.3절 — 상담접수 탭이 신청자/학생/상담 요청 필드를 전부 갖춘 Milestone 2A 구조의 버전. */
 export const INTAKE_SCHEMA_VERSION = '2'
 
+/** 상담케이스 탭이 legacy 케이스 필드(신청경로/주상담주제/다음일정/담당자/Drive폴더URL 등)를 갖춘 구조의 버전. */
+export const CASE_SCHEMA_VERSION = '1'
+
+/** 보호자동의 탭이 legacy 21개 필드(보호자명/동의 항목별 상태/제출·확인 일시 등)를 갖춘 구조의 버전. */
+export const CONSENT_SCHEMA_VERSION = '1'
+
 function quoteSheetName(name: string): string {
   return `'${name}'`
 }
