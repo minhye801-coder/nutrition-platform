@@ -55,9 +55,8 @@ const compactSecondaryButtonClass = `${compactButtonBase} border border-gray-300
 
 /**
  * schoolPublicId 1개당 공개 상담신청 URL은 정확히 하나다(설치 시 1회 생성, 재로그인/개명 시
- * 재생성되지 않음 — functions/_lib/setupOrchestrator.ts:176). 이 카드는 그 값을 그대로
- * 내부적으로만 사용해 열기/복사만 제공한다(URL 자체는 화면에 노출하지 않는다). URL을
- * 새로 만들거나 저장하지 않는다.
+ * 재생성되지 않음 — functions/_lib/setupOrchestrator.ts:176). 이 값을 그대로 읽기 전용으로
+ * 보여주고 열기/복사만 제공한다. URL을 새로 만들거나 저장하지 않는다.
  */
 function PublicIntakeCard({ schoolPublicId, loading }: { schoolPublicId: string | null; loading: boolean }) {
   const [message, setMessage] = useState('')
@@ -86,7 +85,7 @@ function PublicIntakeCard({ schoolPublicId, loading }: { schoolPublicId: string 
   return (
     <Card className="w-full space-y-2 lg:max-w-sm">
       <div>
-        <h2 className="text-sm font-semibold text-gray-900">우리학교 공개 상담신청</h2>
+        <h2 className="text-sm font-semibold text-gray-900">공개 상담신청</h2>
         <p className="mt-0.5 text-xs text-gray-500">학생·보호자가 로그인 없이 상담을 신청하는 페이지입니다.</p>
       </div>
 
@@ -94,9 +93,12 @@ function PublicIntakeCard({ schoolPublicId, loading }: { schoolPublicId: string 
         <p className="text-xs text-gray-400">링크를 불러오는 중...</p>
       ) : publicUrl ? (
         <>
+          <p className="truncate rounded-md bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600" title={publicUrl}>
+            {publicUrl}
+          </p>
           <div className="flex flex-wrap gap-2 sm:flex-nowrap">
             <a href={publicUrl} target="_blank" rel="noopener noreferrer" className={compactPrimaryButtonClass}>
-              신청 페이지 열기
+              상담신청 페이지 열기
             </a>
             <button type="button" onClick={() => void handleCopy()} className={compactSecondaryButtonClass}>
               링크 복사
