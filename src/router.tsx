@@ -10,6 +10,8 @@ import { StudentsPage } from '@/pages/StudentsPage'
 import { PublicIntakePage } from '@/pages/PublicIntakePage'
 import { IntakesPage } from '@/pages/IntakesPage'
 import { IntakeDetailPage } from '@/pages/IntakeDetailPage'
+import { ConsentsPage } from '@/pages/ConsentsPage'
+import { PublicConsentPage } from '@/pages/PublicConsentPage'
 import { ComingSoonPage } from '@/pages/ComingSoonPage'
 
 export const router = createBrowserRouter([
@@ -21,6 +23,7 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'setup', element: <SetupPage /> },
       { path: 'intake/:schoolPublicId', element: <PublicIntakePage /> },
+      { path: 'consent/:token', element: <PublicConsentPage /> },
     ],
   },
   {
@@ -31,7 +34,7 @@ export const router = createBrowserRouter([
       { path: 'intakes/:intakeId', element: <IntakeDetailPage /> },
       { path: 'students', element: <StudentsPage /> },
       { path: 'settings', element: <SettingsPage /> },
-      { path: 'consents', element: <ComingSoonPage title="보호자 동의 관리" /> },
+      { path: 'consents', element: <ConsentsPage /> },
       { path: 'diagnosis', element: <ComingSoonPage title="공식 진단 PDF" /> },
       { path: 'sessions', element: <ComingSoonPage title="상담 기록" /> },
       { path: 'preparation', element: <ComingSoonPage title="다음 회기 준비" /> },

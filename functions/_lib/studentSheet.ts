@@ -224,6 +224,19 @@ export async function listStudents(
   return records.sort(compareStudents)
 }
 
+/** 공개 보호자동의 페이지가 학생 이름을 마스킹해 보여줄 때처럼, uuid 하나로 단건 조회할 때 쓴다. */
+export async function getStudentByUuid(
+  accessToken: string,
+  spreadsheetId: string,
+  studentUuid: string,
+): Promise<StudentRecord | null> {
+  const sheet = await loadWritableSheet(accessToken, spreadsheetId)
+  const idColumn = sheet.headerIndex.studentUuid
+  if (idColumn === undefined) return null
+  const row = sheet.rows.find((row) => row[idColumn] === studentUuid)
+  return row ? rowToRecord(row, sheet.headerIndex) : null
+}
+
 /**
  * name+schoolYear+grade+class+studentNumber가 모두 같고 재학 중인 학생이 이미 있는지 확인한다
  * (중복 등록 경고용 — 이름만으로 학생을 자동 연결/병합하지 않는다, database-schema.md 3절).

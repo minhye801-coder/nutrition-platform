@@ -9,7 +9,7 @@ import type { NavItem } from '@/types/navigation'
 const MENU_ITEMS: NavItem[] = [
   { label: '홈 대시보드', path: '/app' },
   { label: '상담 접수 관리', path: '/intakes' },
-  { label: '보호자 동의 관리', path: '/consents', comingSoon: true },
+  { label: '보호자 동의 관리', path: '/consents' },
   { label: '공식 진단 PDF', path: '/diagnosis', comingSoon: true },
   { label: '상담 기록', path: '/sessions', comingSoon: true },
   { label: '다음 회기 준비', path: '/preparation', comingSoon: true },

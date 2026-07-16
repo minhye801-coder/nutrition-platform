@@ -193,6 +193,12 @@ export async function findCaseByIntakeId(
   return row ? rowToRecord(row, sheet.headerIndex) : null
 }
 
+/** `/consents` 관리 화면이 케이스 컨텍스트(주제/현재단계)를 같이 보여줄 때 쓴다. */
+export async function listCases(accessToken: string, spreadsheetId: string): Promise<CaseRecord[]> {
+  const sheet = await loadWritableSheet(accessToken, spreadsheetId)
+  return sheet.rows.map((row) => rowToRecord(row, sheet.headerIndex))
+}
+
 export async function getCase(
   accessToken: string,
   spreadsheetId: string,
@@ -249,4 +255,42 @@ export async function createCase(
   const row = recordToRow(record, sheet.headers)
   await appendValues(accessToken, spreadsheetId, `${quoteSheetName(CASE_SHEET_NAME)}!A1`, [row])
   return record
+}
+
+export type TransitionCaseStatusResult =
+  | { ok: true; case: CaseRecord; transitioned: boolean }
+  | { ok: false; error: 'not_found' }
+
+/**
+ * 보호자동의 확인 완료 시 케이스를 `동의 대기 → 진단 대기`로 자동 전이하는 용도(그 외
+ * 호출부는 아직 없다). `fromStatuses`에 현재 상태가 없으면 조용히 넘어간다(transitioned=false)
+ * — intake-migration-spec.md 11.5절 "케이스 상태가 이미 동의 대기가 아니면 전이하지 않아야
+ * 한다"를 그대로 따른다. 이건 사용자가 직접 요청한 액션이 아니라 부수효과라서, 전이 대상이
+ * 아닐 때 에러를 내지 않고 호출부(confirm 액션) 자체는 계속 성공해야 한다.
+ */
+export async function transitionCaseStatus(
+  accessToken: string,
+  spreadsheetId: string,
+  caseId: string,
+  fromStatuses: readonly string[],
+  toStatus: string,
+): Promise<TransitionCaseStatusResult> {
+  const sheet = await loadWritableSheet(accessToken, spreadsheetId)
+  const idColumn = sheet.headerIndex.caseId
+  if (idColumn === undefined) return { ok: false, error: 'not_found' }
+  const rowOffset = sheet.rows.findIndex((row) => row[idColumn] === caseId)
+  if (rowOffset === -1) return { ok: false, error: 'not_found' }
+
+  const current = rowToRecord(sheet.rows[rowOffset], sheet.headerIndex)
+  if (!fromStatuses.includes(current.status)) {
+    return { ok: true, case: current, transitioned: false }
+  }
+
+  const now = new Date().toISOString()
+  const updated: CaseRecord = { ...current, status: toStatus, updatedAt: now }
+  const row = recordToRow(updated, sheet.headers)
+  const sheetRowNumber = rowOffset + 2
+  const range = `${quoteSheetName(CASE_SHEET_NAME)}!A${sheetRowNumber}:${columnLetter(sheet.headers.length - 1)}${sheetRowNumber}`
+  await updateValues(accessToken, spreadsheetId, range, [row])
+  return { ok: true, case: updated, transitioned: true }
 }
