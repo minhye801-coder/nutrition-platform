@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requireInstalledAccess'
 import {
   approveIntakeWithStudent,
   getIntake,
@@ -31,7 +31,7 @@ import type { Env } from '../../../_lib/env'
  * 건을 다시 승인하는 것은 v1에서도 허용하지 않는다).
  */
 export const onRequestPost: PagesFunction<Env, 'intakeId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

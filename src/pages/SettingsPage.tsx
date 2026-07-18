@@ -4,10 +4,16 @@ import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
 import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
-import { logout } from '@/services/authService'
+import { logout, GOOGLE_CHOOSE_ACCOUNT_URL } from '@/services/authService'
 import { fetchGeminiKeyStatus, saveGeminiKey, updateManagerName } from '@/services/installationService'
 import { useInstallation } from '@/hooks/useInstallation'
 import type { SessionUser } from '@/types/session'
+
+const ACCOUNT_MODE_LABEL: Record<SessionUser['accountMode'], string> = {
+  SCHOOL_WORKSPACE: '학교 업무용 Google Workspace 계정',
+  PERSONAL_DEMO: '개인 Google 계정(체험 모드)',
+  WORKSPACE_PENDING: 'Google Workspace 계정(도메인 승인 대기)',
+}
 
 export function SettingsPage() {
   return <AuthGuard>{(user) => <SettingsContent user={user} />}</AuthGuard>
@@ -198,6 +204,8 @@ function SettingsContent({ user }: { user: SessionUser }) {
         )}
       </Card>
 
+      <AccountPrivacyCard user={user} installation={installation} />
+
       <Card className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-gray-900">Google 연결 상태</h2>
@@ -261,5 +269,77 @@ function SettingsContent({ user }: { user: SessionUser }) {
         {geminiKeyMessage && <p className="text-xs text-gray-500">{geminiKeyMessage}</p>}
       </Card>
     </div>
+  )
+}
+
+function AccountPrivacyRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <dt className="text-gray-500">{label}</dt>
+      <dd className="text-right text-gray-800">{value}</dd>
+    </div>
+  )
+}
+
+/**
+ * "계정 및 개인정보 보호" — 요구사항 11절. SCHOOL_WORKSPACE에서만 학교용 기능 관련
+ * 버튼을 보여준다. 여기서 보여주는 값은 전부 서버가 세션/설치 조회로 이미 내려준
+ * 것을 그대로 표시할 뿐이라, 이 카드 자체가 권한을 바꾸지는 않는다 — 실제 차단은
+ * 항상 서버 API 쪽 accountMode 검사가 담당한다(functions/_lib/requireInstalledAccess.ts).
+ */
+function AccountPrivacyCard({
+  user,
+  installation,
+}: {
+  user: SessionUser
+  installation: ReturnType<typeof useInstallation>['installation']
+}) {
+  const isSchool = user.accountMode === 'SCHOOL_WORKSPACE'
+
+  return (
+    <Card className="space-y-3">
+      <h2 className="font-semibold text-gray-900">계정 및 개인정보 보호</h2>
+      <dl className="space-y-2 text-sm">
+        <AccountPrivacyRow label="로그인 이메일" value={user.email} />
+        <AccountPrivacyRow label="계정 유형" value={ACCOUNT_MODE_LABEL[user.accountMode]} />
+        <AccountPrivacyRow label="Workspace 도메인" value={user.hostedDomain ?? '해당 없음'} />
+        <AccountPrivacyRow label="현재 사용 모드" value={isSchool ? '학교용(전체 기능)' : '체험 모드'} />
+        <AccountPrivacyRow
+          label="학교용 기능 활성화 여부"
+          value={isSchool && user.schoolUseConfirmed ? '활성화됨' : '비활성'}
+        />
+        <AccountPrivacyRow label="Google Drive 연결 여부" value={installation?.driveFolderUrl ? '연결됨' : '미연결'} />
+        <AccountPrivacyRow label="데이터 Spreadsheet 상태" value={installation?.spreadsheetUrl ? '생성됨' : '미생성'} />
+      </dl>
+
+      {isSchool ? (
+        <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-3">
+          <a href="/setup" className={secondaryButtonClass}>
+            Google 저장공간 설정
+          </a>
+          <a href="/api/auth/google?purpose=install" className={secondaryButtonClass}>
+            권한 다시 연결
+          </a>
+          <button type="button" disabled className={secondaryButtonClass}>
+            저장 구조 점검(준비 중)
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2 border-t border-gray-100 pt-3">
+          <p className="text-xs text-gray-500">
+            개인 Google 계정은 체험 모드로만 사용할 수 있습니다. 학교 업무용 기능이
+            필요하면 학교 또는 교육청에서 발급한 Google Workspace 계정으로 다시
+            로그인해 주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => void logout().then(() => { window.location.href = GOOGLE_CHOOSE_ACCOUNT_URL })}
+            className={secondaryButtonClass}
+          >
+            다른 계정으로 로그인
+          </button>
+        </div>
+      )}
+    </Card>
   )
 }

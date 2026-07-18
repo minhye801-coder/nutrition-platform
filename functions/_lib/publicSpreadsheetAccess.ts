@@ -1,5 +1,6 @@
 import { getInstallationStore, getSessionStore } from './stores'
 import { hasDriveScope, refreshAccessToken } from './googleOAuth'
+import { isAccountStillSchoolWorkspace } from './accountMode'
 import type { Env } from './env'
 import type { InstallationRecord } from './installationStore'
 
@@ -13,6 +14,7 @@ export type PublicAccessError =
   | { error: 'school_not_found'; status: 404 }
   | { error: 'installation_incomplete'; status: 500 }
   | { error: 'owner_reauth_required'; status: 503 }
+  | { error: 'owner_not_school_workspace'; status: 404 }
 
 /**
  * 로그인 세션 없이 `schoolPublicId`만으로 그 학교 소유자의 Drive/Sheets access token을
@@ -29,6 +31,12 @@ export async function ensurePublicSpreadsheetAccess(
   const installation = await getInstallationStore(env).getBySchoolPublicId(schoolPublicId)
   if (!installation) return { error: 'school_not_found', status: 404 }
   if (!installation.spreadsheetId) return { error: 'installation_incomplete', status: 500 }
+
+  // 설치 자체는 SCHOOL_WORKSPACE만 만들 수 있지만(functions/api/setup/start.ts), 계정
+  // 성격이 나중에 바뀌는 경우까지 대비해 공개 페이지를 서빙하기 직전에 다시 확인한다
+  // (요구사항 3절 "학교용 기능 활성화 버튼을 우회하는 직접 API 호출" 차단과 동일한 원칙).
+  const stillSchoolWorkspace = await isAccountStillSchoolWorkspace(env, installation.userId)
+  if (!stillSchoolWorkspace) return { error: 'owner_not_school_workspace', status: 404 }
 
   const tokens = await getSessionStore(env).getTokensByUserId(installation.userId)
   if (!tokens || !tokens.refreshToken) return { error: 'owner_reauth_required', status: 503 }

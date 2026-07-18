@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../../_lib/requireInstalledAccess'
 import { generateAndSendConsentLink } from '../../../../_lib/consentSheet'
 import { getCaseIdParam, handleConsentSheetError } from '../../../../_lib/consentApiHelpers'
 import type { Env } from '../../../../_lib/env'
@@ -11,7 +11,7 @@ import type { Env } from '../../../../_lib/env'
  * 복사한다(공개 상담신청 링크와 동일한 패턴, IntakesPage.tsx 참고).
  */
 export const onRequestPost: PagesFunction<Env, 'caseId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

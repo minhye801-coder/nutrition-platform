@@ -9,6 +9,7 @@ import { AssessmentApiError, fetchAssessments, uploadAssessment } from '@/servic
 import { ASSESSMENT_STATUS_CONFIRMED, EXTRACTION_STATUS_AI } from '@/types/assessment'
 import type { AssessmentListItem } from '@/types/assessment'
 import type { ConsentListItem } from '@/types/consent'
+import type { SessionUser } from '@/types/session'
 
 const inputClass =
   'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500'
@@ -45,10 +46,15 @@ function describeError(error: unknown): string {
 }
 
 export function AssessmentsPage() {
-  return <AuthGuard requireInstallation>{() => <AssessmentsContent />}</AuthGuard>
+  return <AuthGuard requireInstallation>{(user) => <AssessmentsContent user={user} />}</AuthGuard>
 }
 
-function AssessmentsContent() {
+/** 체험 모드에서 "샘플로 체험하기"를 누르면 서비스 계층(demoAssessmentStore)이 실제로
+ * 읽지 않는 빈 File을 형식상으로만 넘긴다 — 원본 PDF 업로드 자체를 차단하기 위함이다. */
+const DEMO_SAMPLE_FILE = new File([], '샘플_진단결과.pdf', { type: 'application/pdf' })
+
+function AssessmentsContent({ user }: { user: SessionUser }) {
+  const isDemo = user.accountMode !== 'SCHOOL_WORKSPACE'
   const [items, setItems] = useState<AssessmentListItem[]>([])
   const [uploadTargets, setUploadTargets] = useState<ConsentListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,12 +89,13 @@ function AssessmentsContent() {
 
   async function handleUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (uploading || !caseId || !file || !round.trim() || !timepoint) return
+    const uploadFile = isDemo ? DEMO_SAMPLE_FILE : file
+    if (uploading || !caseId || !uploadFile || !round.trim() || !timepoint) return
 
     setUploading(true)
     setUploadError('')
     try {
-      await uploadAssessment(caseId, file, round.trim(), timepoint)
+      await uploadAssessment(caseId, uploadFile, round.trim(), timepoint)
       setFile(null)
       setCaseId('')
       await load()
@@ -145,13 +152,20 @@ function AssessmentsContent() {
             <label htmlFor="file" className="block text-xs font-medium text-gray-500">
               검사결과 PDF *
             </label>
-            <input
-              id="file"
-              type="file"
-              accept="application/pdf"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-              className="mt-1 w-full text-sm"
-            />
+            {isDemo ? (
+              <p className="mt-1 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                체험 모드에서는 원본 PDF를 업로드할 수 없습니다. "업로드" 버튼을 누르면
+                준비된 샘플 검사결과로 진단·확인 흐름을 체험할 수 있습니다.
+              </p>
+            ) : (
+              <input
+                id="file"
+                type="file"
+                accept="application/pdf"
+                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                className="mt-1 w-full text-sm"
+              />
+            )}
           </div>
           {uploadError && <p className="text-sm text-red-600 sm:col-span-4">{uploadError}</p>}
           <div className="sm:col-span-4">

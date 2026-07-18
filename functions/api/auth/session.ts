@@ -20,6 +20,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       email: session.email,
       name: session.name,
       picture: session.picture,
+      accountMode: session.accountMode,
+      hostedDomain: session.hostedDomain,
+      schoolUseConfirmed: session.schoolUseConfirmed,
     },
   })
 }

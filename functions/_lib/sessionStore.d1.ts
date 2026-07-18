@@ -15,6 +15,10 @@ interface SessionRow {
   refresh_token_iv: string | null
   access_token_expires_at: number | null
   granted_scopes: string | null
+  hosted_domain: string | null
+  account_mode: string
+  domain_approval_status: string
+  school_use_confirmed: number
 }
 
 /**
@@ -39,15 +43,36 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
       await db.batch([
         db
           .prepare(
-            `INSERT INTO users (id, email, name, picture, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+            `INSERT INTO users (
+               id, email, name, picture,
+               hosted_domain, account_mode, domain_approval_status, school_use_confirmed,
+               created_at, updated_at
+             )
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
              ON CONFLICT(id) DO UPDATE SET
                email = excluded.email,
                name = excluded.name,
                picture = excluded.picture,
+               hosted_domain = excluded.hosted_domain,
+               account_mode = excluded.account_mode,
+               domain_approval_status = excluded.domain_approval_status,
                updated_at = excluded.updated_at`,
+            // school_use_confirmed는 의도적으로 UPDATE SET에서 뺐다 — 기존 사용자가
+            // 이미 확인을 완료했다면 재로그인해도 그 값을 그대로 유지해야 한다
+            // (매 로그인마다 재확인 화면을 다시 보게 하지 않기 위함). 신규 사용자에게만
+            // 아래 바인딩 값(보통 false)이 초기값으로 들어간다.
           )
-          .bind(record.googleSub, record.email, record.name, record.picture, record.createdAt),
+          .bind(
+            record.googleSub,
+            record.email,
+            record.name,
+            record.picture,
+            record.hostedDomain,
+            record.accountMode,
+            record.domainApprovalStatus,
+            record.schoolUseConfirmed ? 1 : 0,
+            record.createdAt,
+          ),
 
         db
           .prepare(
@@ -97,6 +122,7 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
              s.created_at AS session_created_at,
              s.expires_at AS expires_at,
              u.id AS user_id, u.email AS email, u.name AS name, u.picture AS picture,
+             u.hosted_domain, u.account_mode, u.domain_approval_status, u.school_use_confirmed,
              t.access_token_ciphertext, t.access_token_iv,
              t.refresh_token_ciphertext, t.refresh_token_iv,
              t.access_token_expires_at, t.granted_scopes
@@ -138,6 +164,10 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
         accessTokenExpiresAt: row.access_token_expires_at ?? 0,
         grantedScopes: row.granted_scopes ?? '',
         createdAt: row.session_created_at,
+        accountMode: (row.account_mode as SessionRecord['accountMode']) ?? 'PERSONAL_DEMO',
+        hostedDomain: row.hosted_domain,
+        domainApprovalStatus: (row.domain_approval_status as SessionRecord['domainApprovalStatus']) ?? 'not_applicable',
+        schoolUseConfirmed: row.school_use_confirmed === 1,
       }
       return record
     },
@@ -186,6 +216,13 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
         accessTokenExpiresAt: row.access_token_expires_at ?? 0,
         grantedScopes: row.granted_scopes ?? '',
       }
+    },
+
+    async confirmSchoolUse(userId) {
+      await db
+        .prepare(`UPDATE users SET school_use_confirmed = 1, updated_at = ?2 WHERE id = ?1`)
+        .bind(userId, Date.now())
+        .run()
     },
 
     async updateAccessToken(userId, update) {

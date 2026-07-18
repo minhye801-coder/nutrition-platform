@@ -3,6 +3,7 @@ import { RootLayout } from '@/layouts/RootLayout'
 import { AppShellLayout } from '@/layouts/AppShellLayout'
 import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
+import { AccountConfirmPage } from '@/pages/AccountConfirmPage'
 import { SetupPage } from '@/pages/SetupPage'
 import { AppPage } from '@/pages/AppPage'
 import { SettingsPage } from '@/pages/SettingsPage'
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'account/confirm', element: <AccountConfirmPage /> },
       { path: 'setup', element: <SetupPage /> },
       { path: 'intake/:schoolPublicId', element: <PublicIntakePage /> },
       { path: 'consent/:token', element: <PublicConsentPage /> },

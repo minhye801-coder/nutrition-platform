@@ -9,7 +9,13 @@ const sessions = new Map<string, SessionRecord>()
 
 export const memorySessionStore: SessionStore = {
   async create(record) {
-    sessions.set(record.sessionId, record)
+    // D1 저장소와 동일한 규칙: school_use_confirmed는 같은 googleSub의 기존 세션이
+    // 있으면 그 값을 유지한다(재로그인마다 재확인 화면을 다시 보여주지 않기 위함).
+    const existing = [...sessions.values()].find((session) => session.googleSub === record.googleSub)
+    sessions.set(record.sessionId, {
+      ...record,
+      schoolUseConfirmed: existing ? existing.schoolUseConfirmed : record.schoolUseConfirmed,
+    })
   },
   async get(sessionId) {
     return sessions.get(sessionId) ?? null
@@ -28,6 +34,12 @@ export const memorySessionStore: SessionStore = {
       }
     }
     return null
+  },
+  async confirmSchoolUse(userId) {
+    for (const [sessionId, record] of sessions) {
+      if (record.googleSub !== userId) continue
+      sessions.set(sessionId, { ...record, schoolUseConfirmed: true })
+    }
   },
   async updateAccessToken(userId, update) {
     for (const [sessionId, record] of sessions) {

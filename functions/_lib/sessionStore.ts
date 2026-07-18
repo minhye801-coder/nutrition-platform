@@ -1,3 +1,5 @@
+import type { AccountMode, DomainApprovalStatus } from './accountMode'
+
 export interface SessionRecord {
   sessionId: string
   googleSub: string
@@ -10,6 +12,16 @@ export interface SessionRecord {
   /** 토큰 교환/갱신 시 Google이 내려준 공백 구분 scope 문자열. functions/_lib/googleOAuth.ts의 hasDriveScope 참고. */
   grantedScopes: string
   createdAt: number
+  /** 로그인(콜백) 시점에 ID Token의 hd 클레임으로 서버가 판정한 값. functions/_lib/accountMode.ts 참고. */
+  accountMode: AccountMode
+  hostedDomain: string | null
+  domainApprovalStatus: DomainApprovalStatus
+  /**
+   * 이 값은 create() 호출 시 신규 사용자에게만 초기값으로 쓰인다(기존 사용자는 D1의
+   * 저장된 값을 그대로 유지 — sessionStore.d1.ts의 ON CONFLICT가 이 컬럼을 갱신하지
+   * 않는다). get()이 돌려주는 값이 항상 진짜 현재 상태다.
+   */
+  schoolUseConfirmed: boolean
 }
 
 export interface AccessTokenUpdate {
@@ -48,4 +60,10 @@ export interface SessionStore {
    * 있어야 공개 상담신청이 교사의 세션 만료와 무관하게 항상 동작한다(의도된 설계).
    */
   getTokensByUserId(userId: string): Promise<AccountTokens | null>
+  /**
+   * "학교용 기능 활성화" 확인을 마친 사용자만 서버가 호출한다
+   * (functions/api/account/confirm-school-use.ts) — 호출부가 이미 accountMode ===
+   * 'SCHOOL_WORKSPACE'인지 검증한 뒤에만 부르므로, 여기서는 값을 그대로 반영한다.
+   */
+  confirmSchoolUse(userId: string): Promise<void>
 }

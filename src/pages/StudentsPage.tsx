@@ -77,6 +77,14 @@ const EMPTY_FORM: StudentFormValues = {
   studentNumber: '',
 }
 
+/**
+ * 체험 모드에서는 학생 실명을 자유롭게 입력하지 못하게 한다(요구사항 3절 "사용자가
+ * 학생 실명을 직접 입력하는 기능" 차단) — 등록 자체는 인메모리 데모 저장소에만
+ * 반영되지만(src/data/demoStore.ts), 교사가 습관적으로 실제 학생 이름을 입력하는
+ * 상황 자체를 막기 위해 이름 입력란을 고정된 가상 이름 선택으로 대체한다.
+ */
+const DEMO_NAME_POOL = ['가상학생 하나', '가상학생 둘', '가상학생 셋', '가상학생 넷', '가상학생 다섯']
+
 function StudentsContent({ user }: { user: SessionUser }) {
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
@@ -359,18 +367,40 @@ function StudentsContent({ user }: { user: SessionUser }) {
       {showCreateForm && (
         <Card className="space-y-3 border-l-4 border-l-brand-500 bg-brand-50/40">
           <h2 className="font-semibold text-brand-800">✏️ 새 학생 등록</h2>
+          {user.accountMode !== 'SCHOOL_WORKSPACE' && (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              체험 모드에서는 실제 학생 이름을 입력할 수 없습니다. 아래 목록에서 가상
+              이름만 선택할 수 있습니다.
+            </p>
+          )}
           <form className="grid grid-cols-1 gap-3 sm:grid-cols-5" onSubmit={(event) => void handleCreateSubmit(event)}>
             <div>
               <label htmlFor="createName" className="block text-xs font-medium text-gray-500">
                 이름 *
               </label>
-              <input
-                id="createName"
-                type="text"
-                value={createForm.name}
-                onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })}
-                className={inputClass}
-              />
+              {user.accountMode === 'SCHOOL_WORKSPACE' ? (
+                <input
+                  id="createName"
+                  type="text"
+                  value={createForm.name}
+                  onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })}
+                  className={inputClass}
+                />
+              ) : (
+                <select
+                  id="createName"
+                  value={createForm.name}
+                  onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })}
+                  className={inputClass}
+                >
+                  <option value="">선택하세요</option>
+                  {DEMO_NAME_POOL.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label htmlFor="createSchoolYear" className="block text-xs font-medium text-gray-500">

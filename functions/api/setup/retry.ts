@@ -12,6 +12,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!session) {
     return Response.json({ error: 'unauthenticated' }, { status: 401 })
   }
+  if (session.accountMode !== 'SCHOOL_WORKSPACE' || !session.schoolUseConfirmed) {
+    return Response.json({ error: 'school_workspace_required' }, { status: 403 })
+  }
 
   try {
     const result = await runSetup(env, session, undefined)

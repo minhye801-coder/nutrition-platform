@@ -1,11 +1,11 @@
-import { isAccessError, requireInstalledAccess } from '../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../_lib/requireInstalledAccess'
 import { listIntakes } from '../../_lib/intakeSheet'
 import { handleIntakeSheetError } from '../../_lib/intakeApiHelpers'
 import type { Env } from '../../_lib/env'
 
 /** 상담접수 목록 조회 + 검색(GET /api/intakes?status=&q=). 로그인 필요. */
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

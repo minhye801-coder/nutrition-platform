@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requireInstalledAccess'
 import { isValidEnrollmentStatus, updateStudent, type StudentPatch } from '../../../_lib/studentSheet'
 import { getStudentUuidParam, handleStudentSheetError } from '../../../_lib/studentApiHelpers'
 import type { Env } from '../../../_lib/env'
@@ -15,7 +15,7 @@ interface UpdateStudentBody {
 
 /** 학생 정보 수정(PATCH /api/students/:studentUuid). studentUuid 자체는 변경할 수 없다. */
 export const onRequestPatch: PagesFunction<Env, 'studentUuid'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

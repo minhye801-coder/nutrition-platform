@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requireInstalledAccess'
 import { applyExtraction, getAssessment } from '../../../_lib/assessmentSheet'
 import { getStudentByUuid } from '../../../_lib/studentSheet'
 import { downloadFile } from '../../../_lib/googleDrive'
@@ -18,7 +18,7 @@ import type { Env } from '../../../_lib/env'
  * 교사는 PATCH(리뷰 저장)로 직접 입력을 이어가면 된다(사용자 확인, "AI는 선택 기능").
  */
 export const onRequestPost: PagesFunction<Env, 'assessmentId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

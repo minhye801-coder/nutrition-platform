@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../../_lib/requireInstalledAccess'
 import { confirmConsent } from '../../../../_lib/consentSheet'
 import { CASE_STATUS_CONSENT_PENDING, CASE_STATUS_DIAGNOSIS_PENDING, transitionCaseStatus } from '../../../../_lib/caseSheet'
 import { getCaseIdParam, handleConsentSheetError } from '../../../../_lib/consentApiHelpers'
@@ -11,7 +11,7 @@ import type { Env } from '../../../../_lib/env'
  * 성공 처리한다(caseSheet.ts의 transitionCaseStatus 주석 참고).
  */
 export const onRequestPost: PagesFunction<Env, 'caseId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

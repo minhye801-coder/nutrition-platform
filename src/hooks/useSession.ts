@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchSession } from '@/services/authService'
+import { setCachedAccountMode } from '@/lib/accountModeCache'
 import type { SessionStatus, SessionUser } from '@/types/session'
 
 interface UseSessionResult {
@@ -17,6 +18,7 @@ export function useSession(): UseSessionResult {
     const result = await fetchSession()
     setStatus(result.status)
     setUser(result.user)
+    setCachedAccountMode(result.user?.accountMode ?? null)
   }, [])
 
   useEffect(() => {

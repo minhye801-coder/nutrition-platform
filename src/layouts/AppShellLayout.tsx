@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { ModeBanner } from '@/components/common/ModeBanner'
 import { useInstallation } from '@/hooks/useInstallation'
 import { logout } from '@/services/authService'
 import { useSession } from '@/hooks/useSession'
@@ -14,7 +15,7 @@ import { useSession } from '@/hooks/useSession'
  */
 export function AppShellLayout() {
   const navigate = useNavigate()
-  const { refresh: refreshSession } = useSession()
+  const { user, refresh: refreshSession } = useSession()
   const { installation } = useInstallation()
   const [loggingOut, setLoggingOut] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -29,6 +30,7 @@ export function AppShellLayout() {
 
   return (
     <div className="flex h-full min-h-screen flex-col">
+      {user && <ModeBanner accountMode={user.accountMode} />}
       <AppHeader
         schoolName={installation?.schoolName ?? null}
         onLogout={() => void handleLogout()}

@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../_lib/requireInstalledAccess'
 import { createStudent, findPotentialDuplicate, listStudents } from '../../_lib/studentSheet'
 import { handleStudentSheetError } from '../../_lib/studentApiHelpers'
 import type { Env } from '../../_lib/env'
@@ -21,7 +21,7 @@ function toTrimmedString(value: unknown): string {
 
 /** 학생 목록 조회 + 검색(GET /api/students?q=&grade=&class=&status=). */
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }
@@ -43,7 +43,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
 /** 학생 등록(POST /api/students). 이름+학년+반+번호가 겹치는 재학생이 있으면 409. */
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

@@ -31,3 +31,5 @@ export async function logout(): Promise<void> {
 }
 
 export const GOOGLE_LOGIN_URL = '/api/auth/google'
+/** "다른 계정으로 로그인"(개인 계정 체험 모드 안내 화면) 전용 — 계정 선택 화면을 강제로 띄운다. */
+export const GOOGLE_CHOOSE_ACCOUNT_URL = '/api/auth/google?account=choose'

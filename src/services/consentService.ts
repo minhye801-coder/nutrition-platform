@@ -1,4 +1,6 @@
 import type { Consent, ConsentDetail, ConsentListItem, PublicConsentInfo, SubmitConsentInput } from '@/types/consent'
+import { isDemoMode } from '@/lib/accountModeCache'
+import { demoConsentStore } from '@/data/demoStore'
 
 /** 서버가 내려준 오류 코드를 그대로 담아 던진다(intakeService.ts의 IntakeApiError와 동일한 원칙). */
 export class ConsentApiError extends Error {
@@ -26,6 +28,8 @@ async function throwConsentApiError(response: Response): Promise<never> {
 }
 
 export async function fetchConsents(): Promise<ConsentListItem[]> {
+  if (isDemoMode()) return demoConsentStore.list()
+
   const response = await fetch('/api/consents', { credentials: 'include' })
   if (!response.ok) {
     return throwConsentApiError(response)
@@ -35,6 +39,8 @@ export async function fetchConsents(): Promise<ConsentListItem[]> {
 }
 
 export async function fetchConsentDetail(caseId: string): Promise<ConsentDetail> {
+  if (isDemoMode()) return demoConsentStore.detail(caseId)
+
   const response = await fetch(`/api/consents/${encodeURIComponent(caseId)}`, { credentials: 'include' })
   if (!response.ok) {
     return throwConsentApiError(response)
@@ -44,6 +50,8 @@ export async function fetchConsentDetail(caseId: string): Promise<ConsentDetail>
 
 /** 학생 참여 의사 저장(POST /api/cases/:caseId/consent/assent) — 보호자 제출/교사 확인과 독립된 액션. */
 export async function saveStudentAssent(caseId: string, studentAssent: string): Promise<Consent> {
+  if (isDemoMode()) return demoConsentStore.saveStudentAssent(caseId, studentAssent)
+
   const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/consent/assent`, {
     method: 'POST',
     credentials: 'include',
@@ -59,6 +67,8 @@ export async function saveStudentAssent(caseId: string, studentAssent: string): 
 
 /** 링크 생성 + 발송(POST /api/cases/:caseId/consent/send). 이미 보냈으면 alreadySent=true로 기존 값만 돌아온다. */
 export async function sendConsentLink(caseId: string): Promise<{ consent: Consent; alreadySent: boolean }> {
+  if (isDemoMode()) return demoConsentStore.sendConsentLink(caseId)
+
   const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/consent/send`, {
     method: 'POST',
     credentials: 'include',
@@ -70,6 +80,8 @@ export async function sendConsentLink(caseId: string): Promise<{ consent: Consen
 }
 
 export async function confirmConsent(caseId: string): Promise<{ consent: Consent; alreadyConfirmed: boolean }> {
+  if (isDemoMode()) return demoConsentStore.confirmConsent(caseId)
+
   const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/consent/confirm`, {
     method: 'POST',
     credentials: 'include',

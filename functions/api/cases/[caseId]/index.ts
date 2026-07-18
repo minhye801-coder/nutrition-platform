@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requireInstalledAccess'
 import { getCase } from '../../../_lib/caseSheet'
 import { findConsentByCaseId } from '../../../_lib/consentSheet'
 import { getStudentByUuid } from '../../../_lib/studentSheet'
@@ -12,7 +12,7 @@ import type { Env } from '../../../_lib/env'
  * 손대지 않는다 — 케이스/학생/동의 상태까지만 반환한다.
  */
 export const onRequestGet: PagesFunction<Env, 'caseId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

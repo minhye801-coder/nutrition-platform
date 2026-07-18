@@ -39,6 +39,13 @@ interface AuthorizeUrlParams {
   offlineAccess?: boolean
   /** 이미 부여된 스코프가 있어도 다시 동의 화면을 보여줘 refresh token 재발급을 보장한다. */
   forceConsent?: boolean
+  /**
+   * "다른 계정으로 로그인"(개인 계정 체험 모드 안내 화면의 버튼)에서만 쓴다. Google
+   * 계정 선택 화면을 강제로 띄워, 브라우저에 이미 로그인된 계정으로 자동 재로그인되는
+   * 것을 막는다. forceConsent와는 별개 목적이라 둘 다 필요하면 forceConsent를 우선한다
+   * (Google API가 prompt 값을 하나만 받으므로).
+   */
+  promptSelectAccount?: boolean
 }
 
 export function buildAuthorizationUrl(params: AuthorizeUrlParams): string {
@@ -63,6 +70,8 @@ export function buildAuthorizationUrl(params: AuthorizeUrlParams): string {
     // 이미 로그인 스코프에 동의한 사용자에게도 동의 화면을 다시 띄워 새 refresh
     // token을 받는다 — Google은 재동의 없이는 refresh token을 다시 내려주지 않는다.
     url.searchParams.set('prompt', 'consent')
+  } else if (params.promptSelectAccount) {
+    url.searchParams.set('prompt', 'select_account')
   }
   return url.toString()
 }

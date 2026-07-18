@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '@/hooks/useSession'
 import { useInstallation } from '@/hooks/useInstallation'
+import { hasAcknowledgedDemoMode } from '@/lib/demoAck'
 import type { SessionUser } from '@/types/session'
 
 interface AuthGuardProps {
@@ -20,20 +21,36 @@ export function AuthGuard({ children, requireInstallation = false }: AuthGuardPr
   const { installation, loading: installationLoading } = useInstallation()
   const navigate = useNavigate()
 
+  // SCHOOL_WORKSPACE인데 아직 "학교용 기능 활성화"를 안 했거나, 개인/미승인 계정인데
+  // 아직 체험 모드 안내를 확인하지 않은 사용자는 실제 업무 화면보다 먼저
+  // /account/confirm을 봐야 한다(요구사항 2절). 서버도 각 API에서 동일한 조건을
+  // 다시 검사하므로(functions/_lib/requireInstalledAccess.ts), 이 화면 우회 자체가
+  // 실제 데이터 접근 권한을 만들어주지 않는다 — 이건 UX 안내일 뿐이다.
+  const needsAccountConfirm =
+    !!user &&
+    ((user.accountMode === 'SCHOOL_WORKSPACE' && !user.schoolUseConfirmed) ||
+      (user.accountMode !== 'SCHOOL_WORKSPACE' && !hasAcknowledgedDemoMode()))
+
+  // PERSONAL_DEMO/WORKSPACE_PENDING 계정은 실제 설치(Drive/Sheets)를 절대 만들지
+  // 않으므로(요구사항 3절), 이 화면들은 픽스처 데이터로 동작한다 — installation이
+  // 없다는 이유로 /setup으로 보내면 안 된다(그곳은 SCHOOL_WORKSPACE 전용).
+  const needsInstallation =
+    requireInstallation && user?.accountMode === 'SCHOOL_WORKSPACE' && !installationLoading && !installation
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       navigate('/login', { replace: true })
       return
     }
-    if (
-      status === 'authenticated' &&
-      requireInstallation &&
-      !installationLoading &&
-      !installation
-    ) {
+    if (status !== 'authenticated' || !user) return
+    if (needsAccountConfirm) {
+      navigate('/account/confirm', { replace: true })
+      return
+    }
+    if (needsInstallation) {
       navigate('/setup', { replace: true })
     }
-  }, [status, requireInstallation, installationLoading, installation, navigate])
+  }, [status, user, needsAccountConfirm, needsInstallation, navigate])
 
   if (status !== 'authenticated' || !user) {
     return (
@@ -43,7 +60,19 @@ export function AuthGuard({ children, requireInstallation = false }: AuthGuardPr
     )
   }
 
-  if (requireInstallation && (installationLoading || !installation)) {
+  if (needsAccountConfirm) {
+    return (
+      <div className="py-16 text-center text-sm text-gray-500">
+        계정 확인 화면으로 이동하는 중입니다...
+      </div>
+    )
+  }
+
+  if (
+    requireInstallation &&
+    user.accountMode === 'SCHOOL_WORKSPACE' &&
+    (installationLoading || !installation)
+  ) {
     return (
       <div className="py-16 text-center text-sm text-gray-500">
         설치 상태를 확인하는 중입니다...

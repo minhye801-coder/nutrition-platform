@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../../_lib/requireInstalledAccess'
 import { getCase, CASE_STATUS_DIAGNOSIS_PENDING, CASE_STATUS_RESULT_CHECK, transitionCaseStatus } from '../../../../_lib/caseSheet'
 import { createAssessment, listAssessmentsByCase } from '../../../../_lib/assessmentSheet'
 import { ensureAssessmentFolder, extractFolderIdFromUrl } from '../../../../_lib/caseFolder'
@@ -11,7 +11,7 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB — 검사결과 PDF 한 장 기�
 
 /** 케이스별 검사결과 목록(GET /api/cases/:caseId/assessments). 로그인 필요. */
 export const onRequestGet: PagesFunction<Env, 'caseId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }
@@ -59,7 +59,7 @@ function formatTimestamp(date: Date): string {
  * extract.ts). 업로드만으로 케이스를 `진단 대기 → 결과 확인`으로 전이한다.
  */
 export const onRequestPost: PagesFunction<Env, 'caseId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requireInstalledAccess'
 import {
   ASSESSMENT_EXTRACTED_FIELDS,
   getAssessment,
@@ -11,7 +11,7 @@ import type { Env } from '../../../_lib/env'
 
 /** 검사결과 상세 조회(GET /api/assessments/:assessmentId). 로그인 필요. */
 export const onRequestGet: PagesFunction<Env, 'assessmentId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }
@@ -47,7 +47,7 @@ interface ReviewAssessmentBody {
  * 프런트가 caseId를 별도로 들고 다닐 필요가 없다).
  */
 export const onRequestPatch: PagesFunction<Env, 'assessmentId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

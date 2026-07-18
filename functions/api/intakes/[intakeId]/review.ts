@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requireInstalledAccess'
 import { INTAKE_STATUS_NEW, INTAKE_STATUS_REVIEWING, transitionIntakeStatus } from '../../../_lib/intakeSheet'
 import { getIntakeIdParam, handleIntakeSheetError } from '../../../_lib/intakeApiHelpers'
 import type { Env } from '../../../_lib/env'
@@ -10,7 +10,7 @@ import type { Env } from '../../../_lib/env'
  * 쉽다.
  */
 export const onRequestPost: PagesFunction<Env, 'intakeId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

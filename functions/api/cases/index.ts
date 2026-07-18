@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../_lib/requireInstalledAccess'
 import { listCases } from '../../_lib/caseSheet'
 import { listStudents } from '../../_lib/studentSheet'
 import { handleConsentSheetError } from '../../_lib/consentApiHelpers'
@@ -13,7 +13,7 @@ import type { Env } from '../../_lib/env'
  * latestGoal은 지금은 항상 0/'-'다. 가짜 값을 넣지 않는다(사용자 확인 9절).
  */
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

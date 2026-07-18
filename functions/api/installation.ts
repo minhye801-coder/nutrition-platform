@@ -43,6 +43,11 @@ export const onRequestPatch: PagesFunction<Env> = async ({ request, env }) => {
   if (!session) {
     return Response.json({ error: 'unauthenticated' }, { status: 401 })
   }
+  // 설치는 애초에 SCHOOL_WORKSPACE만 만들 수 있으므로(functions/api/setup/start.ts) 이
+  // 검사는 사실상 방어적 중복이지만, 계정 성격이 나중에 바뀐 경우까지 대비해 둔다.
+  if (session.accountMode !== 'SCHOOL_WORKSPACE' || !session.schoolUseConfirmed) {
+    return Response.json({ error: 'school_workspace_required' }, { status: 403 })
+  }
 
   const store = getInstallationStore(env)
   if (!(await store.get(session.googleSub))) {

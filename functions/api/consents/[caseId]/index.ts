@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requireInstalledAccess'
 import { findConsentByCaseId } from '../../../_lib/consentSheet'
 import { getCase } from '../../../_lib/caseSheet'
 import { getStudentByUuid } from '../../../_lib/studentSheet'
@@ -10,7 +10,7 @@ import type { Env } from '../../../_lib/env'
  * code.gs.txt:3441-3454)와 동일한 구성: 학생/케이스 컨텍스트 + 보호자동의 레코드.
  */
 export const onRequestGet: PagesFunction<Env, 'caseId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

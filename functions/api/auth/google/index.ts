@@ -20,6 +20,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // /setup에서 Drive/Sheets 권한이 부족할 때만 ?purpose=install로 진입한다.
   // 그 외(기본값)는 로그인 전용 최소 스코프만 요청한다(9절 "로그인 권한과 Drive/Sheets 권한 분리").
   const purpose = url.searchParams.get('purpose') === 'install' ? 'install' : 'login'
+  // "다른 계정으로 로그인"(체험 모드 안내 화면) 전용 — 다른 파라미터와 조합되지 않는다.
+  const promptSelectAccount = url.searchParams.get('account') === 'choose'
 
   const state = randomString(24)
   const codeVerifier = randomString(48)
@@ -45,6 +47,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     // 다시 뜰 수 있다 — 세션 유지 자체는 Google 토큰이 아니라 세션 쿠키가 담당한다.
     offlineAccess: purpose === 'install',
     forceConsent: purpose === 'install',
+    promptSelectAccount,
   })
 
   // 비밀값(client_secret, code_verifier, access/refresh token)은 절대 포함하지 않는다.
@@ -56,6 +59,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     scopes,
     offlineAccess: purpose === 'install',
     forceConsent: purpose === 'install',
+    promptSelectAccount,
   })
 
   return new Response(null, {

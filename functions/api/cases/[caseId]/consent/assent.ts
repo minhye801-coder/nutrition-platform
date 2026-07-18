@@ -1,4 +1,4 @@
-import { isAccessError, requireInstalledAccess } from '../../../../_lib/requireInstalledAccess'
+import { isAccessError, requireSchoolWorkspaceAccess } from '../../../../_lib/requireInstalledAccess'
 import { saveStudentAssent, STUDENT_ASSENT_VALUES } from '../../../../_lib/consentSheet'
 import { getCaseIdParam, handleConsentSheetError } from '../../../../_lib/consentApiHelpers'
 import type { Env } from '../../../../_lib/env'
@@ -13,7 +13,7 @@ interface SaveAssentBody {
  * 교사 확인과 완전히 독립적인 액션이다.
  */
 export const onRequestPost: PagesFunction<Env, 'caseId'> = async ({ request, env, params }) => {
-  const access = await requireInstalledAccess(request, env)
+  const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
     return Response.json({ error: access.error }, { status: access.status })
   }

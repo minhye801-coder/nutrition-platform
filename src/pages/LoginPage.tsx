@@ -5,6 +5,7 @@ import { primaryButtonClass } from '@/components/common/buttonStyles'
 import { GOOGLE_LOGIN_URL } from '@/services/authService'
 import { useSession } from '@/hooks/useSession'
 import { useInstallation } from '@/hooks/useInstallation'
+import { hasAcknowledgedDemoMode } from '@/lib/demoAck'
 
 const ERROR_MESSAGES: Record<string, string> = {
   access_denied: 'Google 로그인이 취소되었습니다.',
@@ -20,19 +21,30 @@ const ERROR_MESSAGES: Record<string, string> = {
 export function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { status } = useSession()
+  const { status, user } = useSession()
   const { installation, loading: installationLoading } = useInstallation()
   const errorCode = searchParams.get('error')
   const errorMessage = errorCode
     ? (ERROR_MESSAGES[errorCode] ?? '로그인 중 문제가 발생했습니다.')
     : null
 
-  // 이미 로그인된 사용자가 /login에 직접 들어오면 로그인 버튼을 다시 보여주지
-  // 않고, 설치 완료 여부에 따라 /app 또는 /setup으로 곧바로 이동시킨다.
+  // 이미 로그인된 사용자가 /login에 직접 들어오면 로그인 버튼을 다시 보여주지 않고,
+  // 계정 모드/설치 완료 여부에 따라 곧바로 이동시킨다(AuthGuard와 동일한 규칙).
   useEffect(() => {
-    if (status !== 'authenticated' || installationLoading) return
+    if (status !== 'authenticated' || !user || installationLoading) return
+    const needsAccountConfirm =
+      (user.accountMode === 'SCHOOL_WORKSPACE' && !user.schoolUseConfirmed) ||
+      (user.accountMode !== 'SCHOOL_WORKSPACE' && !hasAcknowledgedDemoMode())
+    if (needsAccountConfirm) {
+      navigate('/account/confirm', { replace: true })
+      return
+    }
+    if (user.accountMode !== 'SCHOOL_WORKSPACE') {
+      navigate('/app', { replace: true })
+      return
+    }
     navigate(installation ? '/app' : '/setup', { replace: true })
-  }, [status, installation, installationLoading, navigate])
+  }, [status, user, installation, installationLoading, navigate])
 
   const checkingSession = status === 'loading' || (status === 'authenticated' && installationLoading)
 

@@ -1,4 +1,6 @@
 import type { CaseDetail, CaseSearchFilters, CaseSearchItem } from '@/types/case'
+import { isDemoMode } from '@/lib/accountModeCache'
+import { demoCaseStore } from '@/data/demoStore'
 
 export class CaseApiError extends Error {
   code: string
@@ -25,6 +27,8 @@ async function throwCaseApiError(response: Response): Promise<never> {
 }
 
 export async function fetchCases(filters: CaseSearchFilters = {}): Promise<CaseSearchItem[]> {
+  if (isDemoMode()) return demoCaseStore.list(filters)
+
   const params = new URLSearchParams()
   if (filters.keyword) params.set('keyword', filters.keyword)
   if (filters.status) params.set('status', filters.status)
@@ -39,6 +43,8 @@ export async function fetchCases(filters: CaseSearchFilters = {}): Promise<CaseS
 }
 
 export async function fetchCaseDetail(caseId: string): Promise<CaseDetail> {
+  if (isDemoMode()) return demoCaseStore.detail(caseId)
+
   const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}`, { credentials: 'include' })
   if (!response.ok) {
     return throwCaseApiError(response)

@@ -13,6 +13,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!session) {
     return Response.json({ error: 'unauthenticated' }, { status: 401 })
   }
+  // 데모 계정은 실 Gemini 키를 등록/사용하지 않는다(요구사항 3절) — 항상 미설정으로 본다.
+  if (session.accountMode !== 'SCHOOL_WORKSPACE' || !session.schoolUseConfirmed) {
+    return Response.json({ hasKey: false })
+  }
 
   const encrypted = await getInstallationStore(env).getGeminiApiKey(session.googleSub)
   return Response.json({ hasKey: encrypted !== null })
@@ -27,6 +31,9 @@ export const onRequestPatch: PagesFunction<Env> = async ({ request, env }) => {
   const session = await requireSession(request, env)
   if (!session) {
     return Response.json({ error: 'unauthenticated' }, { status: 401 })
+  }
+  if (session.accountMode !== 'SCHOOL_WORKSPACE' || !session.schoolUseConfirmed) {
+    return Response.json({ error: 'school_workspace_required' }, { status: 403 })
   }
 
   let body: UpdateGeminiKeyBody

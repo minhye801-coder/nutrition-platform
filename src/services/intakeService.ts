@@ -1,4 +1,6 @@
 import type { Intake, IntakeListFilters, SubmitIntakeInput } from '@/types/intake'
+import { isDemoMode } from '@/lib/accountModeCache'
+import { demoIntakeStore } from '@/data/demoStore'
 
 /** 서버가 내려준 오류 코드를 그대로 담아 던진다(studentService.ts의 StudentApiError와 동일한 원칙). */
 export class IntakeApiError extends Error {
@@ -51,6 +53,8 @@ export async function fetchPublicIntakeConfig(schoolPublicId: string): Promise<{
 }
 
 export async function fetchIntakes(filters: IntakeListFilters = {}): Promise<Intake[]> {
+  if (isDemoMode()) return demoIntakeStore.list(filters)
+
   const params = new URLSearchParams()
   if (filters.status) params.set('status', filters.status)
   if (filters.q) params.set('q', filters.q)
@@ -65,6 +69,8 @@ export async function fetchIntakes(filters: IntakeListFilters = {}): Promise<Int
 }
 
 export async function fetchIntake(intakeId: string): Promise<Intake> {
+  if (isDemoMode()) return demoIntakeStore.detail(intakeId)
+
   const response = await fetch(`/api/intakes/${encodeURIComponent(intakeId)}`, { credentials: 'include' })
   if (!response.ok) {
     return throwIntakeApiError(response)
@@ -73,7 +79,15 @@ export async function fetchIntake(intakeId: string): Promise<Intake> {
   return data.intake
 }
 
+const DEMO_INTAKE_ACTION_STATUS: Record<'review' | 'approve' | 'reject', string> = {
+  review: '검토중',
+  approve: '승인',
+  reject: '반려',
+}
+
 async function postIntakeAction(intakeId: string, action: 'review' | 'approve' | 'reject'): Promise<Intake> {
+  if (isDemoMode()) return demoIntakeStore.setStatus(intakeId, DEMO_INTAKE_ACTION_STATUS[action])
+
   const response = await fetch(`/api/intakes/${encodeURIComponent(intakeId)}/${action}`, {
     method: 'POST',
     credentials: 'include',
