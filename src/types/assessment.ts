@@ -4,14 +4,14 @@ export const ASSESSMENT_STATUS_CONFIRMED = '확인 완료'
 export const EXTRACTION_STATUS_MANUAL = '수동 입력'
 export const EXTRACTION_STATUS_AI = 'AI 추출'
 
-/** legacy Gemini responseSchema(counseling-manager/code.gs.txt:4046-4087)와 동일한 38개 키, 같은 순서. */
+/**
+ * functions/_lib/assessmentSheet.ts의 ASSESSMENT_EXTRACTED_FIELDS와 동일한 키·순서.
+ * studentName/schoolType/age/examDate는 재식별 위험이 커서 Gemini에 요청하지 않는다
+ * (요구사항 10절) — grade도 구체 학년 대신 학년군만 받는 gradeBand로 바뀌었다.
+ */
 export const ASSESSMENT_EXTRACTED_FIELDS = [
-  'studentName',
-  'schoolType',
-  'grade',
+  'gradeBand',
   'sex',
-  'age',
-  'examDate',
   'heightCm',
   'heightPercentile',
   'weightKg',
@@ -55,12 +55,8 @@ export const ASSESSMENT_FIELD_GROUPS: { title: string; fields: { key: Assessment
   {
     title: '검사 정보',
     fields: [
-      { key: 'studentName', label: '학생 이름' },
-      { key: 'schoolType', label: '학교급(초/중/고)' },
-      { key: 'grade', label: '학년' },
+      { key: 'gradeBand', label: '학년군(초등 저학년/고학년)' },
       { key: 'sex', label: '성별' },
-      { key: 'age', label: '나이' },
-      { key: 'examDate', label: '검사일' },
     ],
   },
   {
@@ -145,6 +141,8 @@ export interface Assessment extends AssessmentExtractedFields {
   updatedAt: string
   extractionStatus: string
   extractedAt: string
+  /** 이 추출 요청의 일회성 식별자(CASE-YYYYMMDD-XXXX). AI 미사용이면 빈 값. */
+  caseRequestId: string
   /** 줄바꿈으로 구분된 텍스트 — 표시할 땐 .split('\n').filter(Boolean)으로 나눈다. */
   warnings: string
   responseHighlights: string

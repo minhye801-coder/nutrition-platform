@@ -77,13 +77,23 @@ export async function uploadAssessment(
   return data.assessment
 }
 
-/** "AI로 자동 확인" — 업로드된 PDF를 Gemini로 재분석한다(functions/_lib/geminiClient.ts). */
-export async function extractAssessment(assessmentId: string): Promise<Assessment> {
+/**
+ * "AI로 자동 확인" — 브라우저에서 이미 비식별화 확인을 마친 텍스트만 보낸다(원본 PDF
+ * 바이트 없음, src/lib/pdfDeidentify.ts + AssessmentDetailPage의 확인 화면 참고).
+ * Gemini에는 이 텍스트만 전달된다(functions/_lib/geminiClient.ts).
+ */
+export async function extractAssessment(
+  assessmentId: string,
+  deidentifiedText: string,
+  caseRequestId: string,
+): Promise<Assessment> {
   if (isDemoMode()) return demoAssessmentStore.extractSample(assessmentId)
 
   const response = await fetch(`/api/assessments/${encodeURIComponent(assessmentId)}/extract`, {
     method: 'POST',
     credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deidentifiedText, caseRequestId }),
   })
   if (!response.ok) {
     return throwAssessmentApiError(response)

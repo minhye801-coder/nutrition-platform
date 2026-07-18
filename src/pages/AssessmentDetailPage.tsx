@@ -4,6 +4,7 @@ import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
 import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
+import { PdfDeidentifyPanel } from '@/components/assessment/PdfDeidentifyPanel'
 import {
   AssessmentApiError,
   extractAssessment,
@@ -90,18 +91,17 @@ function AssessmentDetailContent() {
     setFields((prev) => (prev ? { ...prev, [key]: value } : prev))
   }
 
-  async function handleExtract() {
+  async function handleExtract(deidentifiedText: string, caseRequestId: string) {
     if (!assessmentId || extracting) return
     setExtracting(true)
     setActionError('')
     try {
-      const result = await extractAssessment(assessmentId)
+      const result = await extractAssessment(assessmentId, deidentifiedText, caseRequestId)
       setAssessment(result)
       setFields(extractFields(result))
       setShowAiNotice(false)
     } catch (error) {
       setActionError(describeError(error))
-      setShowAiNotice(false)
     } finally {
       setExtracting(false)
     }
@@ -183,29 +183,20 @@ function AssessmentDetailContent() {
                   AI로 자동 확인
                 </button>
               ) : (
-                <div className="space-y-3 rounded-md border border-brand-200 bg-brand-50 p-3">
+                <div className="space-y-2">
                   <p className="text-sm text-gray-800">
-                    업로드한 PDF가 Gemini API로 전송됩니다. PDF에 학생 이름 등 개인정보가 포함될 수 있습니다. 학교의
-                    개인정보 처리 기준과 동의 범위를 확인한 후 진행하세요.
+                    저장된 원본 PDF를 그대로 Gemini에 보내지 않습니다. 아래에서 같은(또는 동일 내용의) PDF를 다시
+                    선택하면 브라우저에서만 텍스트를 읽고, 식별정보 후보를 확인한 뒤 정제된 텍스트만 분석에 사용합니다.
                   </p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleExtract()}
-                      disabled={extracting}
-                      className={primaryButtonClass}
-                    >
-                      {extracting ? '분석 중...' : '확인하고 진행'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAiNotice(false)}
-                      disabled={extracting}
-                      className={secondaryButtonClass}
-                    >
-                      취소
-                    </button>
-                  </div>
+                  {extracting ? (
+                    <p className="text-sm text-gray-600">분석 중입니다...</p>
+                  ) : (
+                    <PdfDeidentifyPanel
+                      studentName=""
+                      onConfirm={(text, caseRequestId) => void handleExtract(text, caseRequestId)}
+                      onCancel={() => setShowAiNotice(false)}
+                    />
+                  )}
                 </div>
               )}
               <p className="mt-2 text-xs text-gray-400">
