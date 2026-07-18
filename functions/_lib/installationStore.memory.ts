@@ -32,6 +32,11 @@ export const memoryInstallationStore: InstallationStore = {
   async complete(record) {
     installations.set(record.userId, record)
   },
+  async setIdentitySpreadsheetId(userId, identitySpreadsheetId) {
+    const existing = installations.get(userId)
+    if (!existing) return
+    installations.set(userId, { ...existing, identitySpreadsheetId, updatedAt: Date.now() })
+  },
 
   async getProgress(userId) {
     return progress.get(userId) ?? null

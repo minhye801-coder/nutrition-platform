@@ -149,6 +149,13 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
         .run()
     },
 
+    async setIdentitySpreadsheetId(userId, identitySpreadsheetId) {
+      await db
+        .prepare(`UPDATE installations SET identity_spreadsheet_id = ?2, updated_at = ?3 WHERE user_id = ?1`)
+        .bind(userId, identitySpreadsheetId, Date.now())
+        .run()
+    },
+
     async getProgress(userId) {
       const row = await db
         .prepare(

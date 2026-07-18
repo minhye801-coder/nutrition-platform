@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
+import { MigrationCard } from '@/components/settings/MigrationCard'
 import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
 import { logout, GOOGLE_CHOOSE_ACCOUNT_URL } from '@/services/authService'
 import {
@@ -216,6 +217,8 @@ function SettingsContent({ user }: { user: SessionUser }) {
       </Card>
 
       <AccountPrivacyCard user={user} installation={installation} />
+
+      {user.accountMode === 'SCHOOL_WORKSPACE' && installation && <MigrationCard />}
 
       <Card className="space-y-3">
         <div className="flex items-center justify-between">

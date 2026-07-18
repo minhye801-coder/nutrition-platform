@@ -103,6 +103,18 @@ export async function downloadFile(accessToken: string, fileId: string): Promise
   return response.arrayBuffer()
 }
 
+/**
+ * 마이그레이션 실행 전 원본 Spreadsheet를 백업한다(요구사항 12절 "기존 Spreadsheet
+ * 백업") — 실패 시 이 사본을 기준으로 사용자가 직접 복원할 수 있다. 새 파일은 원본과
+ * 같은 부모 폴더에 만든다.
+ */
+export async function copyFile(accessToken: string, fileId: string, newName: string): Promise<UploadedFile> {
+  return driveFetch(accessToken, `/files/${fileId}/copy?fields=id,webViewLink`, {
+    method: 'POST',
+    body: JSON.stringify({ name: newName }),
+  }) as Promise<UploadedFile>
+}
+
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files'
 
 export interface UploadedFile {

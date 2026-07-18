@@ -64,6 +64,8 @@ export interface InstallationStore {
   updateManagerName(userId: string, managerName: string): Promise<void>
   /** 설치 완료 시 단 한 번 호출되어 installations 행을 만든다. */
   complete(record: InstallationRecord): Promise<void>
+  /** Phase 8 마이그레이션 완료 시, 이미 완료된 설치의 identitySpreadsheetId만 채워 넣는다. */
+  setIdentitySpreadsheetId(userId: string, identitySpreadsheetId: string): Promise<void>
 
   getProgress(userId: string): Promise<InstallationProgressRecord | null>
   saveProgress(record: InstallationProgressRecord): Promise<void>
