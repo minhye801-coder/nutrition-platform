@@ -32,6 +32,7 @@ export type SetupStatusResponse =
       managerName: string
       schoolPublicId: string
       spreadsheetUrl: string
+      identitySpreadsheetUrl: string
       folderUrl: string
       steps: SetupStep[]
     }

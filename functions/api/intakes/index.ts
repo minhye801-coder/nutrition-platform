@@ -12,7 +12,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   const url = new URL(request.url)
   try {
-    const intakes = await listIntakes(access.accessToken, access.spreadsheetId, {
+    const intakes = await listIntakes(access.accessToken, access.identitySpreadsheetId, {
       status: url.searchParams.get('status') ?? undefined,
       q: url.searchParams.get('q') ?? undefined,
     })

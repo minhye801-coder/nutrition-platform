@@ -7,7 +7,10 @@ import type { InstallationRecord } from './installationStore'
 export interface PublicSpreadsheetAccess {
   installation: InstallationRecord
   accessToken: string
+  /** 상담데이터 Spreadsheet. */
   spreadsheetId: string
+  /** 학생식별정보 Spreadsheet(하위호환: 마이그레이션 전이면 spreadsheetId와 동일). */
+  identitySpreadsheetId: string
 }
 
 export type PublicAccessError =
@@ -44,7 +47,12 @@ export async function ensurePublicSpreadsheetAccess(
   const now = Date.now()
   const stillFresh = tokens.accessTokenExpiresAt > now + 60_000 && hasDriveScope(tokens.grantedScopes)
   if (stillFresh) {
-    return { installation, accessToken: tokens.accessToken, spreadsheetId: installation.spreadsheetId }
+    return {
+      installation,
+      accessToken: tokens.accessToken,
+      spreadsheetId: installation.spreadsheetId,
+      identitySpreadsheetId: installation.identitySpreadsheetId ?? installation.spreadsheetId,
+    }
   }
 
   try {
@@ -59,7 +67,12 @@ export async function ensurePublicSpreadsheetAccess(
       accessTokenExpiresAt: now + refreshed.expires_in * 1000,
       grantedScopes: refreshed.scope,
     })
-    return { installation, accessToken: refreshed.access_token, spreadsheetId: installation.spreadsheetId }
+    return {
+      installation,
+      accessToken: refreshed.access_token,
+      spreadsheetId: installation.spreadsheetId,
+      identitySpreadsheetId: installation.identitySpreadsheetId ?? installation.spreadsheetId,
+    }
   } catch {
     return { error: 'owner_reauth_required', status: 503 }
   }

@@ -12,14 +12,16 @@ import { recordSchemaVersion, ASSESSMENT_SCHEMA_VERSION } from './settingsSheet'
  */
 export const ASSESSMENT_SHEET_NAME = '진단결과'
 
-/** legacy Gemini `responseSchema`(4046-4087줄)와 완전히 동일한 키 38개, 같은 순서. */
+/**
+ * legacy Gemini `responseSchema`(4046-4087줄) 34개 키에서 재식별 위험이 큰 4개
+ * (studentName/schoolType/age/examDate)를 뺐다 — Gemini에는 애초에 이 값들을 요청하지
+ * 않는다(functions/_lib/geminiClient.ts). `grade`는 구체적 학년 대신 학년군(초등
+ * 저학년/고학년)만 받도록 `gradeBand`로 이름을 바꿨다(요구사항 10절 "학년·반·번호의
+ * 구체적 조합" 전송 금지).
+ */
 export const ASSESSMENT_EXTRACTED_FIELDS = [
-  'studentName',
-  'schoolType',
-  'grade',
+  'gradeBand',
   'sex',
-  'age',
-  'examDate',
   'heightCm',
   'heightPercentile',
   'weightKg',
@@ -81,6 +83,9 @@ export const ASSESSMENT_HEADERS = [
   'extractionStatus',
   'extractedAt',
   'extractedRawJson',
+  /** 이 AI 요청에 발급된 일회성 식별자(요구사항 10절) — 응답을 저장할 때 서버가
+   * studentUuid 상담건과 연결한다. Gemini 요청 자체에는 studentUuid를 싣지 않는다. */
+  'caseRequestId',
   ...ASSESSMENT_EXTRACTED_FIELDS,
   'warnings',
   'responseHighlights',
@@ -117,6 +122,8 @@ export interface AssessmentRecord extends AssessmentExtractedFields {
   extractedAt: string
   /** Gemini 원본 응답 JSON 그대로(legacy AI추출원문). */
   extractedRawJson: string
+  /** 이 추출 요청의 일회성 식별자(CASE-YYYYMMDD-XXXX). AI 미사용이면 빈 값. */
+  caseRequestId: string
   /** 줄바꿈으로 구분된 텍스트(JSON 배열 아님) — legacy 이상값경고와 동일한 표현 방식. */
   warnings: string
   /** 줄바꿈으로 구분된 텍스트 — legacy 응답내역 하이라이트. */
@@ -244,6 +251,7 @@ function rowToRecord(row: string[], headerIndex: Partial<Record<AssessmentHeader
     extractionStatus: get('extractionStatus'),
     extractedAt: get('extractedAt'),
     extractedRawJson: get('extractedRawJson'),
+    caseRequestId: get('caseRequestId'),
     warnings: get('warnings'),
     responseHighlights: get('responseHighlights'),
   }
@@ -331,6 +339,7 @@ export async function createAssessment(
     extractionStatus: EXTRACTION_STATUS_MANUAL,
     extractedAt: '',
     extractedRawJson: '',
+    caseRequestId: '',
     warnings: '',
     responseHighlights: '',
   }
@@ -344,6 +353,7 @@ export interface ApplyExtractionInput {
   warnings: string[]
   responseHighlights: string[]
   rawJson: string
+  caseRequestId: string
 }
 
 export type ApplyExtractionResult =
@@ -375,6 +385,7 @@ export async function applyExtraction(
     extractionStatus: EXTRACTION_STATUS_AI,
     extractedAt: now,
     extractedRawJson: input.rawJson,
+    caseRequestId: input.caseRequestId,
     warnings: input.warnings.join('\n'),
     responseHighlights: input.responseHighlights.join('\n'),
     updatedAt: now,

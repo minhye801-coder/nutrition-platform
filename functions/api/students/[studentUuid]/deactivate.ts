@@ -16,7 +16,7 @@ export const onRequestPost: PagesFunction<Env, 'studentUuid'> = async ({ request
   }
 
   try {
-    const updated = await deactivateStudent(access.accessToken, access.spreadsheetId, studentUuid)
+    const updated = await deactivateStudent(access.accessToken, access.identitySpreadsheetId, studentUuid)
     if (!updated) {
       return Response.json({ error: 'not_found' }, { status: 404 })
     }

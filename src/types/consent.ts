@@ -18,6 +18,11 @@ export const STUDENT_ASSENT_VALUES = [
   STUDENT_ASSENT_UNWILLING,
 ] as const
 
+/**
+ * 보호자 이름/관계/연락처는 이 레코드에 없다 — 상담데이터에는 StudentID/동의상태/
+ * 동의일/Drive 파일 참조만 저장한다(요구사항 5·7절). 보호자 정보는 제출 시점에
+ * 생성되는 PDF 본문에만 있고, 화면에서 다시 보려면 그 PDF를 열어야 한다.
+ */
 export interface Consent {
   consentId: string
   tenantId: string
@@ -26,9 +31,6 @@ export interface Consent {
   studentUuid: string
   consentToken: string
   status: string
-  guardianName: string
-  relationToStudent: string
-  guardianContact: string
   studentAssent: string
   counselingConsent: string
   personalInfoConsent: string
@@ -38,7 +40,8 @@ export interface Consent {
   requestedAt: string
   respondedAt: string
   consentedAt: string
-  consentPdfUrl: string
+  /** Drive fileId만 내려온다(URL 아님) — 화면에서 `https://drive.google.com/file/d/{id}/view`로 연다. */
+  consentPdfFileId: string
   confirmedAt: string
   confirmedBy: string
   note: string

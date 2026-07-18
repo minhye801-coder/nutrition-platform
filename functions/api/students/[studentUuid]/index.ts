@@ -57,7 +57,7 @@ export const onRequestPatch: PagesFunction<Env, 'studentUuid'> = async ({ reques
   }
 
   try {
-    const updated = await updateStudent(access.accessToken, access.spreadsheetId, studentUuid, patch)
+    const updated = await updateStudent(access.accessToken, access.identitySpreadsheetId, studentUuid, patch)
     if (!updated) {
       return Response.json({ error: 'not_found' }, { status: 404 })
     }

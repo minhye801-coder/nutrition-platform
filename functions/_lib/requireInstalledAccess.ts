@@ -10,8 +10,18 @@ export interface InstalledAccess {
   installation: InstallationRecord
   /** 유효한(만료 임박 시 자동 갱신된) Drive/Sheets 호출용 access token. */
   accessToken: string
-  /** installation.spreadsheetId의 null 아님이 보장된 값 — 호출부에서 매번 null 체크하지 않게 한다. */
+  /**
+   * 상담데이터 Spreadsheet(케이스/동의/진단결과 등, 학생 이름 없음). 대부분의 API가
+   * 이 값을 쓴다 — installation.spreadsheetId의 null 아님이 보장된 값.
+   */
   spreadsheetId: string
+  /**
+   * 학생식별정보 Spreadsheet(학생정보/상담접수, 이름 포함). 학생/접수 관련 API만 이
+   * 값을 쓴다. Phase 8 마이그레이션 전 기존 설치는 identitySpreadsheetId가 아직 없을
+   * 수 있으므로, 그 경우 spreadsheetId(단일 Spreadsheet 시절 값)로 대체한다 —
+   * 마이그레이션 전까지도 학생 API가 깨지지 않게 하기 위한 하위호환 처리다.
+   */
+  identitySpreadsheetId: string
 }
 
 export type InstalledAccessError =
@@ -45,7 +55,13 @@ export async function requireInstalledAccess(
 
   try {
     const accessToken = await ensureDriveAccessToken(env, session)
-    return { session, installation, accessToken, spreadsheetId: installation.spreadsheetId }
+    return {
+      session,
+      installation,
+      accessToken,
+      spreadsheetId: installation.spreadsheetId,
+      identitySpreadsheetId: installation.identitySpreadsheetId ?? installation.spreadsheetId,
+    }
   } catch (error) {
     if (error instanceof ReauthRequiredError) {
       return { error: 'drive_access_required', status: 401 }

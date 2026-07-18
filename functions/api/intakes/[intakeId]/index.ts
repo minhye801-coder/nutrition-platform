@@ -16,7 +16,7 @@ export const onRequestGet: PagesFunction<Env, 'intakeId'> = async ({ request, en
   }
 
   try {
-    const intake = await getIntake(access.accessToken, access.spreadsheetId, intakeId)
+    const intake = await getIntake(access.accessToken, access.identitySpreadsheetId, intakeId)
     if (!intake) {
       return Response.json({ error: 'not_found' }, { status: 404 })
     }

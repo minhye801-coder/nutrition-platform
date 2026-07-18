@@ -2,16 +2,12 @@ import type { AssessmentExtractedFields } from './assessmentSheet'
 import { ASSESSMENT_EXTRACTED_FIELDS } from './assessmentSheet'
 
 /**
- * legacy `extractDiagnosisWithGemini_`(counseling-manager/code.gs.txt:4015-4118)를 그대로
- * 옮긴다 — PDF를 Gemini에 직접 첨부(inline_data)하고 `responseSchema`로 38개 필드를
- * 강제해 구조화된 JSON을 받는다(자유서술 요약이 아니다, 사용자 확인).
- *
- * 우리 쪽 API 호출 자체에는 studentUuid/이름 등 식별 메타데이터를 추가로 싣지 않는다
- * (legacy는 프롬프트에 `학생명=${student.학생명}` 등을 함께 보냈지만, 이번 구현은 그
- * 대조를 서버가 응답을 받은 뒤 studentUuid로 조회한 학생 레코드와 비교하는 방식으로
- * 대체한다 — assessments 업로드/확인 API 참고). 다만 **업로드된 PDF 원본 자체에는
- * 학생 이름 등 개인정보가 인쇄돼 있을 수 있으므로, 이 설계를 "익명 전송"이라고
- * 표현하지 않는다** — Gemini는 PDF 내용을 그대로 받는다.
+ * legacy `extractDiagnosisWithGemini_`(counseling-manager/code.gs.txt:4015-4118)는 원본
+ * PDF를 Gemini에 그대로 첨부(inline_data)했다 — 요구사항 9·10절에 따라 이 구현은 원본
+ * PDF나 학생 이름을 Gemini에 절대 보내지 않는다. 브라우저에서 pdf.js로 텍스트를 뽑고
+ * 교사가 이름/학교명/생년월일 등 직접 식별정보 후보를 확인·제거한 뒤(src/lib/
+ * pdfDeidentify.ts, AssessmentDetailPage) 남은 텍스트만 여기로 들어온다. 이 함수 자체는
+ * "비식별화가 완전하다"고 보장하지 않는다 — 그 확인은 교사 화면 책임이다.
  */
 export class GeminiApiError extends Error {
   readonly status: number
@@ -28,22 +24,21 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 /** 설정 화면에 모델 선택 UI가 생기기 전까지의 기본값 — 필요해지면 이 상수만 바꾸면 된다. */
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash'
 
-/** legacy 프롬프트(4024-4032줄)와 동일한 취지 — 학생 식별 정보 문장만 뺐다(위 클래스 설명 참고). */
-const EXTRACTION_PROMPT = `첨부 PDF는 학교 영양상담용 식생활·생활습관 진단 결과(및 응답내역)입니다.
-PDF 화면에 명시적으로 표시된 값만 정확히 추출하세요. 추론하거나 새로운 판정을 만들지 마세요.
-진단결과 PDF의 공식 판정과 점수를 우선 기준으로 사용하세요.
-값이 없거나 읽을 수 없으면 빈 문자열을 반환하세요(추측 금지).
-학년·이름·검사일 불일치, 비현실적인 수면시간 등 확인이 필요한 사항은 warnings 배열에 기록하세요.
-상담에 참고할 만한 세부 응답이 있으면 responseHighlights 배열에 간단히 정리하세요.`
+/** 학생 식별 정보가 이미 제거된 텍스트만 받는다는 전제를 프롬프트에도 명시한다. */
+const EXTRACTION_PROMPT = `아래 텍스트는 학교 영양상담용 식생활·생활습관 진단 결과에서 학생 이름·학교명·
+생년월일·연락처 등 직접 식별정보를 제거한 뒤 남은 내용입니다. 텍스트에 명시적으로 표시된 값만
+정확히 추출하세요. 추론하거나 새로운 판정을 만들지 마세요. 값이 없거나 읽을 수 없으면 빈 문자열을
+반환하세요(추측 금지). 텍스트에 이름으로 보이는 고유명사나 연락처·주소가 남아 있다면 절대 그대로
+반환하지 말고 warnings 배열에 "식별정보로 보이는 내용이 남아 있습니다"라고만 기록하세요. 비현실적인
+수면시간 등 확인이 필요한 사항도 warnings 배열에 기록하세요. 상담에 참고할 만한 세부 응답이 있으면
+responseHighlights 배열에 간단히 정리하세요.`
 
-/** legacy properties 객체(4046-4086줄)의 설명 문구를 그대로 옮긴 것 — responseSchema용. */
+/** legacy properties 객체(4046-4086줄)의 설명 문구를 그대로 옮긴 것 — responseSchema용.
+ * 재식별 위험이 큰 4개 필드(studentName/schoolType/age/examDate)는 요구사항 10절에 따라
+ * Gemini에 요청하지 않는다 — assessmentSheet.ts의 ASSESSMENT_EXTRACTED_FIELDS 참고. */
 const FIELD_DESCRIPTIONS: Record<(typeof ASSESSMENT_EXTRACTED_FIELDS)[number], string> = {
-  studentName: '학생 이름',
-  schoolType: '초등학교/중학교/고등학교',
-  grade: '학년 숫자',
+  gradeBand: '학년군(초등 저학년 또는 초등 고학년)',
   sex: '성별',
-  age: '나이',
-  examDate: '검사일 YYYY-MM-DD',
   heightCm: '신장 cm',
   heightPercentile: '신장 백분위',
   weightKg: '체중 kg',
@@ -86,16 +81,6 @@ export interface AssessmentExtractionResult {
   rawJson: string
 }
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  const chunkSize = 0x8000
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
-  }
-  return btoa(binary)
-}
-
 function buildResponseSchema() {
   const properties: Record<string, { type: string; description?: string; items?: { type: string } }> = {}
   for (const key of ASSESSMENT_EXTRACTED_FIELDS) {
@@ -110,10 +95,15 @@ function buildResponseSchema() {
   }
 }
 
-/** 실패 시 GeminiApiError를 던진다 — 호출부(assessments extract API)가 그대로 전달해 프런트에 에러로 보여준다. */
-export async function extractAssessmentData(
+/**
+ * 비식별화된 텍스트만 Gemini에 보낸다(inline_data 없음 — PDF 원본 바이트를 다루지
+ * 않는다). 실패 시 GeminiApiError를 던진다 — 호출부(assessments extract API)가 그대로
+ * 전달해 프런트에 에러로 보여준다. 요청 본문 자체를 로그로 출력하지 않는다(요구사항
+ * 10절 "AI API 요청 내용을 디버그 로그에 그대로 출력하지 않는다").
+ */
+export async function extractFromDeidentifiedText(
   apiKey: string,
-  pdfBytes: ArrayBuffer,
+  deidentifiedText: string,
 ): Promise<AssessmentExtractionResult> {
   const response = await fetch(
     `${GEMINI_API_BASE}/models/${DEFAULT_GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
@@ -123,10 +113,7 @@ export async function extractAssessmentData(
       body: JSON.stringify({
         contents: [
           {
-            parts: [
-              { text: EXTRACTION_PROMPT },
-              { inline_data: { mime_type: 'application/pdf', data: arrayBufferToBase64(pdfBytes) } },
-            ],
+            parts: [{ text: `${EXTRACTION_PROMPT}\n\n---\n${deidentifiedText}` }],
           },
         ],
         generationConfig: {

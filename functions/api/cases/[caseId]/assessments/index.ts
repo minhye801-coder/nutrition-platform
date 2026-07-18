@@ -3,7 +3,6 @@ import { getCase, CASE_STATUS_DIAGNOSIS_PENDING, CASE_STATUS_RESULT_CHECK, trans
 import { createAssessment, listAssessmentsByCase } from '../../../../_lib/assessmentSheet'
 import { ensureAssessmentFolder, extractFolderIdFromUrl } from '../../../../_lib/caseFolder'
 import { uploadFile } from '../../../../_lib/googleDrive'
-import { getStudentByUuid } from '../../../../_lib/studentSheet'
 import { getCaseIdParam, handleAssessmentSheetError } from '../../../../_lib/assessmentApiHelpers'
 import type { Env } from '../../../../_lib/env'
 
@@ -104,10 +103,10 @@ export const onRequestPost: PagesFunction<Env, 'caseId'> = async ({ request, env
       return Response.json({ error: 'installation_incomplete' }, { status: 500 })
     }
 
-    const student = await getStudentByUuid(access.accessToken, access.spreadsheetId, caseRecord.studentUuid)
+    // 파일명에 학생 이름을 쓰지 않는다(요구사항 6절) — StudentID로만 식별한다.
     const extIndex = file.name.lastIndexOf('.')
     const ext = extIndex >= 0 ? file.name.slice(extIndex) : ''
-    const safeName = `${sanitizeFileNamePart(student?.name || '학생')}_진단결과_${sanitizeFileNamePart(
+    const safeName = `${sanitizeFileNamePart(caseRecord.studentUuid)}_진단결과_${sanitizeFileNamePart(
       timepoint,
     )}_${formatTimestamp(new Date())}${ext}`
 

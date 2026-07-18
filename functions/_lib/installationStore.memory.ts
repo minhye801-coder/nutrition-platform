@@ -58,4 +58,11 @@ export const memoryInstallationStore: InstallationStore = {
     progress.set(userId, { ...existing, spreadsheetId, headersWritten: false, updatedAt })
     return true
   },
+
+  async claimIdentitySpreadsheet(userId, spreadsheetId, updatedAt) {
+    const existing = progress.get(userId)
+    if (!existing || existing.identitySpreadsheetId) return false
+    progress.set(userId, { ...existing, identitySpreadsheetId: spreadsheetId, identityHeadersWritten: false, updatedAt })
+    return true
+  },
 }

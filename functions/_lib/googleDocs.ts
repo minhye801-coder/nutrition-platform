@@ -31,7 +31,7 @@ export async function createTextPdf(
   targetFolderId: string,
   title: string,
   bodyLines: string[],
-): Promise<{ pdfUrl: string }> {
+): Promise<{ fileId: string; pdfUrl: string }> {
   const created = (await docsFetch(accessToken, '', {
     method: 'POST',
     body: JSON.stringify({ title }),
@@ -62,5 +62,5 @@ export async function createTextPdf(
   // 원본 Docs 파일은 PDF로 내보낸 뒤엔 필요 없다 — legacy도 휴지통으로만 보낸다(영구 삭제 아님).
   await trashFile(accessToken, documentId)
 
-  return { pdfUrl: pdfFile.webViewLink }
+  return { fileId: pdfFile.id, pdfUrl: pdfFile.webViewLink }
 }

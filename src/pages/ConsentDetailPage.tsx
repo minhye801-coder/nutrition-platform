@@ -181,33 +181,30 @@ function ConsentDetailContent() {
                 <span className={fieldValueClass}>{detail.caseStatus || '-'}</span>
               </div>
               <div className={fieldRowClass}>
-                <span className={fieldLabelClass}>보호자 연락처</span>
-                <span className={fieldValueClass}>{consent.guardianContact || '-'}</span>
-              </div>
-              <div className={fieldRowClass}>
-                <span className={fieldLabelClass}>보호자명</span>
-                <span className={fieldValueClass}>{consent.guardianName || '-'}</span>
-              </div>
-              <div className={fieldRowClass}>
-                <span className={fieldLabelClass}>학생과의 관계</span>
-                <span className={fieldValueClass}>{consent.relationToStudent || '-'}</span>
-              </div>
-              <div className={fieldRowClass}>
                 <span className={fieldLabelClass}>제출일</span>
                 <span className={fieldValueClass}>{consent.respondedAt || '-'}</span>
               </div>
               <div className={fieldRowClass}>
                 <span className={fieldLabelClass}>동의서 PDF</span>
                 <span className={fieldValueClass}>
-                  {consent.consentPdfUrl ? (
-                    <a href={consent.consentPdfUrl} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
-                      PDF 열기
+                  {consent.consentPdfFileId ? (
+                    <a
+                      href={`https://drive.google.com/file/d/${consent.consentPdfFileId}/view`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-600 hover:underline"
+                    >
+                      PDF 생성 완료 — 열기
                     </a>
                   ) : (
                     '미생성'
                   )}
                 </span>
               </div>
+              <p className="text-xs text-gray-500">
+                보호자 이름·연락처·관계는 개인정보 보호를 위해 이 화면에 저장·표시하지
+                않습니다. 필요하면 위 동의서 PDF에서 확인하세요.
+              </p>
             </div>
 
             <div className="rounded-md border border-gray-200 p-3 text-sm">

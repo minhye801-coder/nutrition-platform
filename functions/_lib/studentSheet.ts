@@ -1,5 +1,6 @@
 import { appendValues, getValues, updateValues } from './googleSheets'
 import { recordSchemaVersion, STUDENT_SCHEMA_VERSION } from './settingsSheet'
+import { generateStudentId } from './crypto'
 
 /** docs/database-schema.md 2.2절(확정)과 동일하게 유지한다. */
 export const STUDENT_SHEET_NAME = '학생정보'
@@ -309,15 +310,35 @@ export interface CreateStudentInput {
   studentNumber: string
 }
 
+const MAX_STUDENT_ID_ATTEMPTS = 5
+
+/**
+ * 이미 로드된 시트 행과 충돌하지 않는 StudentID를 뽑는다(요구사항 4절 "충돌 여부를
+ * 검사"). 60비트 엔트로피라 실제 충돌 확률은 무시할 수준이지만, 확인 없이 그냥
+ * 믿지 않는다 — 5회 재시도 후에도 충돌하면 시트 상태 자체를 의심할 수준이므로 에러를
+ * 던진다(추가로 crypto.randomUUID() 유입분과도 겹치지 않는지 함께 확인된다).
+ */
+function pickUniqueStudentId(existingIds: Set<string>): string {
+  for (let attempt = 0; attempt < MAX_STUDENT_ID_ATTEMPTS; attempt += 1) {
+    const candidate = generateStudentId()
+    if (!existingIds.has(candidate)) return candidate
+  }
+  throw new Error('student_id_generation_failed')
+}
+
 export async function createStudent(
   accessToken: string,
   spreadsheetId: string,
   input: CreateStudentInput,
 ): Promise<StudentRecord> {
   const sheet = await loadWritableSheet(accessToken, spreadsheetId)
+  const idColumn = sheet.headerIndex.studentUuid
+  const existingIds = new Set(
+    idColumn === undefined ? [] : sheet.rows.map((row) => row[idColumn]).filter(Boolean),
+  )
   const now = new Date().toISOString()
   const record: StudentRecord = {
-    studentUuid: crypto.randomUUID(),
+    studentUuid: pickUniqueStudentId(existingIds),
     tenantId: input.tenantId,
     schoolYear: input.schoolYear,
     name: input.name,

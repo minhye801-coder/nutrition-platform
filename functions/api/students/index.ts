@@ -28,7 +28,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   const url = new URL(request.url)
   try {
-    const students = await listStudents(access.accessToken, access.spreadsheetId, {
+    const students = await listStudents(access.accessToken, access.identitySpreadsheetId, {
       q: url.searchParams.get('q') ?? undefined,
       schoolYear: url.searchParams.get('schoolYear') ?? undefined,
       grade: url.searchParams.get('grade') ?? undefined,
@@ -71,7 +71,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     if (!body.confirmDuplicate) {
       const duplicate = await findPotentialDuplicate(
         access.accessToken,
-        access.spreadsheetId,
+        access.identitySpreadsheetId,
         name,
         schoolYear,
         grade,
@@ -86,7 +86,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       }
     }
 
-    const student = await createStudent(access.accessToken, access.spreadsheetId, {
+    const student = await createStudent(access.accessToken, access.identitySpreadsheetId, {
       tenantId: access.installation.schoolPublicId,
       name,
       schoolYear,

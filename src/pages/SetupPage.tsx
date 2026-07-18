@@ -20,6 +20,7 @@ interface CompletedInfo {
   managerName: string
   schoolPublicId: string
   spreadsheetUrl: string
+  identitySpreadsheetUrl: string
   folderUrl: string
 }
 
@@ -172,6 +173,7 @@ function SetupContent({ user }: { user: SessionUser }) {
           managerName: result.managerName,
           schoolPublicId: result.schoolPublicId,
           spreadsheetUrl: result.spreadsheetUrl,
+          identitySpreadsheetUrl: result.identitySpreadsheetUrl,
           folderUrl: result.folderUrl,
         })
         setPhase('completed')
@@ -438,18 +440,26 @@ function SetupContent({ user }: { user: SessionUser }) {
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <a
+                href={completed.identitySpreadsheetUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`${secondaryButtonClass} text-center`}
+              >
+                학생식별정보 Spreadsheet 열기
+              </a>
+              <a
                 href={completed.spreadsheetUrl}
                 target="_blank"
                 rel="noreferrer"
                 className={`${secondaryButtonClass} text-center`}
               >
-                Spreadsheet 열기
+                상담데이터 Spreadsheet 열기
               </a>
               <a
                 href={completed.folderUrl}
                 target="_blank"
                 rel="noreferrer"
-                className={`${secondaryButtonClass} text-center`}
+                className={`${secondaryButtonClass} text-center sm:col-span-2`}
               >
                 Drive 폴더 열기
               </a>

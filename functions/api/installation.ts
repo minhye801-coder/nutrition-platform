@@ -35,6 +35,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     spreadsheetUrl: installation.spreadsheetId
       ? `https://docs.google.com/spreadsheets/d/${installation.spreadsheetId}/edit`
       : null,
+    // Phase 8 마이그레이션 전 기존 설치는 identitySpreadsheetId가 없을 수 있다 — 그
+    // 경우 아직 학생정보가 상담데이터 Spreadsheet와 분리되지 않았다는 뜻이므로 null로
+    // 내려준다(설정 화면이 "미생성"으로 보여준다).
+    identitySpreadsheetUrl: installation.identitySpreadsheetId
+      ? `https://docs.google.com/spreadsheets/d/${installation.identitySpreadsheetId}/edit`
+      : null,
   })
 }
 

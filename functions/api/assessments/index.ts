@@ -19,7 +19,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const [assessments, cases, students] = await Promise.all([
       listAssessments(access.accessToken, access.spreadsheetId),
       listCases(access.accessToken, access.spreadsheetId),
-      listStudents(access.accessToken, access.spreadsheetId, { status: 'all' }),
+      listStudents(access.accessToken, access.identitySpreadsheetId, { status: 'all' }),
     ])
     const caseByCaseId = new Map(cases.map((c) => [c.caseId, c]))
     const studentByUuid = new Map(students.map((s) => [s.studentUuid, s]))

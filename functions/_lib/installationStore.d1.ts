@@ -11,6 +11,7 @@ interface InstallationRow {
   school_public_id: string
   root_folder_id: string | null
   spreadsheet_id: string | null
+  identity_spreadsheet_id: string | null
   installed_at: number
   updated_at: number
 }
@@ -23,6 +24,7 @@ function toRecord(row: InstallationRow): InstallationRecord {
     schoolPublicId: row.school_public_id,
     rootFolderId: row.root_folder_id,
     spreadsheetId: row.spreadsheet_id,
+    identitySpreadsheetId: row.identity_spreadsheet_id,
     installedAt: row.installed_at,
     updatedAt: row.updated_at,
   }
@@ -36,7 +38,9 @@ interface ProgressRow {
   root_folder_id: string | null
   folder_ids_json: string
   spreadsheet_id: string | null
+  identity_spreadsheet_id: string | null
   headers_written: number
+  identity_headers_written: number
   status: InstallationProgressRecord['status']
   current_step: string | null
   error_step: string | null
@@ -60,7 +64,9 @@ function toProgressRecord(row: ProgressRow): InstallationProgressRecord {
     rootFolderId: row.root_folder_id,
     folderIds,
     spreadsheetId: row.spreadsheet_id,
+    identitySpreadsheetId: row.identity_spreadsheet_id,
     headersWritten: row.headers_written === 1,
+    identityHeadersWritten: row.identity_headers_written === 1,
     status: row.status,
     currentStep: row.current_step,
     errorStep: row.error_step,
@@ -77,7 +83,7 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
       const row = await db
         .prepare(
           `SELECT user_id, school_name, manager_name, school_public_id,
-                  root_folder_id, spreadsheet_id, installed_at, updated_at
+                  root_folder_id, spreadsheet_id, identity_spreadsheet_id, installed_at, updated_at
            FROM installations WHERE user_id = ?1`,
         )
         .bind(userId)
@@ -89,7 +95,7 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
       const { results } = await db
         .prepare(
           `SELECT user_id, school_name, manager_name, school_public_id,
-                  root_folder_id, spreadsheet_id, installed_at, updated_at
+                  root_folder_id, spreadsheet_id, identity_spreadsheet_id, installed_at, updated_at
            FROM installations WHERE school_public_id = ?1 LIMIT 2`,
         )
         .bind(schoolPublicId)
@@ -118,14 +124,15 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
         .prepare(
           `INSERT INTO installations (
              user_id, school_name, manager_name, school_public_id,
-             root_folder_id, spreadsheet_id, installed_at, updated_at
-           ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+             root_folder_id, spreadsheet_id, identity_spreadsheet_id, installed_at, updated_at
+           ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
            ON CONFLICT(user_id) DO UPDATE SET
              school_name = excluded.school_name,
              manager_name = excluded.manager_name,
              school_public_id = excluded.school_public_id,
              root_folder_id = excluded.root_folder_id,
              spreadsheet_id = excluded.spreadsheet_id,
+             identity_spreadsheet_id = excluded.identity_spreadsheet_id,
              updated_at = excluded.updated_at`,
         )
         .bind(
@@ -135,6 +142,7 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
           record.schoolPublicId,
           record.rootFolderId,
           record.spreadsheetId,
+          record.identitySpreadsheetId,
           record.installedAt,
           record.updatedAt,
         )
@@ -145,7 +153,8 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
       const row = await db
         .prepare(
           `SELECT user_id, school_name, manager_name, school_public_id,
-                  root_folder_id, folder_ids_json, spreadsheet_id, headers_written,
+                  root_folder_id, folder_ids_json, spreadsheet_id, identity_spreadsheet_id,
+                  headers_written, identity_headers_written,
                   status, current_step, error_step, error_message, created_at, updated_at
            FROM installation_progress WHERE user_id = ?1`,
         )
@@ -159,9 +168,10 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
         .prepare(
           `INSERT INTO installation_progress (
              user_id, school_name, manager_name, school_public_id,
-             root_folder_id, folder_ids_json, spreadsheet_id, headers_written,
+             root_folder_id, folder_ids_json, spreadsheet_id, identity_spreadsheet_id,
+             headers_written, identity_headers_written,
              status, current_step, error_step, error_message, created_at, updated_at
-           ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+           ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
            ON CONFLICT(user_id) DO UPDATE SET
              school_name = excluded.school_name,
              manager_name = excluded.manager_name,
@@ -169,7 +179,9 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
              root_folder_id = excluded.root_folder_id,
              folder_ids_json = excluded.folder_ids_json,
              spreadsheet_id = excluded.spreadsheet_id,
+             identity_spreadsheet_id = excluded.identity_spreadsheet_id,
              headers_written = excluded.headers_written,
+             identity_headers_written = excluded.identity_headers_written,
              status = excluded.status,
              current_step = excluded.current_step,
              error_step = excluded.error_step,
@@ -184,7 +196,9 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
           record.rootFolderId,
           JSON.stringify(record.folderIds),
           record.spreadsheetId,
+          record.identitySpreadsheetId,
           record.headersWritten ? 1 : 0,
+          record.identityHeadersWritten ? 1 : 0,
           record.status,
           record.currentStep,
           record.errorStep,
@@ -225,6 +239,18 @@ export function createD1InstallationStore(db: D1Database): InstallationStore {
           `UPDATE installation_progress
            SET spreadsheet_id = ?2, headers_written = 0, updated_at = ?3
            WHERE user_id = ?1 AND spreadsheet_id IS NULL`,
+        )
+        .bind(userId, spreadsheetId, updatedAt)
+        .run()
+      return result.meta.changes > 0
+    },
+
+    async claimIdentitySpreadsheet(userId, spreadsheetId, updatedAt) {
+      const result = await db
+        .prepare(
+          `UPDATE installation_progress
+           SET identity_spreadsheet_id = ?2, identity_headers_written = 0, updated_at = ?3
+           WHERE user_id = ?1 AND identity_spreadsheet_id IS NULL`,
         )
         .bind(userId, spreadsheetId, updatedAt)
         .run()

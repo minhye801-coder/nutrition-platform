@@ -53,12 +53,20 @@ export async function ensureAssessmentFolder(accessToken: string, caseFolderId: 
 }
 
 /**
- * 케이스 생성 시 `ensureCaseFolders`가 이미 만들어 두는 "02_보호자동의" 폴더를 다시
- * 찾는다(같은 이름을 findOrCreateFolder에 다시 넘기면 기존 폴더를 그대로 재사용) —
- * 보호자 제출 시점엔 caseFolderId만 갖고 있으므로(consentFolderId는 별도 저장하지
- * 않음) 매번 이렇게 다시 찾아간다. legacy `createConsentPdf_`(intake-consent/
- * code.gs.txt:188)와 동일한 폴더.
+ * 보호자동의서 PDF는 케이스별 중첩 폴더가 아니라 루트 바로 아래
+ * `03_보호자동의서`(installTemplate.ts의 SUBFOLDER_NAMES) 폴더에 평탄하게 저장한다
+ * (요구사항 5·7절 — 폴더 구조를 한눈에 알아볼 수 있게, 파일명은 StudentID 기반).
+ * setupOrchestrator.ts가 설치 시 이미 이 폴더를 만들어 두므로 대개는 찾기만 한다.
  */
-export async function ensureConsentFolder(accessToken: string, caseFolderId: string): Promise<string> {
-  return findOrCreateFolder(accessToken, '02_보호자동의', caseFolderId)
+export async function ensureConsentPdfFolder(accessToken: string, rootFolderId: string): Promise<string> {
+  return findOrCreateFolder(accessToken, '03_보호자동의서', rootFolderId)
+}
+
+/**
+ * AI 분석 결과 중 사람이 다시 확인할 수 있는 형태로 별도 저장하고 싶을 때 쓰는 폴더
+ * (요구사항 9·10절 "04_비식별_분석결과") — 원본 PDF나 학생 이름을 포함하지 않는
+ * 산출물만 여기 저장한다.
+ */
+export async function ensureDeidentifiedResultFolder(accessToken: string, rootFolderId: string): Promise<string> {
+  return findOrCreateFolder(accessToken, '04_비식별_분석결과', rootFolderId)
 }

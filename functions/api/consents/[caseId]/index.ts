@@ -29,7 +29,7 @@ export const onRequestGet: PagesFunction<Env, 'caseId'> = async ({ request, env,
     if (!consent) {
       return Response.json({ error: 'not_found' }, { status: 404 })
     }
-    const student = await getStudentByUuid(access.accessToken, access.spreadsheetId, caseRecord.studentUuid)
+    const student = await getStudentByUuid(access.accessToken, access.identitySpreadsheetId, caseRecord.studentUuid)
 
     return Response.json({
       caseId,

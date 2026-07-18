@@ -12,6 +12,13 @@ import { recordSchemaVersion, CONSENT_SCHEMA_VERSION } from './settingsSheet'
  */
 export const CONSENT_SHEET_NAME = '보호자동의'
 
+/**
+ * 보호자 이름/관계/연락처 컬럼을 의도적으로 두지 않는다(요구사항 5·7절 — 상담데이터
+ * Spreadsheet에는 StudentID/동의상태/동의일/Drive fileId 정도의 메타데이터만 저장).
+ * 보호자 정보는 제출 시점에 생성되는 PDF 본문에만 존재한다
+ * (functions/api/public/consents/[token]/index.ts). `consentPdfFileId`는 URL 대신
+ * Drive fileId만 저장하고, 화면에는 서버가 그때그때 webViewLink를 조립해 내려준다.
+ */
 export const CONSENT_HEADERS = [
   'consentId',
   'tenantId',
@@ -20,9 +27,6 @@ export const CONSENT_HEADERS = [
   'studentUuid',
   'consentToken',
   'status',
-  'guardianName',
-  'relationToStudent',
-  'guardianContact',
   'studentAssent',
   'counselingConsent',
   'personalInfoConsent',
@@ -32,7 +36,7 @@ export const CONSENT_HEADERS = [
   'requestedAt',
   'respondedAt',
   'consentedAt',
-  'consentPdfUrl',
+  'consentPdfFileId',
   'confirmedAt',
   'confirmedBy',
   'note',
@@ -51,9 +55,6 @@ export interface ConsentRecord {
   /** 비어있으면 아직 "동의 링크 생성" 전(legacy와 동일 — 승인 시점엔 항상 빈 값). */
   consentToken: string
   status: string
-  guardianName: string
-  relationToStudent: string
-  guardianContact: string
   studentAssent: string
   counselingConsent: string
   personalInfoConsent: string
@@ -66,7 +67,8 @@ export interface ConsentRecord {
   respondedAt: string
   /** legacy 동의일(동의를 선택했을 때만 채움, 비동의면 빈 값). */
   consentedAt: string
-  consentPdfUrl: string
+  /** Drive fileId만 저장한다(URL 아님) — 화면 표시 시 서버가 webViewLink를 조립한다. */
+  consentPdfFileId: string
   confirmedAt: string
   confirmedBy: string
   note: string
@@ -198,9 +200,6 @@ function rowToRecord(row: string[], headerIndex: Partial<Record<ConsentHeader, n
     studentUuid: get('studentUuid'),
     consentToken: get('consentToken'),
     status: get('status'),
-    guardianName: get('guardianName'),
-    relationToStudent: get('relationToStudent'),
-    guardianContact: get('guardianContact'),
     studentAssent: get('studentAssent'),
     counselingConsent: get('counselingConsent'),
     personalInfoConsent: get('personalInfoConsent'),
@@ -210,7 +209,7 @@ function rowToRecord(row: string[], headerIndex: Partial<Record<ConsentHeader, n
     requestedAt: get('requestedAt'),
     respondedAt: get('respondedAt'),
     consentedAt: get('consentedAt'),
-    consentPdfUrl: get('consentPdfUrl'),
+    consentPdfFileId: get('consentPdfFileId'),
     confirmedAt: get('confirmedAt'),
     confirmedBy: get('confirmedBy'),
     note: get('note'),
@@ -242,8 +241,6 @@ export interface CreateConsentSkeletonInput {
   intakeId: string
   caseId: string
   studentUuid: string
-  /** legacy normalizeContactValue_(접수 연락처) — 보호자동의 링크 생성 전에도 연락 수단으로 미리 채워둔다. */
-  guardianContact: string
 }
 
 /**
@@ -266,9 +263,6 @@ export async function createConsentSkeleton(
     studentUuid: input.studentUuid,
     consentToken: '',
     status: CONSENT_STATUS_NOT_SENT,
-    guardianName: '',
-    relationToStudent: '',
-    guardianContact: input.guardianContact,
     studentAssent: CONSENT_ITEM_UNCONFIRMED,
     counselingConsent: CONSENT_ITEM_UNCONFIRMED,
     personalInfoConsent: CONSENT_ITEM_UNCONFIRMED,
@@ -278,7 +272,7 @@ export async function createConsentSkeleton(
     requestedAt: '',
     respondedAt: '',
     consentedAt: '',
-    consentPdfUrl: '',
+    consentPdfFileId: '',
     confirmedAt: '',
     confirmedBy: '',
     note: '',
@@ -417,12 +411,12 @@ export async function submitConsent(
     return { ok: false, error: 'signature_mismatch' }
   }
 
+  // guardianName/relationToStudent/guardianContact는 서명 대조(위 normalizeGuardianName
+  // 비교)와 PDF 본문 생성에만 쓰고 시트 행에는 쓰지 않는다(요구사항 5·7절 — 보호자
+  // 정보는 PDF 안에만 존재).
   const now = new Date().toISOString()
   const base = {
     ...current,
-    guardianName: input.guardianName,
-    relationToStudent: input.relationToStudent,
-    guardianContact: input.guardianContact,
     respondedAt: now,
     updatedAt: now,
   }
@@ -549,11 +543,11 @@ export async function saveStudentAssent(
  * code.gs.txt:160-168). 토큰이 아니라 caseId로 찾는다(제출 직후 호출부가 caseId를
  * 이미 알고 있음).
  */
-export async function setConsentPdfUrl(
+export async function setConsentPdfFileId(
   accessToken: string,
   spreadsheetId: string,
   caseId: string,
-  consentPdfUrl: string,
+  consentPdfFileId: string,
 ): Promise<void> {
   const sheet = await loadWritableSheet(accessToken, spreadsheetId)
   const caseColumn = sheet.headerIndex.caseId
@@ -562,7 +556,7 @@ export async function setConsentPdfUrl(
   if (rowOffset === -1) return
 
   const current = rowToRecord(sheet.rows[rowOffset], sheet.headerIndex)
-  const updated: ConsentRecord = { ...current, consentPdfUrl, updatedAt: new Date().toISOString() }
+  const updated: ConsentRecord = { ...current, consentPdfFileId, updatedAt: new Date().toISOString() }
   const row = recordToRow(updated, sheet.headers)
   const sheetRowNumber = rowOffset + 2
   const range = `${quoteSheetName(CONSENT_SHEET_NAME)}!A${sheetRowNumber}:${columnLetter(sheet.headers.length - 1)}${sheetRowNumber}`

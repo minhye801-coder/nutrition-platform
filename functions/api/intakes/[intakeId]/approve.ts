@@ -41,10 +41,10 @@ export const onRequestPost: PagesFunction<Env, 'intakeId'> = async ({ request, e
     return Response.json({ error: 'invalid_input' }, { status: 400 })
   }
 
-  const { accessToken, spreadsheetId, installation } = access
+  const { accessToken, spreadsheetId, identitySpreadsheetId, installation } = access
 
   try {
-    const intake = await getIntake(accessToken, spreadsheetId, intakeId)
+    const intake = await getIntake(accessToken, identitySpreadsheetId, intakeId)
     if (!intake) {
       return Response.json({ error: 'not_found' }, { status: 404 })
     }
@@ -62,7 +62,7 @@ export const onRequestPost: PagesFunction<Env, 'intakeId'> = async ({ request, e
     if (!studentUuid) {
       const matched = await findStudentForCaseApproval(
         accessToken,
-        spreadsheetId,
+        identitySpreadsheetId,
         intake.name,
         intake.schoolYear,
         intake.grade,
@@ -72,7 +72,7 @@ export const onRequestPost: PagesFunction<Env, 'intakeId'> = async ({ request, e
       if (matched) {
         studentUuid = matched.studentUuid
       } else {
-        const created = await createStudent(accessToken, spreadsheetId, {
+        const created = await createStudent(accessToken, identitySpreadsheetId, {
           tenantId: installation.schoolPublicId,
           name: intake.name,
           schoolYear: intake.schoolYear,
@@ -113,12 +113,11 @@ export const onRequestPost: PagesFunction<Env, 'intakeId'> = async ({ request, e
         intakeId,
         caseId: caseRecord.caseId,
         studentUuid,
-        guardianContact: intake.contactInfo,
       })
     }
 
     // 4) 상담접수 행 갱신(이미 승인 상태면 그대로 반환, 다시 쓰지 않음).
-    const approveResult = await approveIntakeWithStudent(accessToken, spreadsheetId, intakeId, studentUuid)
+    const approveResult = await approveIntakeWithStudent(accessToken, identitySpreadsheetId, intakeId, studentUuid)
     if (!approveResult.ok) {
       if (approveResult.error === 'not_found') {
         return Response.json({ error: 'not_found' }, { status: 404 })

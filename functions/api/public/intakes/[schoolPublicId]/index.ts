@@ -120,7 +120,7 @@ export const onRequestPost: PagesFunction<Env, 'schoolPublicId'> = async ({ requ
   }
 
   try {
-    const intake = await createIntake(access.accessToken, access.spreadsheetId, {
+    const intake = await createIntake(access.accessToken, access.identitySpreadsheetId, {
       tenantId: access.installation.schoolPublicId,
       applicantType,
       applicantName,

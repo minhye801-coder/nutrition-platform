@@ -4,15 +4,24 @@ import {
   CONSENT_DECISION_DECLINE,
   CONSENT_STATUS_REQUESTED,
   findConsentByToken,
-  setConsentPdfUrl,
+  setConsentPdfFileId,
   submitConsent,
 } from '../../../../_lib/consentSheet'
 import { getCase } from '../../../../_lib/caseSheet'
 import { getStudentByUuid } from '../../../../_lib/studentSheet'
-import { ensureConsentFolder, extractFolderIdFromUrl } from '../../../../_lib/caseFolder'
+import { ensureConsentPdfFolder } from '../../../../_lib/caseFolder'
 import { createTextPdf } from '../../../../_lib/googleDocs'
 import { getConsentTokenParam, handleConsentSheetError, parseConsentToken } from '../../../../_lib/consentApiHelpers'
 import type { Env } from '../../../../_lib/env'
+
+/** `STU-K7P4-Q9XM-2R8D_보호자동의서_20260718.pdf`처럼 StudentID 기반 파일명을 만든다(요구사항 7절). */
+function consentPdfFileName(studentUuid: string): string {
+  const today = new Date()
+  const y = today.getFullYear()
+  const m = String(today.getMonth() + 1).padStart(2, '0')
+  const d = String(today.getDate()).padStart(2, '0')
+  return `${studentUuid}_보호자동의서_${y}${m}${d}`
+}
 
 /** legacy Consent.html/maskName_이 학생 이름을 "홍○동"처럼 가운데만 가려 보여주던 것과 동일. */
 function maskStudentName(name: string): string {
@@ -69,7 +78,7 @@ export const onRequestGet: PagesFunction<Env, 'token'> = async ({ params, env })
       return Response.json({ error: 'not_found' }, { status: 404 })
     }
     const caseRecord = await getCase(access.accessToken, access.spreadsheetId, consent.caseId)
-    const student = await getStudentByUuid(access.accessToken, access.spreadsheetId, consent.studentUuid)
+    const student = await getStudentByUuid(access.accessToken, access.identitySpreadsheetId, consent.studentUuid)
 
     return Response.json({
       studentName: maskStudentName(student?.name ?? ''),
@@ -148,14 +157,15 @@ export const onRequestPost: PagesFunction<Env, 'token'> = async ({ request, para
     // 실패해도 위에서 이미 저장된 동의 데이터에는 영향이 없다.
     try {
       const caseRecord = await getCase(access.accessToken, access.spreadsheetId, result.consent.caseId)
-      const student = await getStudentByUuid(access.accessToken, access.spreadsheetId, result.consent.studentUuid)
-      const caseFolderId = caseRecord ? extractFolderIdFromUrl(caseRecord.driveFolderUrl) : null
-      if (caseRecord && caseFolderId) {
-        const consentFolderId = await ensureConsentFolder(access.accessToken, caseFolderId)
-        const { pdfUrl } = await createTextPdf(
+      const student = await getStudentByUuid(access.accessToken, access.identitySpreadsheetId, result.consent.studentUuid)
+      // 보호자동의서 PDF는 SCHOOL_WORKSPACE 소유 학교의 03_보호자동의서 폴더에만 저장한다
+      // (요구사항 7절) — 케이스별 중첩 폴더가 아니라 루트 바로 아래 평탄한 폴더다.
+      if (caseRecord && access.installation.rootFolderId) {
+        const consentFolderId = await ensureConsentPdfFolder(access.accessToken, access.installation.rootFolderId)
+        const { fileId } = await createTextPdf(
           access.accessToken,
           consentFolderId,
-          `${result.consent.caseId}_보호자동의_전자제출기록`,
+          consentPdfFileName(result.consent.studentUuid),
           [
             '학교 영양상담 보호자 동의 전자제출 기록',
             '※ 본 문서는 공개 웹페이지에서 제출된 동의 내용을 학교 내부 보관용으로 기록한 것입니다.',
@@ -172,7 +182,8 @@ export const onRequestPost: PagesFunction<Env, 'token'> = async ({ request, para
             `전자서명(이름 입력): ${signatureName}`,
           ],
         )
-        await setConsentPdfUrl(access.accessToken, access.spreadsheetId, result.consent.caseId, pdfUrl)
+        // 학생 이름/보호자 정보는 PDF 본문에만 있고, 시트에는 fileId(비공개 Drive 참조)만 남는다.
+        await setConsentPdfFileId(access.accessToken, access.spreadsheetId, result.consent.caseId, fileId)
       }
     } catch (error) {
       console.error('[public consents] consent pdf generation failed(무시하고 계속 진행)', error)

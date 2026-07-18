@@ -28,7 +28,7 @@ export const onRequestPost: PagesFunction<Env, 'intakeId'> = async ({ request, e
   try {
     const result = await transitionIntakeStatus(
       access.accessToken,
-      access.spreadsheetId,
+      access.identitySpreadsheetId,
       intakeId,
       [INTAKE_STATUS_NEW, INTAKE_STATUS_REVIEWING],
       INTAKE_STATUS_REJECTED,

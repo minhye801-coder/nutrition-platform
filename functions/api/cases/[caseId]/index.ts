@@ -28,7 +28,7 @@ export const onRequestGet: PagesFunction<Env, 'caseId'> = async ({ request, env,
       return Response.json({ error: 'not_found' }, { status: 404 })
     }
     const [student, consent] = await Promise.all([
-      getStudentByUuid(access.accessToken, access.spreadsheetId, caseRecord.studentUuid),
+      getStudentByUuid(access.accessToken, access.identitySpreadsheetId, caseRecord.studentUuid),
       findConsentByCaseId(access.accessToken, access.spreadsheetId, caseId),
     ])
 

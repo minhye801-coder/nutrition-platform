@@ -12,11 +12,14 @@ import {
 import { batchWriteValues, createSpreadsheet, spreadsheetExists } from './googleSheets'
 import { GoogleApiError } from './googleApiError'
 import {
-  buildInitialValueRanges,
+  buildDataValueRanges,
+  buildIdentityValueRanges,
+  DATA_SPREADSHEET_TITLE,
+  DATA_TAB_TITLES,
+  IDENTITY_SPREADSHEET_TITLE,
+  IDENTITY_TAB_TITLES,
   ROOT_FOLDER_NAME,
-  SPREADSHEET_TITLE,
   SUBFOLDER_NAMES,
-  TAB_TITLES,
 } from './installTemplate'
 import type { InstallationProgressRecord } from './installationStore'
 import type { SessionRecord } from './sessionStore'
@@ -28,6 +31,8 @@ export const SETUP_STEPS = [
   'auth_check',
   'root_folder',
   'subfolders',
+  'identity_spreadsheet',
+  'identity_headers',
   'spreadsheet',
   'headers',
   'save_metadata',
@@ -39,16 +44,20 @@ const SETUP_STEP_LABELS: Record<SetupStepKey, string> = {
   auth_check: 'Google 권한 확인',
   root_folder: '루트 폴더 생성',
   subfolders: '하위 폴더 생성',
-  spreadsheet: 'Spreadsheet 생성',
-  headers: '기본 시트 생성',
+  identity_spreadsheet: '학생식별정보 Spreadsheet 생성',
+  identity_headers: '학생식별정보 기본 시트 생성',
+  spreadsheet: '상담데이터 Spreadsheet 생성',
+  headers: '상담데이터 기본 시트 생성',
   save_metadata: '설치정보 저장',
 }
 
 const STEP_ERROR_MESSAGES: Partial<Record<SetupStepKey, string>> = {
   root_folder: 'Google Drive 루트 폴더를 만드는 중 문제가 발생했습니다.',
   subfolders: 'Google Drive 하위 폴더를 만드는 중 문제가 발생했습니다.',
-  spreadsheet: 'Google Sheets를 만드는 중 문제가 발생했습니다.',
-  headers: '기본 시트를 구성하는 중 문제가 발생했습니다.',
+  identity_spreadsheet: '학생식별정보 Google Sheets를 만드는 중 문제가 발생했습니다.',
+  identity_headers: '학생식별정보 기본 시트를 구성하는 중 문제가 발생했습니다.',
+  spreadsheet: '상담데이터 Google Sheets를 만드는 중 문제가 발생했습니다.',
+  headers: '상담데이터 기본 시트를 구성하는 중 문제가 발생했습니다.',
   save_metadata: '설치 정보를 저장하는 중 문제가 발생했습니다.',
 }
 const DEFAULT_ERROR_MESSAGE = '설치 중 문제가 발생했습니다.'
@@ -68,6 +77,7 @@ export type SetupResult =
       managerName: string
       schoolPublicId: string
       spreadsheetUrl: string
+      identitySpreadsheetUrl: string
       folderUrl: string
       steps: SetupStepState[]
     }
@@ -110,6 +120,8 @@ function buildSteps(
     auth_check: authDone,
     root_folder: Boolean(progress.rootFolderId),
     subfolders: SUBFOLDER_NAMES.every((name) => Boolean(progress.folderIds[name])),
+    identity_spreadsheet: Boolean(progress.identitySpreadsheetId),
+    identity_headers: progress.identityHeadersWritten,
     spreadsheet: Boolean(progress.spreadsheetId),
     headers: progress.headersWritten,
     save_metadata: progress.status === 'completed',
@@ -177,7 +189,9 @@ export async function runSetup(
       rootFolderId: null,
       folderIds: {},
       spreadsheetId: null,
+      identitySpreadsheetId: null,
       headersWritten: false,
+      identityHeadersWritten: false,
       status: 'in_progress',
       currentStep: 'auth_check',
       errorStep: null,
@@ -283,6 +297,59 @@ export async function runSetup(
       }
     }
 
+    progress.currentStep = 'identity_spreadsheet'
+    await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
+    if (
+      !progress.identitySpreadsheetId ||
+      !(await spreadsheetExists(accessToken, progress.identitySpreadsheetId))
+    ) {
+      const latestIdentity = await installationStore.getProgress(session.googleSub)
+      if (latestIdentity?.identitySpreadsheetId) {
+        progress.identitySpreadsheetId = latestIdentity.identitySpreadsheetId
+        progress.identityHeadersWritten = latestIdentity.identityHeadersWritten
+      } else {
+        const newIdentitySpreadsheetId = await createSpreadsheet(
+          accessToken,
+          IDENTITY_SPREADSHEET_TITLE,
+          IDENTITY_TAB_TITLES,
+        )
+        const claimedIdentity = await installationStore.claimIdentitySpreadsheet(
+          session.googleSub,
+          newIdentitySpreadsheetId,
+          Date.now(),
+        )
+        if (claimedIdentity) {
+          await moveFileToRootFolder(accessToken, newIdentitySpreadsheetId, rootFolderId)
+          progress.identitySpreadsheetId = newIdentitySpreadsheetId
+          progress.identityHeadersWritten = false
+          await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
+        } else {
+          console.log('[setup] duplicate identity spreadsheet detected, trashing', {
+            userId: session.googleSub,
+            spreadsheetId: newIdentitySpreadsheetId,
+          })
+          await trashFile(accessToken, newIdentitySpreadsheetId).catch((trashError) =>
+            console.error('[setup] failed to trash duplicate identity spreadsheet', trashError),
+          )
+          const winnerIdentity = await installationStore.getProgress(session.googleSub)
+          progress.identitySpreadsheetId = winnerIdentity?.identitySpreadsheetId ?? null
+          progress.identityHeadersWritten = winnerIdentity?.identityHeadersWritten ?? false
+        }
+      }
+    }
+    if (!progress.identitySpreadsheetId) {
+      throw new Error('identity_spreadsheet_claim_failed')
+    }
+    const identitySpreadsheetId = progress.identitySpreadsheetId
+
+    progress.currentStep = 'identity_headers'
+    await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
+    if (!progress.identityHeadersWritten) {
+      await batchWriteValues(accessToken, identitySpreadsheetId, buildIdentityValueRanges())
+      progress.identityHeadersWritten = true
+      await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
+    }
+
     progress.currentStep = 'spreadsheet'
     await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
     if (
@@ -300,8 +367,8 @@ export async function runSetup(
         console.log('[setup] createSpreadsheet called', { userId: session.googleSub })
         const newSpreadsheetId = await createSpreadsheet(
           accessToken,
-          SPREADSHEET_TITLE,
-          TAB_TITLES,
+          DATA_SPREADSHEET_TITLE,
+          DATA_TAB_TITLES,
         )
         console.log('[setup] createSpreadsheet result', {
           userId: session.googleSub,
@@ -345,7 +412,7 @@ export async function runSetup(
     progress.currentStep = 'headers'
     await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
     if (!progress.headersWritten) {
-      const ranges = buildInitialValueRanges({
+      const ranges = buildDataValueRanges({
         schoolName: progress.schoolName,
         managerName: progress.managerName,
         schoolPublicId: progress.schoolPublicId,
@@ -366,6 +433,7 @@ export async function runSetup(
       schoolPublicId: progress.schoolPublicId,
       rootFolderId,
       spreadsheetId,
+      identitySpreadsheetId,
       installedAt: now,
       updatedAt: now,
     })
@@ -380,6 +448,7 @@ export async function runSetup(
       managerName: progress.managerName,
       schoolPublicId: progress.schoolPublicId,
       spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
+      identitySpreadsheetUrl: `https://docs.google.com/spreadsheets/d/${identitySpreadsheetId}/edit`,
       folderUrl: `https://drive.google.com/drive/folders/${rootFolderId}`,
       steps: buildSteps(progress, true, null),
     }
@@ -437,6 +506,9 @@ export async function readSetupStatus(
       managerName: existing.managerName,
       schoolPublicId: existing.schoolPublicId,
       spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${existing.spreadsheetId}/edit`,
+      // 아직 Phase 8 마이그레이션을 하지 않은 기존 설치는 identitySpreadsheetId가 없다 —
+      // 그 경우 같은(단일) Spreadsheet URL을 잠정적으로 보여준다(하위호환).
+      identitySpreadsheetUrl: `https://docs.google.com/spreadsheets/d/${existing.identitySpreadsheetId ?? existing.spreadsheetId}/edit`,
       folderUrl: `https://drive.google.com/drive/folders/${existing.rootFolderId}`,
       steps: SETUP_STEPS.map((key) => ({
         key,

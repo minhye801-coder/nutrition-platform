@@ -12,7 +12,14 @@ export interface InstallationRecord {
   managerName: string
   schoolPublicId: string
   rootFolderId: string | null
+  /** 상담데이터 Spreadsheet(케이스/동의/진단결과 등, 학생 이름 미포함). 기존 필드명을 유지한다. */
   spreadsheetId: string | null
+  /**
+   * 학생식별정보 Spreadsheet(학생정보/상담접수, 이름 포함). Phase 6 이전에 설치된
+   * 학교는 이 값이 null일 수 있다 — 그 경우 requireInstalledAccess.ts가 하위호환을 위해
+   * spreadsheetId를 그대로 identitySpreadsheetId로도 쓴다(마이그레이션 전까지 임시).
+   */
+  identitySpreadsheetId: string | null
   installedAt: number
   updatedAt: number
 }
@@ -34,7 +41,9 @@ export interface InstallationProgressRecord {
   /** 하위 폴더명 → Drive 폴더 ID. */
   folderIds: Record<string, string>
   spreadsheetId: string | null
+  identitySpreadsheetId: string | null
   headersWritten: boolean
+  identityHeadersWritten: boolean
   status: InstallationProgressStatus
   currentStep: string | null
   errorStep: string | null
@@ -74,4 +83,6 @@ export interface InstallationStore {
    * 한다(functions/_lib/setupOrchestrator.ts 참고).
    */
   claimSpreadsheet(userId: string, spreadsheetId: string, updatedAt: number): Promise<boolean>
+  /** claimSpreadsheet과 동일한 compare-and-swap — 학생식별정보 Spreadsheet 전용. */
+  claimIdentitySpreadsheet(userId: string, spreadsheetId: string, updatedAt: number): Promise<boolean>
 }

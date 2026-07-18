@@ -7,6 +7,7 @@ interface InstallationResponse {
   schoolPublicId?: string
   driveFolderUrl?: string | null
   spreadsheetUrl?: string | null
+  identitySpreadsheetUrl?: string | null
   error?: string
 }
 
@@ -25,6 +26,7 @@ export async function fetchInstallation(): Promise<Installation | null> {
     schoolPublicId: data.schoolPublicId ?? '',
     driveFolderUrl: data.driveFolderUrl ?? null,
     spreadsheetUrl: data.spreadsheetUrl ?? null,
+    identitySpreadsheetUrl: data.identitySpreadsheetUrl ?? null,
   }
 }
 
@@ -44,6 +46,22 @@ export async function fetchGeminiKeyStatus(): Promise<{ hasKey: boolean }> {
   const response = await fetch('/api/settings/gemini-key', { credentials: 'include' })
   if (!response.ok) {
     throw new Error('fetch_gemini_key_status_failed')
+  }
+  return response.json()
+}
+
+export interface StorageStructureCheck {
+  dataSpreadsheetOk: boolean
+  identitySpreadsheetOk: boolean
+  folders: { name: string; exists: boolean }[]
+  checkedAt: string
+}
+
+/** "저장 구조 점검"(GET /api/settings/check-structure). SCHOOL_WORKSPACE 전용. */
+export async function checkStorageStructure(): Promise<StorageStructureCheck> {
+  const response = await fetch('/api/settings/check-structure', { credentials: 'include' })
+  if (!response.ok) {
+    throw new Error('check_structure_failed')
   }
   return response.json()
 }

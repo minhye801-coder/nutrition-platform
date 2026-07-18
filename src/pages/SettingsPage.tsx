@@ -5,7 +5,13 @@ import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
 import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
 import { logout, GOOGLE_CHOOSE_ACCOUNT_URL } from '@/services/authService'
-import { fetchGeminiKeyStatus, saveGeminiKey, updateManagerName } from '@/services/installationService'
+import {
+  checkStorageStructure,
+  fetchGeminiKeyStatus,
+  saveGeminiKey,
+  updateManagerName,
+  type StorageStructureCheck,
+} from '@/services/installationService'
 import { useInstallation } from '@/hooks/useInstallation'
 import type { SessionUser } from '@/types/session'
 
@@ -196,7 +202,12 @@ function SettingsContent({ user }: { user: SessionUser }) {
               href={installation?.driveFolderUrl ?? null}
             />
             <ResourceLinkRow
-              label="데이터 Spreadsheet 열기"
+              label="학생식별정보 Spreadsheet 열기"
+              description="Google Sheets에서 열기"
+              href={installation?.identitySpreadsheetUrl ?? null}
+            />
+            <ResourceLinkRow
+              label="상담데이터 Spreadsheet 열기"
               description="Google Sheets에서 열기"
               href={installation?.spreadsheetUrl ?? null}
             />
@@ -295,6 +306,22 @@ function AccountPrivacyCard({
   installation: ReturnType<typeof useInstallation>['installation']
 }) {
   const isSchool = user.accountMode === 'SCHOOL_WORKSPACE'
+  const [checking, setChecking] = useState(false)
+  const [checkResult, setCheckResult] = useState<StorageStructureCheck | null>(null)
+  const [checkError, setCheckError] = useState('')
+
+  async function handleCheckStructure() {
+    setChecking(true)
+    setCheckError('')
+    try {
+      const result = await checkStorageStructure()
+      setCheckResult(result)
+    } catch {
+      setCheckError('점검 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setChecking(false)
+    }
+  }
 
   return (
     <Card className="space-y-3">
@@ -309,7 +336,11 @@ function AccountPrivacyCard({
           value={isSchool && user.schoolUseConfirmed ? '활성화됨' : '비활성'}
         />
         <AccountPrivacyRow label="Google Drive 연결 여부" value={installation?.driveFolderUrl ? '연결됨' : '미연결'} />
-        <AccountPrivacyRow label="데이터 Spreadsheet 상태" value={installation?.spreadsheetUrl ? '생성됨' : '미생성'} />
+        <AccountPrivacyRow
+          label="학생식별정보 Spreadsheet 상태"
+          value={installation?.identitySpreadsheetUrl ? '생성됨' : '미생성(마이그레이션 필요할 수 있음)'}
+        />
+        <AccountPrivacyRow label="상담데이터 Spreadsheet 상태" value={installation?.spreadsheetUrl ? '생성됨' : '미생성'} />
       </dl>
 
       {isSchool ? (
@@ -320,11 +351,32 @@ function AccountPrivacyCard({
           <a href="/api/auth/google?purpose=install" className={secondaryButtonClass}>
             권한 다시 연결
           </a>
-          <button type="button" disabled className={secondaryButtonClass}>
-            저장 구조 점검(준비 중)
+          <button
+            type="button"
+            onClick={() => void handleCheckStructure()}
+            disabled={checking}
+            className={secondaryButtonClass}
+          >
+            {checking ? '점검 중...' : '저장 구조 점검'}
           </button>
         </div>
-      ) : (
+      ) : null}
+
+      {checkError && <p className="text-xs text-red-600">{checkError}</p>}
+      {checkResult && (
+        <div className="space-y-1 border-t border-gray-100 pt-3 text-xs text-gray-600">
+          <p>학생식별정보 Spreadsheet: {checkResult.identitySpreadsheetOk ? '정상' : '확인 필요'}</p>
+          <p>상담데이터 Spreadsheet: {checkResult.dataSpreadsheetOk ? '정상' : '확인 필요'}</p>
+          {checkResult.folders.map((folder) => (
+            <p key={folder.name}>
+              {folder.name} 폴더: {folder.exists ? '정상' : '확인 필요'}
+            </p>
+          ))}
+          <p className="text-gray-400">점검 시각: {new Date(checkResult.checkedAt).toLocaleString('ko-KR')}</p>
+        </div>
+      )}
+
+      {isSchool ? null : (
         <div className="space-y-2 border-t border-gray-100 pt-3">
           <p className="text-xs text-gray-500">
             개인 Google 계정은 체험 모드로만 사용할 수 있습니다. 학교 업무용 기능이

@@ -64,6 +64,19 @@ export function randomPublicId(length = 6): string {
   return result
 }
 
+/**
+ * 학생 영구 식별자(StudentID) 생성. 요구사항: 예측 불가능한 암호학적 난수, 순번/학년/반/
+ * 이름 해시 등 어떤 형태로도 원문을 유추할 수 없는 값, 12자 이상의 충분한 난수성.
+ * `STU-XXXX-XXXX-XXXX` 형식(구분자 제외 12자, PUBLIC_ID_CHARS 32종 알파벳 기준 60비트
+ * 엔트로피)으로 `STU-K7P4-Q9XM-2R8D`처럼 사람이 손으로 옮겨 적을 수 있게 한다.
+ * 충돌 검사는 호출부(functions/_lib/studentSheet.ts의 createStudent)가 기존 학생
+ * 시트를 조회해 재시도하는 방식으로 수행한다(이 함수 자체는 순수 난수 생성만 담당).
+ */
+export function generateStudentId(): string {
+  const groups = [randomPublicId(4), randomPublicId(4), randomPublicId(4)]
+  return `STU-${groups.join('-')}`
+}
+
 export async function sha256Base64Url(input: string): Promise<string> {
   const data = new TextEncoder().encode(input)
   const digest = await crypto.subtle.digest('SHA-256', data)

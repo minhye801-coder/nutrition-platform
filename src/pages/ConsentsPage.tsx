@@ -90,7 +90,6 @@ function ConsentsContent() {
                 <tr className="border-b border-gray-200 text-xs text-gray-500">
                   <th className="py-2 pr-2">학생</th>
                   <th className="py-2 pr-2">상담 주제</th>
-                  <th className="py-2 pr-2">보호자 연락처</th>
                   <th className="py-2 pr-2">동의 상태</th>
                   <th className="py-2 pr-2">발송일</th>
                   <th className="py-2 pr-2">제출일</th>
@@ -105,7 +104,6 @@ function ConsentsContent() {
                       {gradeClass} {studentName || '-'}
                     </td>
                     <td className="py-2 pr-2 text-gray-700">{caseTopic || '-'}</td>
-                    <td className="py-2 pr-2 text-gray-700">{consent.guardianContact || '-'}</td>
                     <td className="py-2 pr-2">{statusBadge(consent.status)}</td>
                     <td className="py-2 pr-2 text-gray-500">{consent.requestedAt.slice(0, 10) || '-'}</td>
                     <td className="py-2 pr-2 text-gray-500">{consent.respondedAt.slice(0, 10) || '-'}</td>
