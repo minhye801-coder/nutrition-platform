@@ -37,8 +37,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
           consent,
           caseTopic: caseRecord?.topic ?? '',
           caseStatus: caseRecord?.status ?? '',
+          caseOpenedAt: caseRecord?.openedAt ?? '',
           studentName: student?.name ?? '',
           gradeClass: student ? `${student.grade}학년 ${student.class}반` : '',
+          grade: student?.grade ?? '',
+          studentClass: student?.class ?? '',
+          studentNumber: student?.studentNumber ?? '',
         }
       })
       .filter((item) => item.caseStatus !== '종결')

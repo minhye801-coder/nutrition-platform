@@ -53,8 +53,14 @@ export interface ConsentListItem {
   consent: Consent
   caseTopic: string
   caseStatus: string
+  /** legacy 접수일(케이스 생성일이 아니라 원본 상담접수 제출일) — 상담접수일 표시용. */
+  caseOpenedAt: string
   studentName: string
   gradeClass: string
+  /** 학생식별정보 Spreadsheet에서 StudentID로 조회해 결합한 값(이름과 중복 저장하지 않음). */
+  grade: string
+  studentClass: string
+  studentNumber: string
 }
 
 export interface ConsentDetail {

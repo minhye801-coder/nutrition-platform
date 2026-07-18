@@ -153,4 +153,8 @@ export interface AssessmentListItem {
   caseTopic: string
   caseStatus: string
   studentName: string
+  /** 학생식별정보 Spreadsheet에서 StudentID로 조회해 결합한 값(이름과 중복 저장하지 않음). */
+  grade: string
+  studentClass: string
+  studentNumber: string
 }

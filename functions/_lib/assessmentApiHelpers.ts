@@ -15,6 +15,17 @@ export function getAssessmentIdParam(params: Record<string, string | string[]>):
 }
 
 /**
+ * 원본 진단검사 PDF는 학교 PC 로컬에만 두고 Cloudflare Worker로 전송하지 않는다(개인정보
+ * 보호 구조 확정 사항). 이 함수는 요청의 Content-Type만 보고 순수하게 판정하므로(본문을
+ * 읽지 않음) 인증 이전에도, 유닛 테스트에서도 그대로 재사용할 수 있다 — 라우트는 이 값이
+ * true면 본문을 아예 파싱하지 않고 즉시 명확한 오류로 거부해야 한다.
+ */
+export function isRawFileUploadRequest(request: Request): boolean {
+  const contentType = request.headers.get('content-type') ?? ''
+  return contentType.includes('multipart/form-data') || contentType.includes('application/pdf')
+}
+
+/**
  * Google Sheets 호출 실패를 안전한 오류 응답으로 변환한다(consentApiHelpers.ts와 동일한
  * 원칙) — 검사결과 원자료는 어떤 경우에도 로그에 남기지 않는다.
  */

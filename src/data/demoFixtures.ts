@@ -181,15 +181,23 @@ export const DEMO_CONSENT_LIST_ITEMS: ConsentListItem[] = [
     consent: DEMO_CONSENTS[0],
     caseTopic: '편식·균형 식생활',
     caseStatus: '상담 예정',
+    caseOpenedAt: DEMO_CASES[0].openedAt,
     studentName: '김민수',
     gradeClass: '5학년 2반 15번',
+    grade: '5',
+    studentClass: '2',
+    studentNumber: '15',
   },
   {
     consent: DEMO_CONSENTS[1],
     caseTopic: '체중·성장',
     caseStatus: '진단 대기',
+    caseOpenedAt: DEMO_CASES[1].openedAt,
     studentName: '이서연',
     gradeClass: '4학년 1반 8번',
+    grade: '4',
+    studentClass: '1',
+    studentNumber: '8',
   },
 ]
 
@@ -279,6 +287,9 @@ export const DEMO_ASSESSMENT_LIST_ITEMS: AssessmentListItem[] = [
     caseTopic: '편식·균형 식생활',
     caseStatus: '상담 예정',
     studentName: '김민수',
+    grade: '5',
+    studentClass: '2',
+    studentNumber: '15',
   },
 ]
 

@@ -103,6 +103,35 @@ export async function downloadFile(accessToken: string, fileId: string): Promise
   return response.arrayBuffer()
 }
 
+export interface DriveFileMetadata {
+  id: string
+  name: string
+  createdTime: string
+  webViewLink: string
+  parents: string[]
+  trashed: boolean
+}
+
+/**
+ * 기존(개인정보 보호 구조 확정 이전) 설치에 이미 저장된 원본 진단검사 PDF를 점검하는
+ * 관리자 도구(functions/_lib/legacyPdfAudit.ts)에서만 쓴다 — 파일 내용은 절대 읽지
+ * 않고(바이트를 다운로드하지 않음) 메타데이터만 조회한다.
+ */
+export async function getFileMetadata(accessToken: string, fileId: string): Promise<DriveFileMetadata> {
+  const data = (await driveFetch(
+    accessToken,
+    `/files/${fileId}?fields=id,name,createdTime,webViewLink,parents,trashed`,
+  )) as Partial<DriveFileMetadata>
+  return {
+    id: data.id ?? fileId,
+    name: data.name ?? '',
+    createdTime: data.createdTime ?? '',
+    webViewLink: data.webViewLink ?? '',
+    parents: data.parents ?? [],
+    trashed: data.trashed ?? false,
+  }
+}
+
 /**
  * 마이그레이션 실행 전 원본 Spreadsheet를 백업한다(요구사항 12절 "기존 Spreadsheet
  * 백업") — 실패 시 이 사본을 기준으로 사용자가 직접 복원할 수 있다. 새 파일은 원본과

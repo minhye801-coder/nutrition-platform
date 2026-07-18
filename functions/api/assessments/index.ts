@@ -33,6 +33,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
           caseTopic: caseRecord?.topic ?? '',
           caseStatus: caseRecord?.status ?? '',
           studentName: student?.name ?? '',
+          grade: student?.grade ?? '',
+          studentClass: student?.class ?? '',
+          studentNumber: student?.studentNumber ?? '',
         }
       })
       .sort((a, b) => b.assessment.createdAt.localeCompare(a.assessment.createdAt))

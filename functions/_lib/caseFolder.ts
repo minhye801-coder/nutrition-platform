@@ -43,10 +43,13 @@ export async function ensureCaseFolders(
 }
 
 /**
- * legacy 6개 하위폴더 중 "03_공식진단"(uploadCaseFile()이 검사결과 원본 PDF를 올리던
- * 폴더, docs/google-data-inventory.md 53번 줄)에 해당한다. caseFolderUrl은 호출부가
- * 이미 CaseRecord.driveFolderUrl로 갖고 있으므로 extractFolderIdFromUrl로 ID만 뽑아
- * 넘겨준다.
+ * legacy 6개 하위폴더 중 "03_공식진단"(과거 uploadCaseFile()이 검사결과 원본 PDF를 올리던
+ * 폴더, docs/google-data-inventory.md 53번 줄)에 해당한다. 개인정보 보호 구조 확정 이후
+ * 원본 PDF를 더 이상 Drive에 올리지 않으므로(functions/api/cases/[caseId]/assessments/
+ * index.ts) 현재 업로드 경로에서는 호출하지 않는다 — 기존 설치에 이미 저장된 원본 PDF를
+ * 찾아 점검하는 관리자 도구(functions/_lib/legacyPdfAudit.ts)가 같은 폴더명을 참조용으로
+ * 쓴다. caseFolderUrl은 호출부가 이미 CaseRecord.driveFolderUrl로 갖고 있으므로
+ * extractFolderIdFromUrl로 ID만 뽑아 넘겨준다.
  */
 export async function ensureAssessmentFolder(accessToken: string, caseFolderId: string): Promise<string> {
   return findOrCreateFolder(accessToken, '03_공식진단', caseFolderId)

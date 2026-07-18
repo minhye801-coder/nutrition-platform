@@ -49,26 +49,19 @@ export async function fetchAssessment(assessmentId: string): Promise<Assessment>
   return data.assessment
 }
 
-export async function uploadAssessment(
-  caseId: string,
-  file: File,
-  round: string,
-  timepoint: string,
-): Promise<Assessment> {
-  // 체험 모드는 원본 파일을 읽거나 전송하지 않는다 — 화면도 실제 파일 선택 input을
-  // 렌더링하지 않지만(AssessmentsPage/AssessmentDetailPage), 우회 호출에 대비해
-  // 서비스 계층에서도 file 인자를 무시하고 항상 준비된 샘플 결과로 대체한다.
+/**
+ * 검사결과 레코드 등록. 원본 PDF 바이트는 절대 서버로 보내지 않는다(개인정보 보호
+ * 구조 확정 사항) — 여기서는 round/timepoint만 전달해 빈 레코드를 만들고, 실제 PDF는
+ * AssessmentDetailPage에서 PdfDeidentifyPanel(브라우저 내부 처리)로만 다룬다.
+ */
+export async function createAssessment(caseId: string, round: string, timepoint: string): Promise<Assessment> {
   if (isDemoMode()) return demoAssessmentStore.uploadSample(caseId, round, timepoint)
-
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('round', round)
-  formData.append('timepoint', timepoint)
 
   const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/assessments`, {
     method: 'POST',
     credentials: 'include',
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ round, timepoint }),
   })
   if (!response.ok) {
     return throwAssessmentApiError(response)

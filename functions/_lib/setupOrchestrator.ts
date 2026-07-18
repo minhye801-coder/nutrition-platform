@@ -21,6 +21,7 @@ import {
   ROOT_FOLDER_NAME,
   SUBFOLDER_NAMES,
 } from './installTemplate'
+import { sanitizeLogContext, safeErrorMessage } from './logSafety'
 import type { InstallationProgressRecord } from './installationStore'
 import type { SessionRecord } from './sessionStore'
 import type { Env } from './env'
@@ -324,12 +325,12 @@ export async function runSetup(
           progress.identityHeadersWritten = false
           await installationStore.saveProgress({ ...progress, updatedAt: Date.now() })
         } else {
-          console.log('[setup] duplicate identity spreadsheet detected, trashing', {
-            userId: session.googleSub,
-            spreadsheetId: newIdentitySpreadsheetId,
-          })
+          console.log(
+            '[setup] duplicate identity spreadsheet detected, trashing',
+            sanitizeLogContext({ userId: session.googleSub, spreadsheetId: newIdentitySpreadsheetId }),
+          )
           await trashFile(accessToken, newIdentitySpreadsheetId).catch((trashError) =>
-            console.error('[setup] failed to trash duplicate identity spreadsheet', trashError),
+            console.error('[setup] failed to trash duplicate identity spreadsheet', safeErrorMessage(trashError)),
           )
           const winnerIdentity = await installationStore.getProgress(session.googleSub)
           progress.identitySpreadsheetId = winnerIdentity?.identitySpreadsheetId ?? null
@@ -364,16 +365,16 @@ export async function runSetup(
         progress.spreadsheetId = latest.spreadsheetId
         progress.headersWritten = latest.headersWritten
       } else {
-        console.log('[setup] createSpreadsheet called', { userId: session.googleSub })
+        console.log('[setup] createSpreadsheet called', sanitizeLogContext({ userId: session.googleSub }))
         const newSpreadsheetId = await createSpreadsheet(
           accessToken,
           DATA_SPREADSHEET_TITLE,
           DATA_TAB_TITLES,
         )
-        console.log('[setup] createSpreadsheet result', {
-          userId: session.googleSub,
-          spreadsheetId: newSpreadsheetId,
-        })
+        console.log(
+          '[setup] createSpreadsheet result',
+          sanitizeLogContext({ userId: session.googleSub, spreadsheetId: newSpreadsheetId }),
+        )
 
         // spreadsheet_id가 여전히 비어있을 때만 원자적으로 채워 넣는다(compare-and-swap).
         // 두 요청이 동시에 여기까지 왔다면 둘 다 새 Spreadsheet를 만들었을 수 있지만,
@@ -391,12 +392,12 @@ export async function runSetup(
         } else {
           // 경쟁에서 졌다 — 다른 요청이 이미 정본 Spreadsheet를 등록했으므로 방금
           // 만든 것은 중복이다. 휴지통으로 보내고(영구 삭제 아님) 정본 ID를 채택한다.
-          console.log('[setup] duplicate spreadsheet detected, trashing', {
-            userId: session.googleSub,
-            spreadsheetId: newSpreadsheetId,
-          })
+          console.log(
+            '[setup] duplicate spreadsheet detected, trashing',
+            sanitizeLogContext({ userId: session.googleSub, spreadsheetId: newSpreadsheetId }),
+          )
           await trashFile(accessToken, newSpreadsheetId).catch((trashError) =>
-            console.error('[setup] failed to trash duplicate spreadsheet', trashError),
+            console.error('[setup] failed to trash duplicate spreadsheet', safeErrorMessage(trashError)),
           )
           const winner = await installationStore.getProgress(session.googleSub)
           progress.spreadsheetId = winner?.spreadsheetId ?? null
@@ -469,7 +470,7 @@ export async function runSetup(
       }
     }
 
-    console.error('[setup] step failed', progress.currentStep, error)
+    console.error('[setup] step failed', progress.currentStep, safeErrorMessage(error))
     const errorStep = progress.currentStep as SetupStepKey
     const errorMessage = resolveErrorMessage(errorStep)
     progress.status = 'failed'

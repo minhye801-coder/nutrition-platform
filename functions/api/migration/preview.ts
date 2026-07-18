@@ -1,5 +1,6 @@
 import { isAccessError, requireSchoolWorkspaceAccess } from '../../_lib/requireInstalledAccess'
 import { previewMigration } from '../../_lib/migrationOrchestrator'
+import { safeErrorMessage } from '../../_lib/logSafety'
 import type { Env } from '../../_lib/env'
 
 /**
@@ -17,7 +18,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const preview = await previewMigration(access.accessToken, access.installation)
     return Response.json(preview)
   } catch (error) {
-    console.error('[migration] preview failed', error)
+    console.error('[migration] preview failed', safeErrorMessage(error))
     return Response.json({ error: 'preview_failed' }, { status: 502 })
   }
 }

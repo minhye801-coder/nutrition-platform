@@ -297,17 +297,22 @@ export interface CreateAssessmentInput {
   studentUuid: string
   round: string
   timepoint: string
-  fileUrl: string
-  fileId: string
-  fileName: string
+  /**
+   * 더 이상 원본 PDF를 Drive에 올리지 않으므로 항상 빈 값이다(개인정보 보호 구조
+   * 확정 사항) — 필드 자체는 과거 레코드/시트 스키마와의 호환을 위해 남겨 둔다.
+   */
+  fileUrl?: string
+  fileId?: string
+  fileName?: string
   uploadedBy: string
 }
 
 /**
- * PDF 업로드 직후 호출(functions/api/cases/[caseId]/assessments/index.ts). 이 시점엔
- * Gemini를 호출하지 않는다 — AI 자동확인은 별도 액션(applyExtraction)이고, 교사가 아예
- * 안 쓸 수도 있다(직접 입력 경로, 사용자 확인). 그래서 38개 필드는 전부 빈 값으로
- * 시작하고 `extractionStatus`도 '수동 입력'으로 시작한다.
+ * 검사결과 레코드 생성 직후 호출(functions/api/cases/[caseId]/assessments/index.ts).
+ * 이 시점엔 Gemini를 호출하지 않는다 — AI 자동확인은 별도 액션(applyExtraction)이고,
+ * 교사가 아예 안 쓸 수도 있다(직접 입력 경로, 사용자 확인). 그래서 38개 필드는 전부
+ * 빈 값으로 시작하고 `extractionStatus`도 '수동 입력'으로 시작한다. 원본 PDF 자체를
+ * Drive에 저장하지 않으므로 fileUrl/fileId/fileName도 기본적으로 빈 값이다.
  */
 export async function createAssessment(
   accessToken: string,
@@ -324,9 +329,9 @@ export async function createAssessment(
     studentUuid: input.studentUuid,
     round: input.round,
     timepoint: input.timepoint,
-    fileUrl: input.fileUrl,
-    fileId: input.fileId,
-    fileName: input.fileName,
+    fileUrl: input.fileUrl ?? '',
+    fileId: input.fileId ?? '',
+    fileName: input.fileName ?? '',
     uploadedAt: now,
     uploadedBy: input.uploadedBy,
     status: ASSESSMENT_STATUS_PENDING_REVIEW,

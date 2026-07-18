@@ -29,9 +29,11 @@ function describeError(error: unknown): string {
       case 'gemini_key_not_set':
         return 'Gemini API Key가 설정돼 있지 않습니다. 설정 화면에서 먼저 등록하거나, 아래 항목을 직접 입력해 주세요.'
       case 'gemini_extraction_failed':
-        return 'AI 자동확인에 실패했습니다. 업로드한 PDF는 그대로 남아 있으니 직접 입력으로 진행할 수 있습니다.'
+        return 'AI 자동확인에 실패했습니다. 아래 항목을 직접 입력해 저장할 수 있습니다.'
       case 'invalid_transition':
         return '이미 처리된 항목이거나 처리할 수 없는 상태입니다.'
+      case 'raw_pdf_upload_not_supported':
+        return '원본 PDF는 서버로 전송할 수 없습니다. 비식별화 확인을 마친 텍스트만 분석에 사용할 수 있습니다.'
       default:
         return '처리에 실패했습니다. 잠시 후 다시 시도해 주세요.'
     }
@@ -156,10 +158,18 @@ function AssessmentDetailContent() {
                   {assessment.round} / {assessment.timepoint}
                 </span>
               </div>
-              <a href={assessment.fileUrl} target="_blank" rel="noopener noreferrer" className={secondaryButtonClass}>
-                원본 PDF 열기
-              </a>
+              {assessment.fileUrl && (
+                <a href={assessment.fileUrl} target="_blank" rel="noopener noreferrer" className={secondaryButtonClass}>
+                  원본 PDF 열기(마이그레이션 이전 레코드)
+                </a>
+              )}
             </div>
+            {!assessment.fileUrl && (
+              <p className="text-xs text-gray-400">
+                이 검사결과에는 Drive에 저장된 원본 PDF가 없습니다 — 원본 PDF는 학교 PC에만 보관하고 서버로 전송하지
+                않습니다.
+              </p>
+            )}
 
             {warningList.length > 0 && (
               <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
@@ -185,7 +195,7 @@ function AssessmentDetailContent() {
               ) : (
                 <div className="space-y-2">
                   <p className="text-sm text-gray-800">
-                    저장된 원본 PDF를 그대로 Gemini에 보내지 않습니다. 아래에서 같은(또는 동일 내용의) PDF를 다시
+                    원본 PDF는 서버로 전송되거나 Drive에 저장되지 않습니다. 아래에서 학교 PC에 있는 검사결과 PDF를
                     선택하면 브라우저에서만 텍스트를 읽고, 식별정보 후보를 확인한 뒤 정제된 텍스트만 분석에 사용합니다.
                   </p>
                   {extracting ? (
