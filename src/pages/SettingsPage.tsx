@@ -19,8 +19,9 @@ import type { SessionUser } from '@/types/session'
 
 const ACCOUNT_MODE_LABEL: Record<SessionUser['accountMode'], string> = {
   SCHOOL_WORKSPACE: '학교 업무용 Google Workspace 계정',
-  PERSONAL_DEMO: '개인 Google 계정(체험 모드)',
-  WORKSPACE_PENDING: 'Google Workspace 계정(도메인 승인 대기)',
+  PERSONAL_ACCOUNT_BLOCKED: '개인 Google 계정(사용 불가)',
+  WORKSPACE_CONFIRMATION_REQUIRED: 'Google Workspace 계정(확인 대기)',
+  DEMO_GUEST: '체험 모드(로그인 없음)',
 }
 
 export function SettingsPage() {

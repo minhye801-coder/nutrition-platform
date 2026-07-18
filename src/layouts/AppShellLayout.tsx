@@ -6,6 +6,7 @@ import { ModeBanner } from '@/components/common/ModeBanner'
 import { useInstallation } from '@/hooks/useInstallation'
 import { logout } from '@/services/authService'
 import { useSession } from '@/hooks/useSession'
+import { endGuestSession } from '@/lib/demoAck'
 
 /**
  * 로그인 후 실제 업무 화면(`/app`, `/intakes`, `/students`, `/settings` 등) 전용
@@ -28,9 +29,25 @@ export function AppShellLayout() {
     navigate('/login', { replace: true })
   }
 
+  function handleExitGuest() {
+    endGuestSession()
+    navigate('/', { replace: true })
+  }
+
+  function handleGuestLoginAsWorkspace() {
+    endGuestSession()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="flex h-full min-h-screen flex-col">
-      {user && <ModeBanner accountMode={user.accountMode} />}
+      {user && (
+        <ModeBanner
+          accountMode={user.accountMode}
+          onExitGuest={handleExitGuest}
+          onLoginAsWorkspace={handleGuestLoginAsWorkspace}
+        />
+      )}
       <AppHeader
         schoolName={installation?.schoolName ?? null}
         onLogout={() => void handleLogout()}

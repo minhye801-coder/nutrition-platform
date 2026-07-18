@@ -2,7 +2,6 @@ import { useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '@/hooks/useSession'
 import { useInstallation } from '@/hooks/useInstallation'
-import { hasAcknowledgedDemoMode } from '@/lib/demoAck'
 import type { SessionUser } from '@/types/session'
 
 interface AuthGuardProps {
@@ -12,28 +11,28 @@ interface AuthGuardProps {
 }
 
 /**
- * 로그인하지 않은 사용자를 /login으로 보내고, 로그인 상태가 확인될 때까지 대기
- * 화면을 보여준다. `requireInstallation`이 true면 로그인은 됐지만 설치가 아직
- * 완료되지 않은 사용자를 /setup으로도 되돌린다(예: /app).
+ * 로그인하지 않은 사용자(게스트 체험 모드 제외)를 /login으로 보내고, 로그인 상태가
+ * 확인될 때까지 대기 화면을 보여준다. `requireInstallation`이 true면 로그인은 됐지만
+ * 설치가 아직 완료되지 않은 사용자를 /setup으로도 되돌린다(예: /app).
  */
 export function AuthGuard({ children, requireInstallation = false }: AuthGuardProps) {
   const { status, user } = useSession()
   const { installation, loading: installationLoading } = useInstallation()
   const navigate = useNavigate()
 
-  // SCHOOL_WORKSPACE인데 아직 "학교용 기능 활성화"를 안 했거나, 개인/미승인 계정인데
-  // 아직 체험 모드 안내를 확인하지 않은 사용자는 실제 업무 화면보다 먼저
-  // /account/confirm을 봐야 한다(요구사항 2절). 서버도 각 API에서 동일한 조건을
-  // 다시 검사하므로(functions/_lib/requireInstalledAccess.ts), 이 화면 우회 자체가
-  // 실제 데이터 접근 권한을 만들어주지 않는다 — 이건 UX 안내일 뿐이다.
+  // 개인 계정(PERSONAL_ACCOUNT_BLOCKED)이거나, Workspace 계정인데 아직 최초 확인
+  // 화면을 통과하지 않은 경우(WORKSPACE_CONFIRMATION_REQUIRED) 실제 업무 화면보다
+  // 먼저 /account/confirm을 봐야 한다. DEMO_GUEST는 첫 화면에서 이미 명시적으로
+  // "로그인 없이 체험하기"를 선택한 것이므로 별도 확인 화면이 필요 없다. 서버도 각
+  // API에서 동일한 조건을 다시 검사하므로(functions/_lib/requireInstalledAccess.ts),
+  // 이 화면 우회 자체가 실제 데이터 접근 권한을 만들어주지 않는다 — 이건 UX 안내일
+  // 뿐이다.
   const needsAccountConfirm =
-    !!user &&
-    ((user.accountMode === 'SCHOOL_WORKSPACE' && !user.schoolUseConfirmed) ||
-      (user.accountMode !== 'SCHOOL_WORKSPACE' && !hasAcknowledgedDemoMode()))
+    !!user && (user.accountMode === 'PERSONAL_ACCOUNT_BLOCKED' || user.accountMode === 'WORKSPACE_CONFIRMATION_REQUIRED')
 
-  // PERSONAL_DEMO/WORKSPACE_PENDING 계정은 실제 설치(Drive/Sheets)를 절대 만들지
-  // 않으므로(요구사항 3절), 이 화면들은 픽스처 데이터로 동작한다 — installation이
-  // 없다는 이유로 /setup으로 보내면 안 된다(그곳은 SCHOOL_WORKSPACE 전용).
+  // DEMO_GUEST/PERSONAL_ACCOUNT_BLOCKED 계정은 실제 설치(Drive/Sheets)를 절대 만들지
+  // 않으므로, 이 화면들은 픽스처 데이터로 동작한다 — installation이 없다는 이유로
+  // /setup으로 보내면 안 된다(그곳은 SCHOOL_WORKSPACE 전용).
   const needsInstallation =
     requireInstallation && user?.accountMode === 'SCHOOL_WORKSPACE' && !installationLoading && !installation
 

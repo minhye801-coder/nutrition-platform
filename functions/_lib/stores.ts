@@ -1,9 +1,10 @@
 import type { SessionStore } from './sessionStore'
-import { memorySessionStore } from './sessionStore.memory'
+import { createMemorySessionStore } from './sessionStore.memory'
 import { createD1SessionStore } from './sessionStore.d1'
 import type { InstallationStore } from './installationStore'
 import { memoryInstallationStore } from './installationStore.memory'
 import { createD1InstallationStore } from './installationStore.d1'
+import { getConfirmationVersion } from './accountMode'
 import type { Env } from './env'
 
 /**
@@ -11,11 +12,13 @@ import type { Env } from './env'
  * AUTH_DB(D1) 바인딩이 있으면 운영용 D1 저장소를 쓰고, 없으면(로컬 개발 등)
  * 인메모리 구현으로 대체한다.
  */
-export function getSessionStore(env: Pick<Env, 'AUTH_DB' | 'SESSION_SECRET'>): SessionStore {
+export function getSessionStore(
+  env: Pick<Env, 'AUTH_DB' | 'SESSION_SECRET' | 'PRIVACY_CONFIRMATION_VERSION'>,
+): SessionStore {
   if (env.AUTH_DB) {
-    return createD1SessionStore(env.AUTH_DB, env.SESSION_SECRET)
+    return createD1SessionStore(env.AUTH_DB, env.SESSION_SECRET, getConfirmationVersion(env))
   }
-  return memorySessionStore
+  return createMemorySessionStore(env)
 }
 
 export function getInstallationStore(env: Pick<Env, 'AUTH_DB'>): InstallationStore {

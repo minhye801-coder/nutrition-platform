@@ -3,7 +3,6 @@ import { randomString } from '../../../_lib/crypto'
 import { parseCookies, serializeCookie, expireCookie } from '../../../_lib/cookies'
 import { exchangeCodeForTokens, fetchGoogleUserInfo } from '../../../_lib/googleOAuth'
 import { verifyGoogleIdToken, IdTokenVerificationError } from '../../../_lib/googleIdToken'
-import { resolveAccountMode } from '../../../_lib/accountMode'
 import { getSessionStore, getInstallationStore } from '../../../_lib/stores'
 import { SESSION_TTL_SECONDS } from '../../../_lib/sessionStore'
 import { hasOAuthConfig, type Env } from '../../../_lib/env'
@@ -118,8 +117,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       return redirectBack('token_exchange_failed')
     }
 
-    const { accountMode, domainApprovalStatus } = await resolveAccountMode(env, verifiedIdToken.hostedDomain)
-
+    // hd 클레임 존재 여부만으로 개인/업무용을 가른다(functions/_lib/accountMode.ts
+    // computeAccountMode) — 별도 승인 도메인 목록은 더 이상 쓰지 않는다. 확인
+    // 여부(schoolUseConfirmed)는 create()가 신규 사용자에게만 초기값을 넣고 기존
+    // 사용자는 손대지 않으므로, 여기서는 우선 미확인 상태로 넘기고 아래에서 세션을
+    // 다시 읽어 진짜 현재 값(과 그걸로 계산한 accountMode)을 확인한다.
     const sessionId = randomString(32)
     await getSessionStore(env).create({
       sessionId,
@@ -132,23 +134,22 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       accessTokenExpiresAt: Date.now() + tokens.expires_in * 1000,
       grantedScopes: tokens.scope ?? '',
       createdAt: Date.now(),
-      accountMode,
+      accountMode: 'WORKSPACE_CONFIRMATION_REQUIRED', // 신규 사용자에게만 쓰이는 초기값(store가 실제로는 즉시 다시 계산함)
       hostedDomain: verifiedIdToken.hostedDomain ?? null,
-      domainApprovalStatus,
       schoolUseConfirmed: false,
+      confirmationVersion: '',
+      confirmedAt: null,
     })
 
-    // school_use_confirmed는 create()가 신규 사용자에게만 초기값을 넣고 기존 사용자는
-    // 손대지 않으므로(위 참고), 방금 만든 세션을 다시 읽어 진짜 현재 값을 확인한다.
     const freshSession = await getSessionStore(env).get(sessionId)
-    const schoolUseConfirmed = freshSession?.schoolUseConfirmed ?? false
+    const accountMode = freshSession?.accountMode ?? 'PERSONAL_ACCOUNT_BLOCKED'
 
-    // 학교 업무용 계정 확인(SCHOOL_WORKSPACE) 또는 체험 모드 안내(그 외)를 아직 보지
-    // 않은 사용자는 /setup·/app보다 먼저 /account/confirm을 거쳐야 한다 — 클라이언트
-    // AccountModeGate도 같은 규칙으로 한 번 더 막지만(요구사항 8절 "버튼 숨김만으로
-    // 끝내지 않음"), 리다이렉트 목적지 자체도 여기서 맞춰 준다.
+    // 학교 업무용 계정 확인(SCHOOL_WORKSPACE) 또는 개인 계정 차단 안내(그 외)를 아직
+    // 보지 않은 사용자는 /setup·/app보다 먼저 /account/confirm을 거쳐야 한다 —
+    // 클라이언트 AuthGuard도 같은 규칙으로 한 번 더 막지만(버튼 숨김만으로 끝내지
+    // 않음), 리다이렉트 목적지 자체도 여기서 맞춰 준다.
     let destination = '/account/confirm'
-    if (accountMode === 'SCHOOL_WORKSPACE' && schoolUseConfirmed) {
+    if (accountMode === 'SCHOOL_WORKSPACE') {
       // install 목적 동의는 설치 흐름 중간에 발생하므로, 완료 여부와 무관하게 항상
       // /setup으로 돌아가 설치를 이어간다(진행 상태는 installation_progress에 남아있다).
       destination = '/setup'

@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Card } from '@/components/common/Card'
-import { primaryButtonClass } from '@/components/common/buttonStyles'
+import { primaryButtonClass, secondaryButtonClass } from '@/components/common/buttonStyles'
+import { startGuestSession } from '@/lib/demoAck'
 
 interface Feature {
   code: string
@@ -32,6 +33,13 @@ const FEATURES: Feature[] = [
 ]
 
 export function HomePage() {
+  const navigate = useNavigate()
+
+  function handleStartGuest() {
+    startGuestSession()
+    navigate('/app')
+  }
+
   return (
     <div className="space-y-16">
       <section className="flex flex-col items-center gap-6 py-8 text-center">
@@ -39,21 +47,24 @@ export function HomePage() {
           N+
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-            영양상담 AI+
-          </h1>
-          <p className="mt-2 text-base text-gray-500 sm:text-lg">
-            학교 영양상담 통합플랫폼
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">AI 영양상담</h1>
         </div>
         <p className="max-w-xl text-sm leading-relaxed text-gray-600 sm:text-base">
-          여러 학교의 영양교사가 하나의 사이트에서 각자의 Google 계정으로 로그인해
-          본인 소유의 Google Sheets/Drive에 학생 데이터를 안전하게 저장하고
-          관리하는 플랫폼입니다.
+          학교 또는 교육청에서 발급한 Google Workspace 업무용 계정으로 로그인하거나,
+          가상자료로 서비스를 체험할 수 있습니다.
         </p>
-        <Link to="/login" className={primaryButtonClass}>
-          Google로 시작하기
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link to="/login" className={primaryButtonClass}>
+            학교 업무용 계정으로 로그인
+          </Link>
+          <button type="button" onClick={handleStartGuest} className={secondaryButtonClass}>
+            로그인 없이 체험하기
+          </button>
+        </div>
+        <p className="max-w-xl text-xs leading-relaxed text-gray-500">
+          실제 학생정보를 처리할 때에는 반드시 학교 또는 교육청에서 승인한 업무용
+          Google Workspace 계정을 사용해 주세요.
+        </p>
       </section>
 
       <section className="space-y-6">

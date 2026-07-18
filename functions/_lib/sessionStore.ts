@@ -1,4 +1,4 @@
-import type { AccountMode, DomainApprovalStatus } from './accountMode'
+import type { AccountMode } from './accountMode'
 
 export interface SessionRecord {
   sessionId: string
@@ -12,16 +12,24 @@ export interface SessionRecord {
   /** 토큰 교환/갱신 시 Google이 내려준 공백 구분 scope 문자열. functions/_lib/googleOAuth.ts의 hasDriveScope 참고. */
   grantedScopes: string
   createdAt: number
-  /** 로그인(콜백) 시점에 ID Token의 hd 클레임으로 서버가 판정한 값. functions/_lib/accountMode.ts 참고. */
+  /**
+   * 매 요청마다 hostedDomain/schoolUseConfirmed/confirmationVersion으로부터 새로
+   * 계산되는 값이다(functions/_lib/accountMode.ts의 computeAccountMode) — D1에 저장된
+   * 문자열을 그대로 믿지 않는다. 이래야 confirmationVersion이 바뀌면 세션이 아직
+   * 살아 있어도(재로그인 전에도) 다음 요청부터 바로 재확인 화면으로 돌아간다.
+   */
   accountMode: AccountMode
   hostedDomain: string | null
-  domainApprovalStatus: DomainApprovalStatus
   /**
    * 이 값은 create() 호출 시 신규 사용자에게만 초기값으로 쓰인다(기존 사용자는 D1의
    * 저장된 값을 그대로 유지 — sessionStore.d1.ts의 ON CONFLICT가 이 컬럼을 갱신하지
    * 않는다). get()이 돌려주는 값이 항상 진짜 현재 상태다.
    */
   schoolUseConfirmed: boolean
+  /** 확인 당시의 confirmationVersion(functions/_lib/accountMode.ts). 미확인이면 빈 문자열. */
+  confirmationVersion: string
+  /** 확인을 완료한 시각(epoch ms). 미확인이면 null. */
+  confirmedAt: number | null
 }
 
 export interface AccessTokenUpdate {
@@ -62,8 +70,10 @@ export interface SessionStore {
   getTokensByUserId(userId: string): Promise<AccountTokens | null>
   /**
    * "학교용 기능 활성화" 확인을 마친 사용자만 서버가 호출한다
-   * (functions/api/account/confirm-school-use.ts) — 호출부가 이미 accountMode ===
-   * 'SCHOOL_WORKSPACE'인지 검증한 뒤에만 부르므로, 여기서는 값을 그대로 반영한다.
+   * (functions/api/account/confirm-school-use.ts) — 호출부가 이미 hostedDomain이
+   * 있는 계정인지(개인 계정이 아닌지) 검증한 뒤에만 부르므로, 여기서는 값을 그대로
+   * 반영한다. version은 확인 시점의 confirmationVersion을 그대로 저장해, 나중에
+   * 버전이 올라가면 재확인이 필요하다고 판정할 수 있게 한다.
    */
-  confirmSchoolUse(userId: string): Promise<void>
+  confirmSchoolUse(userId: string, confirmationVersion: string, confirmedAt: number): Promise<void>
 }

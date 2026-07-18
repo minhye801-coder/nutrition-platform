@@ -80,11 +80,13 @@ export function isAccessError(
  * 학생 자료(등록/검색/상담접수/보호자동의/진단검사/상담기록 등)를 다루는 모든 API가
  * 공통으로 써야 하는 게이트. UI에서 버튼을 숨기는 것과 무관하게, 이 함수를 거치지
  * 않고 직접 fetch로 호출해도 서버가 계정 모드를 확인해 차단한다(요구사항 3·8·13절).
- * PERSONAL_DEMO/WORKSPACE_PENDING 계정은 애초에 requireInstalledAccess 단계에서
- * installation이 없어 not_installed로 걸리는 경우가 대부분이지만(설치 자체가
- * account_mode 게이트로 막혀 있음, functions/api/setup/start.ts), 과거에 설치를
- * 마친 뒤 계정 성격이 바뀌었거나 판정이 달라진 경우까지 방어하기 위해 별도로
- * account_mode를 다시 확인한다.
+ * PERSONAL_ACCOUNT_BLOCKED/WORKSPACE_CONFIRMATION_REQUIRED 계정은 애초에
+ * requireInstalledAccess 단계에서 installation이 없어 not_installed로 걸리는
+ * 경우가 대부분이지만(설치 자체가 account_mode 게이트로 막혀 있음,
+ * functions/api/setup/start.ts), 과거에 설치를 마친 뒤 계정 성격이 바뀌었거나
+ * confirmationVersion이 올라가 재확인이 필요해진 경우까지 방어하기 위해 별도로
+ * accountMode를 다시 확인한다 — accountMode는 매 요청마다 D1에서 새로 계산되므로
+ * (functions/_lib/sessionStore.d1.ts) 세션이 살아 있어도 즉시 반영된다.
  */
 export async function requireSchoolWorkspaceAccess(
   request: Request,

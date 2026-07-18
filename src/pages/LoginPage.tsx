@@ -5,7 +5,6 @@ import { primaryButtonClass } from '@/components/common/buttonStyles'
 import { GOOGLE_LOGIN_URL } from '@/services/authService'
 import { useSession } from '@/hooks/useSession'
 import { useInstallation } from '@/hooks/useInstallation'
-import { hasAcknowledgedDemoMode } from '@/lib/demoAck'
 
 const ERROR_MESSAGES: Record<string, string> = {
   access_denied: 'Google 로그인이 취소되었습니다.',
@@ -32,15 +31,15 @@ export function LoginPage() {
   // 계정 모드/설치 완료 여부에 따라 곧바로 이동시킨다(AuthGuard와 동일한 규칙).
   useEffect(() => {
     if (status !== 'authenticated' || !user || installationLoading) return
-    const needsAccountConfirm =
-      (user.accountMode === 'SCHOOL_WORKSPACE' && !user.schoolUseConfirmed) ||
-      (user.accountMode !== 'SCHOOL_WORKSPACE' && !hasAcknowledgedDemoMode())
-    if (needsAccountConfirm) {
-      navigate('/account/confirm', { replace: true })
+    if (user.accountMode === 'DEMO_GUEST') {
+      // 게스트 상태로 /login에 직접 들어온 경우 — 이미 체험 중이므로 그대로 앱으로.
+      navigate('/app', { replace: true })
       return
     }
-    if (user.accountMode !== 'SCHOOL_WORKSPACE') {
-      navigate('/app', { replace: true })
+    const needsAccountConfirm =
+      user.accountMode === 'PERSONAL_ACCOUNT_BLOCKED' || user.accountMode === 'WORKSPACE_CONFIRMATION_REQUIRED'
+    if (needsAccountConfirm) {
+      navigate('/account/confirm', { replace: true })
       return
     }
     navigate(installation ? '/app' : '/setup', { replace: true })

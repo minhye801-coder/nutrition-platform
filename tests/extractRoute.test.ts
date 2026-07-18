@@ -98,6 +98,10 @@ describe('POST /api/assessments/:assessmentId/extract', () => {
     })
     const response = await onRequestPost({ request, env: {} as never, params: { assessmentId: 'ASSESS-1' } } as never)
     expect(response.status).toBe(200)
+    // 요구사항 9절 테스트 12: caseRequestId는 서버 저장(applyExtraction)에만 쓰이고
+    // Gemini 호출에는 절대 전달되지 않는다 — 정확히 (apiKey, deidentifiedText) 2개
+    // 인자로만 호출됐는지 확인한다.
     expect(extractFromDeidentifiedTextMock).toHaveBeenCalledWith('plain-key', deidentifiedText)
+    expect(extractFromDeidentifiedTextMock.mock.calls[0]).toHaveLength(2)
   })
 })

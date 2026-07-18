@@ -42,7 +42,7 @@ async function throwStudentApiError(response: Response): Promise<never> {
 }
 
 /**
- * PERSONAL_DEMO/WORKSPACE_PENDING 계정은 실제 /api/students를 절대 호출하지 않는다 —
+ * PERSONAL_ACCOUNT_BLOCKED/WORKSPACE_CONFIRMATION_REQUIRED/DEMO_GUEST 계정은 실제 /api/students를 절대 호출하지 않는다 —
  * 서버도 이 계정 모드를 거부하지만(functions/_lib/requireInstalledAccess.ts의
  * requireSchoolWorkspaceAccess), 애초에 요청 자체를 보내지 않아 실 Sheets 호출이
  * 전혀 발생하지 않게 한다(요구사항 3·8절). 아래 모든 함수가 동일한 원칙을 따른다.

@@ -5,7 +5,7 @@ import type { Assessment, AssessmentListItem } from '@/types/assessment'
 import type { Intake } from '@/types/intake'
 
 /**
- * PERSONAL_DEMO/WORKSPACE_PENDING 계정이 보는 가상 데이터. 학생 이름은 전부
+ * PERSONAL_ACCOUNT_BLOCKED/WORKSPACE_CONFIRMATION_REQUIRED/DEMO_GUEST 계정이 보는 가상 데이터. 학생 이름은 전부
  * 가공인물이고 studentUuid는 실제 발급 포맷(STU-XXXX-XXXX-XXXX, functions/_lib/crypto.ts
  * generateStudentId)과 겹치지 않도록 "STU-DEMO-"로 시작한다 — 실제 학생 데이터와
  * 절대 섞이지 않게 하기 위한 구분자다. 이 파일의 배열은 읽기 전용 시드이고, 실제

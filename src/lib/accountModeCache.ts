@@ -1,4 +1,4 @@
-import type { AccountMode } from '@/types/session'
+import type { ClientAccountMode } from '@/types/session'
 
 /**
  * 서비스 함수(studentService 등)는 React 컴포넌트가 아니라서 useSession() 훅의
@@ -8,17 +8,17 @@ import type { AccountMode } from '@/types/session'
  * 확인해서 내린다(functions/_lib/requireInstalledAccess.ts) — 이 캐시를 조작해도
  * 서버 API가 열리지는 않는다.
  */
-let cachedAccountMode: AccountMode | null = null
+let cachedAccountMode: ClientAccountMode | null = null
 
-export function setCachedAccountMode(mode: AccountMode | null): void {
+export function setCachedAccountMode(mode: ClientAccountMode | null): void {
   cachedAccountMode = mode
 }
 
-export function getCachedAccountMode(): AccountMode | null {
+export function getCachedAccountMode(): ClientAccountMode | null {
   return cachedAccountMode
 }
 
-/** PERSONAL_DEMO/WORKSPACE_PENDING 둘 다 "실제 학교 데이터를 쓸 수 없는" 데모 취급이다. */
+/** SCHOOL_WORKSPACE가 아닌 모든 값(DEMO_GUEST 포함)은 "실제 학교 데이터를 쓸 수 없는" 데모 취급이다. */
 export function isDemoMode(): boolean {
   return cachedAccountMode !== null && cachedAccountMode !== 'SCHOOL_WORKSPACE'
 }

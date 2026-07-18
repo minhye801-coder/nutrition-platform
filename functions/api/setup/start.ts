@@ -17,8 +17,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!session) {
     return Response.json({ error: 'unauthenticated' }, { status: 401 })
   }
-  // 데모/미승인 Workspace 계정은 실제 Drive/Sheets를 만들 수 없다 — "학교용 기능
-  // 활성화" 버튼을 우회해 이 API를 직접 호출해도 서버가 막는다(요구사항 3·8절).
+  // 개인 계정/미확인 Workspace 계정은 실제 Drive/Sheets를 만들 수 없다 — "확인하고
+  // 학교용 기능 사용" 버튼을 우회해 이 API를 직접 호출해도 서버가 막는다.
   if (session.accountMode !== 'SCHOOL_WORKSPACE' || !session.schoolUseConfirmed) {
     return Response.json({ error: 'school_workspace_required' }, { status: 403 })
   }

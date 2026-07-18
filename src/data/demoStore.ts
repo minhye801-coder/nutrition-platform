@@ -15,7 +15,7 @@ import type { Assessment, AssessmentListItem } from '@/types/assessment'
 import type { Intake, IntakeListFilters } from '@/types/intake'
 
 /**
- * PERSONAL_DEMO/WORKSPACE_PENDING 계정이 화면을 조작할 때 실제로 쓰는 인메모리
+ * PERSONAL_ACCOUNT_BLOCKED/WORKSPACE_CONFIRMATION_REQUIRED/DEMO_GUEST 계정이 화면을 조작할 때 실제로 쓰는 인메모리
  * 저장소. 페이지를 새로고침하면 시드로 초기화된다 — 서버(D1/Sheets/Drive) 어디에도
  * 쓰지 않는다(요구사항 3절 "실제 상담자료 Google Drive/Sheets 저장 차단"을 구조적으로
  * 만족). 실제 서비스 함수와 시그니처를 최대한 맞춰서, src/services/*.ts의 분기

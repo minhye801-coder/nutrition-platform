@@ -6,11 +6,11 @@ export interface Env {
   /** 운영(D1) 세션/설치 저장소 바인딩. 로컬에 바인딩이 없으면 인메모리 저장소로 대체된다. */
   AUTH_DB?: D1Database
   /**
-   * 승인된 학교/교육청 Workspace 도메인 콤마 구분 목록(예: "school1.go.kr,school2.hs.kr").
-   * 관리자 UI가 아직 없는 이번 범위에서 approved_school_domains D1 테이블을 보완하는
-   * 용도다(functions/_lib/accountMode.ts). 둘 중 하나라도 일치하면 승인된 것으로 본다.
+   * 학교 업무용 계정 최초 확인 화면(functions/api/account/confirm-school-use.ts)의
+   * 안내문 버전을 코드 배포 없이 올리고 싶을 때 덮어쓴다. 비어 있으면
+   * accountMode.ts의 DEFAULT_CONFIRMATION_VERSION을 쓴다.
    */
-  APPROVED_SCHOOL_DOMAINS?: string
+  PRIVACY_CONFIRMATION_VERSION?: string
 }
 
 export function hasOAuthConfig(env: Partial<Env>): env is Env {

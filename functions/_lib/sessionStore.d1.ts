@@ -1,6 +1,7 @@
 import { SESSION_TTL_SECONDS, type AccountTokens, type SessionRecord, type SessionStore } from './sessionStore'
 import { sha256Base64Url } from './crypto'
 import { decryptToken, encryptToken } from './tokenCipher'
+import { computeAccountMode } from './accountMode'
 
 interface SessionRow {
   session_created_at: number
@@ -16,9 +17,9 @@ interface SessionRow {
   access_token_expires_at: number | null
   granted_scopes: string | null
   hosted_domain: string | null
-  account_mode: string
-  domain_approval_status: string
   school_use_confirmed: number
+  confirmation_version: string | null
+  confirmed_at: number | null
 }
 
 /**
@@ -29,8 +30,16 @@ interface SessionRow {
  * 쿠키에는 원본 세션 ID를 담아 내려보내지만, D1에는 그 SHA-256 해시(session_id_hash)만
  * 저장한다 — sessions 테이블만 유출되어도 쿠키 값을 재구성할 수 없다.
  * access/refresh token은 SESSION_SECRET으로 유도한 키로 AES-GCM 암호화한 뒤 저장한다.
+ *
+ * confirmationVersion은 env.PRIVACY_CONFIRMATION_VERSION을 그대로 전달받아, get()이
+ * 매 요청마다 accountMode를 정확히(현재 버전 기준으로) 다시 계산할 수 있게 한다
+ * (functions/_lib/stores.ts에서 넘겨준다).
  */
-export function createD1SessionStore(db: D1Database, sessionSecret: string): SessionStore {
+export function createD1SessionStore(
+  db: D1Database,
+  sessionSecret: string,
+  confirmationVersion: string,
+): SessionStore {
   return {
     async create(record) {
       const sessionIdHash = await sha256Base64Url(record.sessionId)
@@ -46,21 +55,23 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
             `INSERT INTO users (
                id, email, name, picture,
                hosted_domain, account_mode, domain_approval_status, school_use_confirmed,
+               confirmation_version, confirmed_at,
                created_at, updated_at
              )
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'not_applicable', ?7, ?8, ?9, ?10, ?10)
              ON CONFLICT(id) DO UPDATE SET
                email = excluded.email,
                name = excluded.name,
                picture = excluded.picture,
                hosted_domain = excluded.hosted_domain,
                account_mode = excluded.account_mode,
-               domain_approval_status = excluded.domain_approval_status,
                updated_at = excluded.updated_at`,
-            // school_use_confirmed는 의도적으로 UPDATE SET에서 뺐다 — 기존 사용자가
-            // 이미 확인을 완료했다면 재로그인해도 그 값을 그대로 유지해야 한다
-            // (매 로그인마다 재확인 화면을 다시 보게 하지 않기 위함). 신규 사용자에게만
-            // 아래 바인딩 값(보통 false)이 초기값으로 들어간다.
+            // school_use_confirmed/confirmation_version/confirmed_at은 의도적으로
+            // UPDATE SET에서 뺐다 — 기존 사용자가 이미 확인을 완료했다면 재로그인해도
+            // 그 값을 그대로 유지해야 한다(매 로그인마다 재확인 화면을 다시 보게 하지
+            // 않기 위함, confirmationVersion이 바뀐 경우만 get()이 다시 계산해 예외
+            // 처리한다). 신규 사용자에게만 아래 바인딩 값(보통 미확인 상태)이 초기값으로
+            // 들어간다.
           )
           .bind(
             record.googleSub,
@@ -69,8 +80,9 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
             record.picture,
             record.hostedDomain,
             record.accountMode,
-            record.domainApprovalStatus,
             record.schoolUseConfirmed ? 1 : 0,
+            record.confirmationVersion,
+            record.confirmedAt,
             record.createdAt,
           ),
 
@@ -122,7 +134,7 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
              s.created_at AS session_created_at,
              s.expires_at AS expires_at,
              u.id AS user_id, u.email AS email, u.name AS name, u.picture AS picture,
-             u.hosted_domain, u.account_mode, u.domain_approval_status, u.school_use_confirmed,
+             u.hosted_domain, u.school_use_confirmed, u.confirmation_version, u.confirmed_at,
              t.access_token_ciphertext, t.access_token_iv,
              t.refresh_token_ciphertext, t.refresh_token_iv,
              t.access_token_expires_at, t.granted_scopes
@@ -153,6 +165,7 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
             })
           : null
 
+      const schoolUseConfirmed = row.school_use_confirmed === 1
       const record: SessionRecord = {
         sessionId,
         googleSub: row.user_id,
@@ -164,10 +177,17 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
         accessTokenExpiresAt: row.access_token_expires_at ?? 0,
         grantedScopes: row.granted_scopes ?? '',
         createdAt: row.session_created_at,
-        accountMode: (row.account_mode as SessionRecord['accountMode']) ?? 'PERSONAL_DEMO',
+        // 저장된 문자열을 그대로 믿지 않고 매 요청마다 다시 계산한다 — 이래야
+        // confirmationVersion이 바뀌면 재로그인 없이도 바로 재확인 화면으로 돌아간다.
+        accountMode: computeAccountMode(
+          row.hosted_domain,
+          { confirmed: schoolUseConfirmed, confirmedVersion: row.confirmation_version },
+          confirmationVersion,
+        ),
         hostedDomain: row.hosted_domain,
-        domainApprovalStatus: (row.domain_approval_status as SessionRecord['domainApprovalStatus']) ?? 'not_applicable',
-        schoolUseConfirmed: row.school_use_confirmed === 1,
+        schoolUseConfirmed,
+        confirmationVersion: row.confirmation_version ?? '',
+        confirmedAt: row.confirmed_at,
       }
       return record
     },
@@ -218,10 +238,14 @@ export function createD1SessionStore(db: D1Database, sessionSecret: string): Ses
       }
     },
 
-    async confirmSchoolUse(userId) {
+    async confirmSchoolUse(userId, version, confirmedAt) {
       await db
-        .prepare(`UPDATE users SET school_use_confirmed = 1, updated_at = ?2 WHERE id = ?1`)
-        .bind(userId, Date.now())
+        .prepare(
+          `UPDATE users
+           SET school_use_confirmed = 1, confirmation_version = ?2, confirmed_at = ?3, updated_at = ?3
+           WHERE id = ?1`,
+        )
+        .bind(userId, version, confirmedAt)
         .run()
     },
 

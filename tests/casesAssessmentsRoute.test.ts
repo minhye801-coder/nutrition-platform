@@ -114,7 +114,7 @@ describe('POST /api/cases/:caseId/assessments', () => {
     expect(input.round).toBe('1차')
   })
 
-  it('rejects PERSONAL_DEMO accounts before touching any assessment data', async () => {
+  it('rejects non-SCHOOL_WORKSPACE accounts (blocked personal / unconfirmed workspace / guest) before touching any assessment data', async () => {
     requireSchoolWorkspaceAccessMock.mockResolvedValue({ error: 'school_workspace_required', status: 403 })
     const { onRequestPost } = await import('../functions/api/cases/[caseId]/assessments/index')
     const request = new Request('https://example.com/api/cases/CASE-1/assessments', {
