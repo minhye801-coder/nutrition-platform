@@ -88,6 +88,24 @@ export const DEMO_CASES: Case[] = [
     createdAt: '2026-07-14T00:00:00.000Z',
     updatedAt: '2026-07-14T00:00:00.000Z',
   },
+  {
+    caseId: 'DEMO-CASE-0003',
+    tenantId: 'demo',
+    studentUuid: 'STU-DEMO-0003',
+    intakeId: 'DEMO-INTAKE-0003',
+    schoolYear: '2026',
+    topic: '간식·단 음료',
+    referralType: '보호자 신청',
+    status: '진단 대기',
+    nextScheduledAt: '',
+    managerEmail: 'demo@example.com',
+    driveFolderUrl: '',
+    openedAt: '2026-07-17T00:00:00.000Z',
+    closedAt: '',
+    note: '체험 모드 샘플 케이스입니다 — 진단대상 목록/PDF 분석 흐름 데모용(보호자동의 완료, 진단결과 없음).',
+    createdAt: '2026-07-17T00:00:00.000Z',
+    updatedAt: '2026-07-17T00:00:00.000Z',
+  },
 ]
 
 export const DEMO_CASE_SEARCH_ITEMS: CaseSearchItem[] = [
@@ -115,6 +133,18 @@ export const DEMO_CASE_SEARCH_ITEMS: CaseSearchItem[] = [
     nextDate: '',
     latestGoal: '',
   },
+  {
+    caseId: 'DEMO-CASE-0003',
+    studentUuid: 'STU-DEMO-0003',
+    gradeClass: '6학년 3반 22번',
+    studentName: '박도윤',
+    topic: '간식·단 음료',
+    status: '진단 대기',
+    sessionCount: 0,
+    lastSessionDate: '',
+    nextDate: '',
+    latestGoal: '',
+  },
 ]
 
 export const DEMO_CASE_DETAILS: Record<string, CaseDetail> = {
@@ -129,6 +159,12 @@ export const DEMO_CASE_DETAILS: Record<string, CaseDetail> = {
     studentName: '이서연',
     gradeClass: '4학년 1반 8번',
     consentStatus: '동의 요청',
+  },
+  'DEMO-CASE-0003': {
+    case: DEMO_CASES[2],
+    studentName: '박도윤',
+    gradeClass: '6학년 3반 22번',
+    consentStatus: '동의 완료',
   },
 }
 
@@ -174,6 +210,18 @@ export const DEMO_CONSENTS: Consent[] = [
     status: '동의 요청',
     requestedAt: '2026-07-14T00:00:00.000Z',
   },
+  {
+    ...DEMO_CONSENT_BASE,
+    consentId: 'DEMO-CONSENT-0003',
+    caseId: 'DEMO-CASE-0003',
+    studentUuid: 'STU-DEMO-0003',
+    status: '동의 완료',
+    requestedAt: '2026-07-17T00:00:00.000Z',
+    respondedAt: '2026-07-17T00:00:00.000Z',
+    consentedAt: '2026-07-17T00:00:00.000Z',
+    confirmedAt: '2026-07-17T00:00:00.000Z',
+    confirmedBy: 'demo@example.com',
+  },
 ]
 
 export const DEMO_CONSENT_LIST_ITEMS: ConsentListItem[] = [
@@ -199,6 +247,17 @@ export const DEMO_CONSENT_LIST_ITEMS: ConsentListItem[] = [
     studentClass: '1',
     studentNumber: '8',
   },
+  {
+    consent: DEMO_CONSENTS[2],
+    caseTopic: '간식·단 음료',
+    caseStatus: '진단 대기',
+    caseOpenedAt: DEMO_CASES[2].openedAt,
+    studentName: '박도윤',
+    gradeClass: '6학년 3반 22번',
+    grade: '6',
+    studentClass: '3',
+    studentNumber: '22',
+  },
 ]
 
 export const DEMO_CONSENT_DETAILS: Record<string, ConsentDetail> = {
@@ -217,6 +276,14 @@ export const DEMO_CONSENT_DETAILS: Record<string, ConsentDetail> = {
     topic: '체중·성장',
     caseStatus: '진단 대기',
     consent: DEMO_CONSENTS[1],
+  },
+  'DEMO-CASE-0003': {
+    caseId: 'DEMO-CASE-0003',
+    studentName: '박도윤',
+    gradeClass: '6학년 3반 22번',
+    topic: '간식·단 음료',
+    caseStatus: '진단 대기',
+    consent: DEMO_CONSENTS[2],
   },
 }
 
@@ -243,6 +310,8 @@ const DEMO_EXTRACTED_FIELDS: Assessment = {
   caseRequestId: 'CASE-20260715-DEMO',
   warnings: '',
   responseHighlights: '아침 결식이 잦다는 응답이 확인됩니다(샘플).',
+  reviewFlags: '',
+  mergedIntoAssessmentId: '',
   gradeBand: '초등 고학년',
   sex: '남',
   heightCm: '142.3',
@@ -279,7 +348,33 @@ const DEMO_EXTRACTED_FIELDS: Assessment = {
   additionalRequest: '균형 잡힌 식습관 형성을 돕고 싶습니다(샘플 데이터).',
 }
 
-export const DEMO_ASSESSMENTS: Assessment[] = [DEMO_EXTRACTED_FIELDS]
+/**
+ * 요구사항 4절 "불일치 경고가 있는 검토 화면" 데모용 — 실제 PDF 상호작용 없이도
+ * `/assessments/DEMO-ASSESS-0002`로 바로 들어가면 볼 수 있다(케이스 단계와 무관하게
+ * assessmentId로 직접 조회 가능). 이름/PDF 원문이 아니라 코드만 저장한다는 원칙을
+ * 데모에서도 그대로 보여준다.
+ */
+const DEMO_EXTRACTED_FIELDS_WITH_WARNINGS: Assessment = {
+  ...DEMO_EXTRACTED_FIELDS,
+  assessmentId: 'DEMO-ASSESS-0002',
+  caseId: 'DEMO-CASE-0002',
+  studentUuid: 'STU-DEMO-0002',
+  status: '검토 대기',
+  reviewedAt: '',
+  reviewedBy: '',
+  uploadedAt: '2026-07-18T00:00:00.000Z',
+  createdAt: '2026-07-18T00:00:00.000Z',
+  updatedAt: '2026-07-18T09:00:00.000Z',
+  extractedAt: '2026-07-18T09:00:00.000Z',
+  caseRequestId: 'CASE-20260718-DEM2',
+  reviewFlags: 'STUDENT_NAME_MISMATCH\nGRADE_MISMATCH\nRESPONSE_PDF_MISSING',
+  responseHighlights: '',
+  warnings: '비현실적인 수면시간(3시간)이 감지되었습니다(샘플).',
+  sleepDuration: '3시간',
+  sleepLevel: '주의',
+}
+
+export const DEMO_ASSESSMENTS: Assessment[] = [DEMO_EXTRACTED_FIELDS, DEMO_EXTRACTED_FIELDS_WITH_WARNINGS]
 
 export const DEMO_INTAKES: Intake[] = [
   {

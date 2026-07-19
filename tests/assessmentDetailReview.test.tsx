@@ -45,6 +45,8 @@ const DETAIL: AssessmentListItem = {
     caseRequestId: 'CASE-20260715-AB12',
     warnings: '',
     responseHighlights: '아침 결식이 잦다는 응답이 확인됩니다.\n스마트폰 사용 시간이 평소보다 길다는 응답입니다.',
+    reviewFlags: '',
+    mergedIntoAssessmentId: '',
     gradeBand: '초등 고학년',
     sex: '남',
     heightCm: '142.3',
@@ -123,5 +125,49 @@ describe('AssessmentDetailPage — 통합 검토 화면', () => {
     )
 
     expect(await screen.findByText('등록된 응답내역이 없습니다.')).toBeInTheDocument()
+  })
+
+  it('renders all 9 requested category headings so the review screen reads in the required order', async () => {
+    render(
+      <MemoryRouter initialEntries={['/assessments/ASSESS-1']}>
+        <Routes>
+          <Route path="/assessments/:assessmentId" element={<AssessmentDetailContent />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await screen.findByText('김민수')
+
+    for (const heading of [
+      '검사 기본정보',
+      '영역별 점수와 판정',
+      '식생활 주요 응답',
+      '생활습관 주요 응답',
+      '수면 관련 응답',
+      '스마트폰·신체활동 관련 응답',
+      '알레르기·질환 등 상담 참고사항',
+      '확인이 필요한 응답',
+      '누락 또는 판독 실패 항목',
+    ]) {
+      expect(screen.getByText(heading)).toBeInTheDocument()
+    }
+  })
+
+  it('shows a persisted review flag code (e.g. from a previous session) translated to Korean when the record is reopened', async () => {
+    fetchAssessmentMock.mockResolvedValue({
+      ...DETAIL,
+      assessment: { ...DETAIL.assessment, reviewFlags: 'STUDENT_NAME_MISMATCH\nRESPONSE_PDF_MISSING' },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/assessments/ASSESS-1']}>
+        <Routes>
+          <Route path="/assessments/:assessmentId" element={<AssessmentDetailContent />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('학생 이름 불일치')).toBeInTheDocument()
+    expect(screen.getByText('응답내역 PDF 미제공')).toBeInTheDocument()
   })
 })

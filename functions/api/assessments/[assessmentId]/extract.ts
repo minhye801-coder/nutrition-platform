@@ -1,5 +1,5 @@
 import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requireInstalledAccess'
-import { applyExtraction, getAssessment } from '../../../_lib/assessmentSheet'
+import { applyExtraction, getAssessment, isReviewFlagCode } from '../../../_lib/assessmentSheet'
 import { getInstallationStore } from '../../../_lib/stores'
 import { decryptToken } from '../../../_lib/tokenCipher'
 import { extractFromDeidentifiedText, GeminiApiError } from '../../../_lib/geminiClient'
@@ -16,6 +16,12 @@ interface ExtractBody {
   /** 같은 방식으로 비식별화된 응답내역 텍스트(선택 — 원본도 responsePdf가 선택이었다, 요구사항 4절). */
   responseText?: string
   caseRequestId?: string
+  /**
+   * 브라우저에서 리다크션 전 원문 대조로 계산한 코드만 온다(src/lib/pdfDeidentify.ts
+   * hasNameMismatch/detectGradeMismatch 등) — 실제 이름이나 비교 문자열은 여기 없다
+   * (요구사항 2절). 알 수 없는 값은 무시한다(서버가 정의한 REVIEW_FLAG_CODES만 저장).
+   */
+  reviewFlagCodes?: unknown
 }
 
 /**
@@ -48,6 +54,9 @@ export const onRequestPost: PagesFunction<Env, 'assessmentId'> = async ({ reques
   const diagnosisText = typeof body?.diagnosisText === 'string' ? body.diagnosisText.trim() : ''
   const responseText = typeof body?.responseText === 'string' ? body.responseText.trim() : ''
   const caseRequestId = typeof body?.caseRequestId === 'string' ? body.caseRequestId.trim() : ''
+  const reviewFlagCodes = Array.isArray(body?.reviewFlagCodes)
+    ? Array.from(new Set(body.reviewFlagCodes.filter((code): code is string => typeof code === 'string' && isReviewFlagCode(code))))
+    : []
   if (
     !diagnosisText ||
     diagnosisText.length > MAX_TEXT_LENGTH ||
@@ -62,6 +71,10 @@ export const onRequestPost: PagesFunction<Env, 'assessmentId'> = async ({ reques
     if (!assessment) {
       return Response.json({ error: 'not_found' }, { status: 404 })
     }
+    // getAssessment는 병합되어 숨겨진 ID로 요청이 와도 정상(canonical) 기록을 대신
+    // 돌려준다 — 이후 쓰기는 반드시 그 canonical assessmentId를 대상으로 해야 한다(URL의
+    // assessmentId 그대로 쓰면 숨겨진 행에 잘못 쓰게 된다).
+    const canonicalAssessmentId = assessment.assessmentId
 
     const encryptedGeminiKey = await getInstallationStore(env).getGeminiApiKey(access.session.googleSub)
     if (!encryptedGeminiKey) {
@@ -88,12 +101,13 @@ export const onRequestPost: PagesFunction<Env, 'assessmentId'> = async ({ reques
       throw error
     }
 
-    const updateResult = await applyExtraction(access.accessToken, access.spreadsheetId, assessmentId, {
+    const updateResult = await applyExtraction(access.accessToken, access.spreadsheetId, canonicalAssessmentId, {
       extracted: result.extracted,
       warnings: result.warnings,
       responseHighlights: result.responseHighlights,
       rawJson: result.rawJson,
       caseRequestId,
+      reviewFlagCodes,
     })
     if (!updateResult.ok) {
       return Response.json({ error: 'not_found' }, { status: 404 })

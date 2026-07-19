@@ -85,6 +85,7 @@ export async function extractAssessment(
   diagnosisText: string,
   caseRequestId: string,
   responseText?: string,
+  reviewFlagCodes?: string[],
 ): Promise<Assessment> {
   if (isDemoMode()) return demoAssessmentStore.extractSample(assessmentId)
 
@@ -92,7 +93,7 @@ export async function extractAssessment(
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ diagnosisText, responseText, caseRequestId }),
+    body: JSON.stringify({ diagnosisText, responseText, caseRequestId, reviewFlagCodes }),
   })
   if (!response.ok) {
     return throwAssessmentApiError(response)
@@ -104,6 +105,8 @@ export async function extractAssessment(
 export interface ReviewAssessmentPayload extends Partial<AssessmentExtractedFields> {
   reviewNote?: string
   confirm: boolean
+  /** 넘기지 않으면 서버가 기존 reviewFlags를 그대로 둔다. */
+  reviewFlagCodes?: string[]
 }
 
 export async function reviewAssessment(

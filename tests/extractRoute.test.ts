@@ -121,4 +121,26 @@ describe('POST /api/assessments/:assessmentId/extract', () => {
     expect(applyExtractionMock).toHaveBeenCalledTimes(1)
     expect(applyExtractionMock.mock.calls[0][2]).toBe('ASSESS-1')
   })
+
+  it('forwards only known REVIEW_FLAG_CODES values to applyExtraction, silently dropping unknown codes', async () => {
+    // 요구사항 2절: 브라우저가 계산한 코드만 저장하고, 서버가 정의하지 않은 값(혹시 모를
+    // 오염된 입력)은 무시한다 — 이름이나 PDF 원문이 실수로 이 필드에 들어와도 저장되지 않는다.
+    const { onRequestPost } = await import('../functions/api/assessments/[assessmentId]/extract')
+    const request = new Request('https://example.com/api/assessments/ASSESS-1/extract', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        diagnosisText: '키 165cm',
+        caseRequestId: 'CASE-20260718-AB12',
+        reviewFlagCodes: ['STUDENT_NAME_MISMATCH', 'GRADE_MISMATCH', 'STUDENT_NAME_MISMATCH', '김민수', 'NOT_A_REAL_CODE'],
+      }),
+    })
+    const response = await onRequestPost({ request, env: {} as never, params: { assessmentId: 'ASSESS-1' } } as never)
+    expect(response.status).toBe(200)
+
+    const applyInput = applyExtractionMock.mock.calls[0][3]
+    expect(applyInput.reviewFlagCodes.sort()).toEqual(['GRADE_MISMATCH', 'STUDENT_NAME_MISMATCH'])
+    expect(applyInput.reviewFlagCodes).not.toContain('김민수')
+    expect(applyInput.reviewFlagCodes).not.toContain('NOT_A_REAL_CODE')
+  })
 })

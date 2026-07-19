@@ -2,6 +2,7 @@ import { isAccessError, requireSchoolWorkspaceAccess } from '../../../_lib/requi
 import {
   ASSESSMENT_EXTRACTED_FIELDS,
   getAssessment,
+  isReviewFlagCode,
   reviewAssessment,
   type ReviewAssessmentInput,
 } from '../../../_lib/assessmentSheet'
@@ -94,6 +95,9 @@ export const onRequestPatch: PagesFunction<Env, 'assessmentId'> = async ({ reque
     reviewNote: typeof body.reviewNote === 'string' ? body.reviewNote : undefined,
     confirm: body.confirm === true,
     reviewedBy: access.session.email,
+    reviewFlagCodes: Array.isArray(body.reviewFlagCodes)
+      ? Array.from(new Set(body.reviewFlagCodes.filter((code): code is string => typeof code === 'string' && isReviewFlagCode(code))))
+      : undefined,
   }
   for (const key of ASSESSMENT_EXTRACTED_FIELDS) {
     const value = body[key]

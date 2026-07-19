@@ -10,9 +10,16 @@ import {
   redactText,
   type PiiCandidate,
 } from '@/lib/pdfDeidentify'
+import { REVIEW_FLAG_LABELS, type ReviewFlagCode } from '@/types/assessment'
 
 const NO_TEXT_MESSAGE =
   '이 PDF에서는 분석 가능한 텍스트를 찾지 못했습니다. 자료를 확인하고 필요한 항목을 직접 입력해 주세요.'
+
+/** 코드(서버에 저장) + 사람이 읽을 문구(화면 표시 전용) 한 쌍 — 문구는 절대 서버로 보내지 않는다. */
+export interface ReviewFlag {
+  code: ReviewFlagCode
+  message: string
+}
 
 interface PdfFieldProps {
   fieldId: string
@@ -25,11 +32,12 @@ interface PdfFieldProps {
   /** 파일이 선택됐지만 아직 분석에 쓸 준비가 안 된 상태인지(진행 중/미확인/텍스트 없음) 부모에게 알린다. */
   onPendingChange: (pending: boolean) => void
   /**
-   * 이름·학년 불일치 경고 문구 — 리다크션 전 원문에서만 판단할 수 있으므로(요구사항
-   * 6절 D), 검토 화면이 분석 이후에도 계속 보여줄 수 있도록 부모(AssessmentDetailPage)에
-   * 문자열로만 넘긴다. 원문 자체나 후보 목록은 넘기지 않는다.
+   * 이름·학년 불일치, 판독 실패 등 "확인 필요" 상태 — 리다크션 전 원문에서만 판단할 수
+   * 있으므로(요구사항 2·6절), 검토 화면이 분석 이후에도 계속 보여줄 수 있도록
+   * 부모(AssessmentDetailPage)에 코드+문구로 넘긴다. 원문 자체나 후보 목록은 넘기지 않는다.
+   * 서버에는 code만 전송된다.
    */
-  onMismatchChange: (warnings: string[]) => void
+  onFlagsChange: (flags: ReviewFlag[]) => void
 }
 
 /**
@@ -46,7 +54,7 @@ function PdfField({
   studentGrade,
   onReadyChange,
   onPendingChange,
-  onMismatchChange,
+  onFlagsChange,
 }: PdfFieldProps) {
   const [rawText, setRawText] = useState<string | null>(null)
   const [candidates, setCandidates] = useState<PiiCandidate[]>([])
@@ -67,18 +75,25 @@ function PdfField({
     onReadyChange(ready ? redacted : null)
     // 파일을 선택했는데 아직 분석에 쓸 준비가 안 됐으면(처리 중/텍스트 없음/미확인) pending.
     onPendingChange(hasFile && !ready)
-    const warnings: string[] = []
+    const flags: ReviewFlag[] = []
     if (nameMismatch) {
-      warnings.push(`${label}: PDF에서 발견된 이름이 등록된 학생 이름(${studentName || '미상'})과 다릅니다.`)
+      flags.push({
+        code: 'STUDENT_NAME_MISMATCH',
+        message: `${label}: PDF에서 발견된 이름이 등록된 학생 이름(${studentName || '미상'})과 다릅니다.`,
+      })
     }
     if (gradeMismatch.mismatch) {
-      warnings.push(
-        `${label}: PDF에 표기된 학년(${gradeMismatch.foundGrades.join(', ')}학년)이 등록된 학년(${studentGrade}학년)과 다릅니다.`,
-      )
+      flags.push({
+        code: 'GRADE_MISMATCH',
+        message: `${label}: PDF에 표기된 학년(${gradeMismatch.foundGrades.join(', ')}학년)이 등록된 학년(${studentGrade}학년)과 다릅니다.`,
+      })
     }
-    onMismatchChange(warnings)
+    if (noText) {
+      flags.push({ code: 'PDF_TEXT_EXTRACTION_FAILED', message: `${label}: ${NO_TEXT_MESSAGE}` })
+    }
+    onFlagsChange(flags)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, redacted, hasFile, nameMismatch, gradeMismatch.mismatch])
+  }, [ready, redacted, hasFile, nameMismatch, gradeMismatch.mismatch, noText])
 
   async function handleFileSelected(selected: File | null) {
     setFileName(selected?.name ?? '')
@@ -214,7 +229,7 @@ interface PdfDeidentifyPanelProps {
   studentName: string
   /** 학년 불일치 경고 대조용 — 서버로 전송하지 않는다. */
   studentGrade: string
-  onConfirm: (diagnosisText: string, caseRequestId: string, responseText: string | undefined, mismatchWarnings: string[]) => void
+  onConfirm: (diagnosisText: string, caseRequestId: string, responseText: string | undefined, flags: ReviewFlag[]) => void
   onCancel: () => void
 }
 
@@ -228,10 +243,10 @@ interface PdfDeidentifyPanelProps {
 export function PdfDeidentifyPanel({ studentName, studentGrade, onConfirm, onCancel }: PdfDeidentifyPanelProps) {
   const [diagnosisText, setDiagnosisText] = useState<string | null>(null)
   const [diagnosisPending, setDiagnosisPending] = useState(false)
-  const [diagnosisMismatch, setDiagnosisMismatch] = useState<string[]>([])
+  const [diagnosisFlags, setDiagnosisFlags] = useState<ReviewFlag[]>([])
   const [responseText, setResponseText] = useState<string | null>(null)
   const [responsePending, setResponsePending] = useState(false)
-  const [responseMismatch, setResponseMismatch] = useState<string[]>([])
+  const [responseFlags, setResponseFlags] = useState<ReviewFlag[]>([])
 
   // 이중 클릭 방지는 이 컴포넌트가 아니라 부모(AssessmentDetailPage)의 책임이다 — 부모가
   // 분석 요청 중(extracting=true)에는 이 패널 자체를 화면에서 치우고 "분석 중..." 문구로
@@ -241,10 +256,13 @@ export function PdfDeidentifyPanel({ studentName, studentGrade, onConfirm, onCan
 
   function handleConfirm() {
     if (!canAnalyze || !diagnosisText) return
-    onConfirm(diagnosisText, generateCaseRequestId(), responseText ?? undefined, [
-      ...diagnosisMismatch,
-      ...responseMismatch,
-    ])
+    const flags = [...diagnosisFlags, ...responseFlags]
+    // 응답내역 PDF 없이(선택 사항이므로) 분석을 진행하면, 나중에 다시 열었을 때도 이
+    // 사실을 알 수 있도록 코드로 남긴다(요구사항 2절 RESPONSE_PDF_MISSING).
+    if (!responseText) {
+      flags.push({ code: 'RESPONSE_PDF_MISSING', message: `${REVIEW_FLAG_LABELS.RESPONSE_PDF_MISSING} — 진단결과만 분석했습니다.` })
+    }
+    onConfirm(diagnosisText, generateCaseRequestId(), responseText ?? undefined, flags)
   }
 
   return (
@@ -257,7 +275,7 @@ export function PdfDeidentifyPanel({ studentName, studentGrade, onConfirm, onCan
         studentGrade={studentGrade}
         onReadyChange={setDiagnosisText}
         onPendingChange={setDiagnosisPending}
-        onMismatchChange={setDiagnosisMismatch}
+        onFlagsChange={setDiagnosisFlags}
       />
       <PdfField
         fieldId="diagnosisResponseFile"
@@ -267,7 +285,7 @@ export function PdfDeidentifyPanel({ studentName, studentGrade, onConfirm, onCan
         studentGrade={studentGrade}
         onReadyChange={setResponseText}
         onPendingChange={setResponsePending}
-        onMismatchChange={setResponseMismatch}
+        onFlagsChange={setResponseFlags}
       />
 
       <div className="flex gap-2">

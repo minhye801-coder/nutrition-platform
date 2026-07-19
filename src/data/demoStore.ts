@@ -11,7 +11,8 @@ import {
 import type { CreateStudentInput, Student, StudentListFilters, UpdateStudentInput } from '@/types/student'
 import type { CaseDetail, CaseSearchFilters, CaseSearchItem } from '@/types/case'
 import type { Consent, ConsentDetail, ConsentListItem } from '@/types/consent'
-import type { Assessment, AssessmentListItem } from '@/types/assessment'
+import { ASSESSMENT_EXTRACTED_FIELDS } from '@/types/assessment'
+import type { Assessment, AssessmentExtractedFields, AssessmentListItem } from '@/types/assessment'
 import type { Intake, IntakeListFilters } from '@/types/intake'
 
 /**
@@ -194,24 +195,40 @@ export const demoAssessmentStore = {
     const existing = assessments.find((a) => a.caseId === caseId && a.timepoint === timepoint)
     if (existing) return clone(existing)
 
+    // 실제 ensureAssessment/createAssessment와 동일하게 처음에는 38개 필드를 전부
+    // 빈 값으로 시작한다(assessmentSheet.ts emptyExtractedFields) — 다른 학생의 샘플
+    // 진단값을 복사해 오면 "PDF 선택 전인데 값이 이미 채워져 있는" 잘못된 상태가 된다.
+    const emptyFields = {} as AssessmentExtractedFields
+    for (const key of ASSESSMENT_EXTRACTED_FIELDS) emptyFields[key] = ''
+
     const now = new Date().toISOString()
-    const sample = clone(assessments[0])
-    const studentUuid = DEMO_CASES.find((c) => c.caseId === caseId)?.studentUuid ?? sample.studentUuid
+    const studentUuid = DEMO_CASES.find((c) => c.caseId === caseId)?.studentUuid ?? ''
     const record: Assessment = {
-      ...sample,
+      ...emptyFields,
       assessmentId: demoId('ASSESS'),
+      tenantId: 'demo',
       caseId,
       studentUuid,
       round,
       timepoint,
-      status: '검토 대기',
-      fileName: '샘플_진단결과.pdf',
+      fileUrl: '',
+      fileId: '',
+      fileName: '',
       uploadedAt: now,
+      uploadedBy: 'demo@example.com',
+      status: '검토 대기',
+      reviewNote: '',
+      reviewedAt: '',
+      reviewedBy: '',
+      createdAt: now,
       updatedAt: now,
       extractionStatus: '수동 입력',
       extractedAt: '',
+      caseRequestId: '',
       warnings: '',
       responseHighlights: '',
+      reviewFlags: '',
+      mergedIntoAssessmentId: '',
     }
     assessments = [...assessments, record]
     return clone(record)
@@ -233,13 +250,15 @@ export const demoAssessmentStore = {
   },
   async review(
     assessmentId: string,
-    payload: Partial<Assessment> & { confirm: boolean },
+    payload: Partial<Assessment> & { confirm: boolean; reviewFlagCodes?: string[] },
   ): Promise<{ assessment: Assessment; confirmed: boolean }> {
     const index = assessments.findIndex((a) => a.assessmentId === assessmentId)
     if (index === -1) throw new Error('not_found')
+    const { reviewFlagCodes, ...rest } = payload
     assessments[index] = {
       ...assessments[index],
-      ...payload,
+      ...rest,
+      reviewFlags: reviewFlagCodes ? reviewFlagCodes.join('\n') : assessments[index].reviewFlags,
       status: payload.confirm ? '확인 완료' : assessments[index].status,
       reviewedAt: payload.confirm ? new Date().toISOString() : assessments[index].reviewedAt,
       updatedAt: new Date().toISOString(),
