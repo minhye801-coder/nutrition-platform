@@ -24,14 +24,21 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 /** 설정 화면에 모델 선택 UI가 생기기 전까지의 기본값 — 필요해지면 이 상수만 바꾸면 된다. */
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash'
 
-/** 학생 식별 정보가 이미 제거된 텍스트만 받는다는 전제를 프롬프트에도 명시한다. */
-const EXTRACTION_PROMPT = `아래 텍스트는 학교 영양상담용 식생활·생활습관 진단 결과에서 학생 이름·학교명·
-생년월일·연락처 등 직접 식별정보를 제거한 뒤 남은 내용입니다. 텍스트에 명시적으로 표시된 값만
-정확히 추출하세요. 추론하거나 새로운 판정을 만들지 마세요. 값이 없거나 읽을 수 없으면 빈 문자열을
-반환하세요(추측 금지). 텍스트에 이름으로 보이는 고유명사나 연락처·주소가 남아 있다면 절대 그대로
-반환하지 말고 warnings 배열에 "식별정보로 보이는 내용이 남아 있습니다"라고만 기록하세요. 비현실적인
-수면시간 등 확인이 필요한 사항도 warnings 배열에 기록하세요. 상담에 참고할 만한 세부 응답이 있으면
-responseHighlights 배열에 간단히 정리하세요.`
+/**
+ * 학생 식별 정보가 이미 제거된 텍스트만 받는다는 전제를 프롬프트에도 명시한다. 원본은
+ * 진단결과 PDF와 응답내역 PDF를 함께 분석했다(legacy `analyzeDiagnosisFiles`,
+ * counseling-manager/code.gs.txt:3965-4013) — 두 문서를 구분해서 넘기고, responseHighlights는
+ * 응답내역 쪽에서 우선 뽑도록 프롬프트에 명시한다(요구사항 4·6절).
+ */
+const EXTRACTION_PROMPT = `아래 텍스트는 학교 영양상담용 식생활·생활습관 진단 결과(및 있는 경우 응답내역)에서
+학생 이름·학교명·생년월일·연락처 등 직접 식별정보를 제거한 뒤 남은 내용입니다. "진단결과" 구간에서는
+공식 판정·점수·등급만, "응답내역" 구간에서는 문항별 응답 중 상담에 참고할 만한 내용만 근거로 삼으세요.
+텍스트에 명시적으로 표시된 값만 정확히 추출하세요. 추론하거나 새로운 판정을 만들지 마세요. 값이 없거나
+읽을 수 없으면 빈 문자열을 반환하세요(추측 금지). 텍스트에 이름으로 보이는 고유명사나 연락처·주소가
+남아 있다면 절대 그대로 반환하지 말고 warnings 배열에 "식별정보로 보이는 내용이 남아 있습니다"라고만
+기록하세요. 비현실적인 수면시간 등 확인이 필요한 사항도 warnings 배열에 기록하세요. "응답내역" 구간이
+있으면 그 안에서, 없으면 "진단결과" 구간 안에서 상담에 참고할 만한 세부 응답을 찾아 responseHighlights
+배열에 간단히 정리하세요.`
 
 /** legacy properties 객체(4046-4086줄)의 설명 문구를 그대로 옮긴 것 — responseSchema용.
  * 재식별 위험이 큰 4개 필드(studentName/schoolType/age/examDate)는 요구사항 10절에 따라
@@ -97,14 +104,21 @@ function buildResponseSchema() {
 
 /**
  * 비식별화된 텍스트만 Gemini에 보낸다(inline_data 없음 — PDF 원본 바이트를 다루지
- * 않는다). 실패 시 GeminiApiError를 던진다 — 호출부(assessments extract API)가 그대로
- * 전달해 프런트에 에러로 보여준다. 요청 본문 자체를 로그로 출력하지 않는다(요구사항
- * 10절 "AI API 요청 내용을 디버그 로그에 그대로 출력하지 않는다").
+ * 않는다). 진단결과 텍스트는 필수, 응답내역 텍스트는 선택이다(원본 `resultPdf`
+ * 필수/`responsePdf` 선택과 동일한 규칙 — 요구사항 4절). 실패 시 GeminiApiError를
+ * 던진다 — 호출부(assessments extract API)가 그대로 전달해 프런트에 에러로 보여준다.
+ * 요청 본문 자체를 로그로 출력하지 않는다(요구사항 10절 "AI API 요청 내용을 디버그
+ * 로그에 그대로 출력하지 않는다").
  */
 export async function extractFromDeidentifiedText(
   apiKey: string,
-  deidentifiedText: string,
+  diagnosisText: string,
+  responseText?: string,
 ): Promise<AssessmentExtractionResult> {
+  const sections = [`[진단결과]\n${diagnosisText}`]
+  if (responseText && responseText.trim()) {
+    sections.push(`[응답내역]\n${responseText}`)
+  }
   const response = await fetch(
     `${GEMINI_API_BASE}/models/${DEFAULT_GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
@@ -113,7 +127,7 @@ export async function extractFromDeidentifiedText(
       body: JSON.stringify({
         contents: [
           {
-            parts: [{ text: `${EXTRACTION_PROMPT}\n\n---\n${deidentifiedText}` }],
+            parts: [{ text: `${EXTRACTION_PROMPT}\n\n---\n${sections.join('\n\n---\n')}` }],
           },
         ],
         generationConfig: {

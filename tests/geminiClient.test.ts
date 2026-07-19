@@ -60,10 +60,50 @@ describe('extractFromDeidentifiedText', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('has no parameter for a File/Blob/filename/caseId/studentUuid — only apiKey and text', () => {
+  it('has no parameter for a File/Blob/filename/caseId/studentUuid — only apiKey, diagnosis text, and optional response text', () => {
     // 요구사항 9절 테스트 11: Gemini 요청에 원본 PDF·파일명이 없음. 함수 시그니처
-    // 자체가 2개 문자열 인자(apiKey, deidentifiedText)만 받으므로 파일을 실어 보낼 수 없다.
-    expect(extractFromDeidentifiedText.length).toBe(2)
+    // 자체가 3개 문자열 인자(apiKey, diagnosisText, responseText?)만 받으므로 파일을 실어 보낼 수 없다.
+    expect(extractFromDeidentifiedText.length).toBe(3)
+  })
+
+  it('combines diagnosis and response texts into labeled sections when both are given', async () => {
+    let capturedText = ''
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      capturedText = (JSON.parse(init.body as string) as { contents: { parts: { text: string }[] }[] }).contents[0]
+        .parts[0].text
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: JSON.stringify({ warnings: [], responseHighlights: [] }) }] } }],
+        }),
+      } as Response
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await extractFromDeidentifiedText('fake-api-key', '진단결과 본문', '응답내역 본문')
+
+    expect(capturedText).toContain('[진단결과]\n진단결과 본문')
+    expect(capturedText).toContain('[응답내역]\n응답내역 본문')
+  })
+
+  it('omits the response-detail section when no response text is given (original responsePdf was optional)', async () => {
+    let capturedText = ''
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      capturedText = (JSON.parse(init.body as string) as { contents: { parts: { text: string }[] }[] }).contents[0]
+        .parts[0].text
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: JSON.stringify({ warnings: [], responseHighlights: [] }) }] } }],
+        }),
+      } as Response
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await extractFromDeidentifiedText('fake-api-key', '진단결과 본문')
+
+    expect(capturedText).toContain('[진단결과]\n진단결과 본문')
+    expect(capturedText).not.toContain('[응답내역]')
   })
 
   it('never includes a STU-xxxx-xxxx-xxxx StudentID pattern in the outgoing request', async () => {

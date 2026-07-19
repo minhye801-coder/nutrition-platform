@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 const requireSchoolWorkspaceAccessMock = vi.fn()
 const getCaseMock = vi.fn()
 const transitionCaseStatusMock = vi.fn()
-const createAssessmentMock = vi.fn()
+const ensureAssessmentMock = vi.fn()
 
 vi.mock('../functions/_lib/requireInstalledAccess', () => ({
   requireSchoolWorkspaceAccess: (...args: unknown[]) => requireSchoolWorkspaceAccessMock(...args),
@@ -25,7 +25,7 @@ vi.mock('../functions/_lib/assessmentSheet', async () => {
   )
   return {
     ...actual,
-    createAssessment: (...args: unknown[]) => createAssessmentMock(...args),
+    ensureAssessment: (...args: unknown[]) => ensureAssessmentMock(...args),
     listAssessmentsByCase: vi.fn(),
   }
 })
@@ -44,11 +44,11 @@ describe('POST /api/cases/:caseId/assessments', () => {
     requireSchoolWorkspaceAccessMock.mockReset()
     getCaseMock.mockReset()
     transitionCaseStatusMock.mockReset()
-    createAssessmentMock.mockReset()
+    ensureAssessmentMock.mockReset()
     requireSchoolWorkspaceAccessMock.mockResolvedValue(FAKE_ACCESS)
     getCaseMock.mockResolvedValue({ caseId: 'CASE-1', studentUuid: 'STU-AAAA-BBBB-CCCC', driveFolderUrl: '' })
     transitionCaseStatusMock.mockResolvedValue({ ok: true, transitioned: true })
-    createAssessmentMock.mockResolvedValue({ assessmentId: 'ASSESS-1' })
+    ensureAssessmentMock.mockResolvedValue({ assessment: { assessmentId: 'ASSESS-1' }, created: true })
   })
 
   it('rejects a raw PDF (multipart) upload without creating a record', async () => {
@@ -71,7 +71,7 @@ describe('POST /api/cases/:caseId/assessments', () => {
     expect(response.status).toBe(400)
     const body = await response.json()
     expect(body.error).toBe('raw_pdf_upload_not_supported')
-    expect(createAssessmentMock).not.toHaveBeenCalled()
+    expect(ensureAssessmentMock).not.toHaveBeenCalled()
   })
 
   it('rejects a request whose content-type is application/pdf directly', async () => {
@@ -89,7 +89,7 @@ describe('POST /api/cases/:caseId/assessments', () => {
     } as never)
 
     expect(response.status).toBe(400)
-    expect(createAssessmentMock).not.toHaveBeenCalled()
+    expect(ensureAssessmentMock).not.toHaveBeenCalled()
   })
 
   it('creates a bare assessment record from JSON round/timepoint with no file fields sent to Drive', async () => {
@@ -107,11 +107,14 @@ describe('POST /api/cases/:caseId/assessments', () => {
     } as never)
 
     expect(response.status).toBe(200)
-    expect(createAssessmentMock).toHaveBeenCalledTimes(1)
-    const input = createAssessmentMock.mock.calls[0][2]
+    expect(ensureAssessmentMock).toHaveBeenCalledTimes(1)
+    const input = ensureAssessmentMock.mock.calls[0][2]
     expect(input.fileUrl).toBeUndefined()
     expect(input.fileId).toBeUndefined()
     expect(input.round).toBe('1차')
+
+    // 요구사항 7·10절 테스트 10: 사전 진단 등록 직후 케이스 단계가 '결과 확인'으로 전이된다.
+    expect(transitionCaseStatusMock).toHaveBeenCalledWith('token', 'sheet-1', 'CASE-1', ['진단 대기'], '결과 확인')
   })
 
   it('rejects non-SCHOOL_WORKSPACE accounts (blocked personal / unconfirmed workspace / guest) before touching any assessment data', async () => {
@@ -130,6 +133,6 @@ describe('POST /api/cases/:caseId/assessments', () => {
     } as never)
 
     expect(response.status).toBe(403)
-    expect(createAssessmentMock).not.toHaveBeenCalled()
+    expect(ensureAssessmentMock).not.toHaveBeenCalled()
   })
 })

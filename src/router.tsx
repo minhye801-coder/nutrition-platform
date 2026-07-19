@@ -52,7 +52,6 @@ export const router = createBrowserRouter([
       { path: 'neis', element: <ComingSoonPage title="NEIS 업로드" /> },
       { path: 'evaluation', element: <ComingSoonPage title="효과평가·성장" /> },
       { path: 'cleanup', element: <ComingSoonPage title="테스트 데이터 정리" /> },
-      { path: 'official-diagnosis', element: <ComingSoonPage title="교육부 진단프로그램" /> },
     ],
   },
 ])

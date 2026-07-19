@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AuthGuard } from '@/components/common/AuthGuard'
 import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
@@ -10,19 +10,12 @@ import { ASSESSMENT_STATUS_CONFIRMED, EXTRACTION_STATUS_AI } from '@/types/asses
 import type { AssessmentListItem } from '@/types/assessment'
 import type { ConsentListItem } from '@/types/consent'
 
-const inputClass =
-  'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500'
-
-/** 검사결과를 새로 등록할 수 있는 케이스 단계 — 승인 시 '진단 대기'가 되고, 등록 후 '결과 확인'이 된다(추가 회차 등록 허용). */
-const UPLOADABLE_CASE_STATUSES = ['진단 대기', '결과 확인']
-
-function statusBadge(status: string) {
-  return status === ASSESSMENT_STATUS_CONFIRMED ? (
-    <Badge tone="success">확인 완료</Badge>
-  ) : (
-    <Badge tone="warning">검토 대기</Badge>
-  )
-}
+/**
+ * 진단대상 조건(요구사항 2절): 상담접수 완료 + 보호자동의 완료 + 진단 대기/결과 확인
+ * 단계인 케이스만 진단대상이다. consents 목록은 이미 StudentID+caseId로 조인돼 있다
+ * (functions/api/consents/index.ts) — 이름으로 다시 합치지 않는다.
+ */
+const DIAGNOSIS_TARGET_CASE_STATUSES = ['진단 대기', '결과 확인']
 
 function describeError(error: unknown): string {
   if (error instanceof AssessmentApiError || error instanceof ConsentApiError) {
@@ -69,21 +62,30 @@ export function describeAssessmentStatus(caseId: string, assessments: Assessment
   return '분석 대기'
 }
 
+/**
+ * 이 케이스의 "현재 평가시점" — 사전 기록이 아직 없으면 다음 등록은 사전이 기본이고
+ * (요구사항 3절), 있으면 그 시점을 그대로 보여준다.
+ */
+function currentTimepoint(caseId: string, assessments: AssessmentListItem[]): string {
+  const related = assessments.filter((item) => item.assessment.caseId === caseId)
+  if (related.length === 0) return '사전'
+  const latest = [...related].sort((a, b) => b.assessment.updatedAt.localeCompare(a.assessment.updatedAt))[0]
+  return latest.assessment.timepoint || '사전'
+}
+
 export function AssessmentsPage() {
   return <AuthGuard requireInstallation>{() => <AssessmentsContent />}</AuthGuard>
 }
 
-function AssessmentsContent() {
+/** AuthGuard 없이 직접 테스트할 수 있도록 내부 컴포넌트를 노출한다(테스트 전용 export). */
+export function AssessmentsContent() {
+  const navigate = useNavigate()
   const [items, setItems] = useState<AssessmentListItem[]>([])
   const [targets, setTargets] = useState<ConsentListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
-
-  const [caseId, setCaseId] = useState('')
-  const [round, setRound] = useState('1차')
-  const [timepoint, setTimepoint] = useState('사전')
-  const [registering, setRegistering] = useState(false)
-  const [registerError, setRegisterError] = useState('')
+  const [openingCaseId, setOpeningCaseId] = useState('')
+  const [openError, setOpenError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -91,7 +93,11 @@ function AssessmentsContent() {
     try {
       const [assessments, consents] = await Promise.all([fetchAssessments(), fetchConsents()])
       setItems(assessments)
-      setTargets(consents.filter((item) => UPLOADABLE_CASE_STATUSES.includes(item.caseStatus)))
+      setTargets(
+        consents.filter(
+          (item) => item.consent.status === '동의 완료' && DIAGNOSIS_TARGET_CASE_STATUSES.includes(item.caseStatus),
+        ),
+      )
     } catch (error) {
       setLoadError(describeError(error))
     } finally {
@@ -103,25 +109,37 @@ function AssessmentsContent() {
     void load()
   }, [load])
 
-  const registerableTargets = useMemo(
-    () => targets.filter((item) => item.consent.status === '동의 완료'),
-    [targets],
-  )
+  const assessmentByCaseAndTimepoint = useMemo(() => {
+    const map = new Map<string, AssessmentListItem>()
+    for (const item of items) {
+      map.set(`${item.assessment.caseId}:${item.assessment.timepoint}`, item)
+    }
+    return map
+  }, [items])
 
-  async function handleRegister(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (registering || !caseId || !round.trim() || !timepoint) return
-
-    setRegistering(true)
-    setRegisterError('')
+  /**
+   * 학생 카드의 유일한 버튼. 사전 기록이 이미 있으면 그 기록을 그대로 열고(요구사항
+   * 3절 "사전 진단이 존재하면 기존 사전 자료를 표시"), 없으면 사전으로 새로 만든다.
+   * caseId+timepoint 유일성은 서버(ensureAssessment)가 보장하므로 버튼을 연타해도
+   * 같은 기록이 반환된다 — 여기서는 진행 중에 같은 카드를 다시 누르지 못하게만 막는다
+   * (요구사항 8·9절).
+   */
+  async function handleOpenDiagnosis(caseId: string) {
+    if (openingCaseId) return
+    setOpeningCaseId(caseId)
+    setOpenError('')
     try {
-      await createAssessment(caseId, round.trim(), timepoint)
-      setCaseId('')
-      await load()
+      const existingPre = assessmentByCaseAndTimepoint.get(`${caseId}:사전`)
+      if (existingPre) {
+        navigate(`/assessments/${existingPre.assessment.assessmentId}`)
+        return
+      }
+      const assessment = await createAssessment(caseId, '1차', '사전')
+      navigate(`/assessments/${assessment.assessmentId}`)
     } catch (error) {
-      setRegisterError(describeError(error))
+      setOpenError(describeError(error))
     } finally {
-      setRegistering(false)
+      setOpeningCaseId('')
     }
   }
 
@@ -130,143 +148,63 @@ function AssessmentsContent() {
       <div>
         <h1 className="text-xl font-bold text-gray-900">진단·검사</h1>
         <p className="mt-1 text-sm text-gray-500">
-          검사결과 PDF는 학교 PC에서만 열어봅니다. 이 화면에서는 검사결과 항목만 등록하고, 실제 PDF 읽기·비식별화
-          확인·AI 분석은 검토 화면에서 브라우저 안에서만 진행합니다.
+          검사결과 PDF는 학교 PC에서만 열어봅니다. 학생을 선택하면 검토 화면에서 진단결과·응답내역 PDF 읽기,
+          비식별화 확인, AI 분석을 모두 브라우저 안에서 진행합니다.
         </p>
       </div>
 
       <Card className="space-y-4">
-        <h2 className="text-sm font-semibold text-gray-900">진단검사 대상 학생</h2>
+        <h2 className="text-sm font-semibold text-gray-900">진단대상 학생</h2>
         {loadError && <p className="text-sm text-red-600">{loadError}</p>}
+        {openError && <p className="text-sm text-red-600">{openError}</p>}
         {loading ? (
           <p className="py-4 text-center text-sm text-gray-500">불러오는 중...</p>
         ) : targets.length === 0 ? (
-          <p className="py-4 text-center text-sm text-gray-500">보호자동의가 진행 중인 케이스가 없습니다.</p>
+          <p className="py-4 text-center text-sm text-gray-500">
+            보호자동의가 완료되고 진단을 기다리는 학생이 없습니다.
+          </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {targets.map((item) => (
-              <div key={item.consent.caseId} className="rounded-md border border-gray-200 p-3">
-                <p className="font-semibold text-gray-900">{item.studentName || '이름 미상'}</p>
-                <p className="text-xs text-gray-500">
-                  {formatGradeClassNumber(item.grade, item.studentClass, item.studentNumber) || '학급 정보 없음'}
-                </p>
-                <dl className="mt-2 space-y-1 text-xs text-gray-600">
-                  <div className="flex justify-between gap-2">
-                    <dt>상담접수</dt>
-                    <dd>{formatDate(item.caseOpenedAt)}</dd>
+            {targets.map((item) => {
+              const caseId = item.consent.caseId
+              const opening = openingCaseId === caseId
+              return (
+                <div key={caseId} className="flex flex-col justify-between rounded-md border border-gray-200 p-3">
+                  <div>
+                    <p className="text-base font-bold text-gray-900">{item.studentName || '이름 미상'}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatGradeClassNumber(item.grade, item.studentClass, item.studentNumber) || '학급 정보 없음'}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-1">
+                      <Badge tone="neutral">{item.caseStatus}</Badge>
+                      <Badge tone="neutral">{currentTimepoint(caseId, items)}</Badge>
+                    </div>
+                    <dl className="mt-2 space-y-1 text-xs text-gray-600">
+                      <div className="flex justify-between gap-2">
+                        <dt>상담접수</dt>
+                        <dd>{formatDate(item.caseOpenedAt)}</dd>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <dt>보호자동의</dt>
+                        <dd>{item.consent.status}</dd>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <dt>진단검사</dt>
+                        <dd>{describeAssessmentStatus(caseId, items)}</dd>
+                      </div>
+                    </dl>
                   </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>보호자동의</dt>
-                    <dd>{item.consent.status}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>진단검사</dt>
-                    <dd>{describeAssessmentStatus(item.consent.caseId, items)}</dd>
-                  </div>
-                </dl>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card className="space-y-4">
-        <h2 className="text-sm font-semibold text-gray-900">검사결과 등록</h2>
-        <p className="text-xs text-gray-500">
-          여기서는 검사차수·평가시점만 등록합니다. 원본 PDF 선택과 비식별화 확인은 등록 후 검토 화면에서 진행해
-          주세요.
-        </p>
-        <form className="grid grid-cols-1 gap-3 sm:grid-cols-4" onSubmit={(event) => void handleRegister(event)}>
-          <div className="sm:col-span-2">
-            <label htmlFor="caseId" className="block text-xs font-medium text-gray-500">
-              대상 케이스 *
-            </label>
-            <select id="caseId" value={caseId} onChange={(event) => setCaseId(event.target.value)} className={inputClass}>
-              <option value="">선택하세요</option>
-              {registerableTargets.map((item) => (
-                <option key={item.consent.caseId} value={item.consent.caseId}>
-                  {item.studentName || '이름 미상'}
-                  {formatGradeClassNumber(item.grade, item.studentClass, item.studentNumber)
-                    ? ` (${formatGradeClassNumber(item.grade, item.studentClass, item.studentNumber)})`
-                    : ''}{' '}
-                  · {item.caseTopic || '주제 없음'} ({item.caseStatus})
-                </option>
-              ))}
-            </select>
-            {!loading && registerableTargets.length === 0 && (
-              <p className="mt-1 text-xs text-gray-400">보호자동의가 완료된 케이스가 없습니다.</p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="round" className="block text-xs font-medium text-gray-500">
-              검사차수 *
-            </label>
-            <input id="round" type="text" value={round} onChange={(event) => setRound(event.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label htmlFor="timepoint" className="block text-xs font-medium text-gray-500">
-              평가시점 *
-            </label>
-            <select id="timepoint" value={timepoint} onChange={(event) => setTimepoint(event.target.value)} className={inputClass}>
-              <option value="사전">사전</option>
-              <option value="사후">사후</option>
-            </select>
-          </div>
-          {registerError && <p className="text-sm text-red-600 sm:col-span-4">{registerError}</p>}
-          <div className="sm:col-span-4">
-            <button type="submit" disabled={registering} className={primaryButtonClass}>
-              {registering ? '등록 중...' : '등록'}
-            </button>
-          </div>
-        </form>
-      </Card>
-
-      <Card>
-        {loading ? (
-          <p className="py-8 text-center text-sm text-gray-500">불러오는 중...</p>
-        ) : items.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-500">등록된 검사결과가 없습니다.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-xs text-gray-500">
-                  <th className="py-2 pr-2">학생명</th>
-                  <th className="py-2 pr-2">학년·반·번호</th>
-                  <th className="py-2 pr-2">검사차수/시점</th>
-                  <th className="py-2 pr-2">추출방식</th>
-                  <th className="py-2 pr-2">상태</th>
-                  <th className="py-2 pr-2">등록일</th>
-                  <th className="py-2 pr-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {items.map(({ assessment, studentName, grade, studentClass, studentNumber }) => (
-                  <tr key={assessment.assessmentId} className="border-b border-gray-100">
-                    <td className="py-2 pr-2 text-gray-900">{studentName || '-'}</td>
-                    <td className="py-2 pr-2 text-gray-700">
-                      {formatGradeClassNumber(grade, studentClass, studentNumber) || '-'}
-                    </td>
-                    <td className="py-2 pr-2 text-gray-700">
-                      {assessment.round} / {assessment.timepoint}
-                    </td>
-                    <td className="py-2 pr-2 text-gray-700">
-                      {assessment.extractionStatus === EXTRACTION_STATUS_AI ? 'AI 추출' : '수동 입력'}
-                    </td>
-                    <td className="py-2 pr-2">{statusBadge(assessment.status)}</td>
-                    <td className="py-2 pr-2 text-gray-500">{assessment.uploadedAt.slice(0, 10)}</td>
-                    <td className="py-2 pr-2 text-right">
-                      <Link
-                        to={`/assessments/${assessment.assessmentId}`}
-                        className="text-sm font-medium text-brand-600 hover:underline"
-                      >
-                        검토
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  <button
+                    type="button"
+                    onClick={() => void handleOpenDiagnosis(caseId)}
+                    disabled={opening}
+                    className={`${primaryButtonClass} mt-3 w-full`}
+                  >
+                    {opening ? '여는 중...' : '진단자료 확인'}
+                  </button>
+                </div>
+              )
+            })}
           </div>
         )}
       </Card>

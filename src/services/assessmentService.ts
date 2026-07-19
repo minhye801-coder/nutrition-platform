@@ -38,15 +38,19 @@ export async function fetchAssessments(): Promise<AssessmentListItem[]> {
   return data.assessments ?? []
 }
 
-export async function fetchAssessment(assessmentId: string): Promise<Assessment> {
+/**
+ * 목록(fetchAssessments)과 동일한 모양(AssessmentListItem)을 돌려준다 — 검토 화면이 학생
+ * 이름·학년·반·번호를 표시하고 이름 불일치를 확인할 수 있으려면 단건 조회도 학생 조인이
+ * 필요하다(요구사항 2·6절).
+ */
+export async function fetchAssessment(assessmentId: string): Promise<AssessmentListItem> {
   if (isDemoMode()) return demoAssessmentStore.detail(assessmentId)
 
   const response = await fetch(`/api/assessments/${encodeURIComponent(assessmentId)}`, { credentials: 'include' })
   if (!response.ok) {
     return throwAssessmentApiError(response)
   }
-  const data = (await response.json()) as { assessment: Assessment }
-  return data.assessment
+  return (await response.json()) as AssessmentListItem
 }
 
 /**
@@ -71,14 +75,16 @@ export async function createAssessment(caseId: string, round: string, timepoint:
 }
 
 /**
- * "AI로 자동 확인" — 브라우저에서 이미 비식별화 확인을 마친 텍스트만 보낸다(원본 PDF
+ * "두 자료 분석하기" — 브라우저에서 이미 비식별화 확인을 마친 텍스트만 보낸다(원본 PDF
  * 바이트 없음, src/lib/pdfDeidentify.ts + AssessmentDetailPage의 확인 화면 참고).
- * Gemini에는 이 텍스트만 전달된다(functions/_lib/geminiClient.ts).
+ * 진단결과 텍스트는 필수, 응답내역 텍스트는 선택이다(원본 PDF 선택 규칙과 동일 —
+ * 요구사항 4절). Gemini에는 이 두 텍스트만 전달된다(functions/_lib/geminiClient.ts).
  */
 export async function extractAssessment(
   assessmentId: string,
-  deidentifiedText: string,
+  diagnosisText: string,
   caseRequestId: string,
+  responseText?: string,
 ): Promise<Assessment> {
   if (isDemoMode()) return demoAssessmentStore.extractSample(assessmentId)
 
@@ -86,7 +92,7 @@ export async function extractAssessment(
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ deidentifiedText, caseRequestId }),
+    body: JSON.stringify({ diagnosisText, responseText, caseRequestId }),
   })
   if (!response.ok) {
     return throwAssessmentApiError(response)

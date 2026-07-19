@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 const requireSchoolWorkspaceAccessMock = vi.fn()
 const getCaseMock = vi.fn()
 const transitionCaseStatusMock = vi.fn()
-const createAssessmentMock = vi.fn()
+const ensureAssessmentMock = vi.fn()
 const uploadFileMock = vi.fn()
 const ensureAssessmentFolderMock = vi.fn()
 
@@ -19,7 +19,7 @@ vi.mock('../functions/_lib/caseSheet', async () => {
 
 vi.mock('../functions/_lib/assessmentSheet', async () => {
   const actual = await vi.importActual<typeof import('../functions/_lib/assessmentSheet')>('../functions/_lib/assessmentSheet')
-  return { ...actual, createAssessment: (...args: unknown[]) => createAssessmentMock(...args), listAssessmentsByCase: vi.fn() }
+  return { ...actual, ensureAssessment: (...args: unknown[]) => ensureAssessmentMock(...args), listAssessmentsByCase: vi.fn() }
 })
 
 vi.mock('../functions/_lib/googleDrive', async () => {
@@ -45,7 +45,7 @@ describe('진단검사 원본 PDF — Drive 업로드 함수가 호출되지 않
     requireSchoolWorkspaceAccessMock.mockReset().mockResolvedValue(FAKE_ACCESS)
     getCaseMock.mockReset().mockResolvedValue({ caseId: 'CASE-1', studentUuid: 'STU-AAAA-BBBB-CCCC', driveFolderUrl: 'https://drive.google.com/drive/folders/root-folder' })
     transitionCaseStatusMock.mockReset().mockResolvedValue({ ok: true, transitioned: true })
-    createAssessmentMock.mockReset().mockResolvedValue({ assessmentId: 'ASSESS-1' })
+    ensureAssessmentMock.mockReset().mockResolvedValue({ assessment: { assessmentId: 'ASSESS-1' }, created: true })
     uploadFileMock.mockReset()
     ensureAssessmentFolderMock.mockReset()
   })

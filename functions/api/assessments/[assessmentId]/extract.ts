@@ -11,8 +11,10 @@ const MAX_TEXT_LENGTH = 50_000
 const CASE_REQUEST_ID_PATTERN = /^CASE-\d{8}-[A-Z0-9]{4}$/
 
 interface ExtractBody {
-  /** 브라우저에서 pdf.js로 추출 후 교사가 식별정보 후보를 제거·확인한 텍스트(src/lib/pdfDeidentify.ts). 원본 PDF 바이트는 여기 없다. */
-  deidentifiedText?: string
+  /** 브라우저에서 pdf.js로 추출 후 교사가 식별정보 후보를 제거·확인한 진단결과 텍스트(필수, src/lib/pdfDeidentify.ts). 원본 PDF 바이트는 여기 없다. */
+  diagnosisText?: string
+  /** 같은 방식으로 비식별화된 응답내역 텍스트(선택 — 원본도 responsePdf가 선택이었다, 요구사항 4절). */
+  responseText?: string
   caseRequestId?: string
 }
 
@@ -43,9 +45,15 @@ export const onRequestPost: PagesFunction<Env, 'assessmentId'> = async ({ reques
   } catch {
     return Response.json({ error: 'invalid_input' }, { status: 400 })
   }
-  const deidentifiedText = typeof body?.deidentifiedText === 'string' ? body.deidentifiedText.trim() : ''
+  const diagnosisText = typeof body?.diagnosisText === 'string' ? body.diagnosisText.trim() : ''
+  const responseText = typeof body?.responseText === 'string' ? body.responseText.trim() : ''
   const caseRequestId = typeof body?.caseRequestId === 'string' ? body.caseRequestId.trim() : ''
-  if (!deidentifiedText || deidentifiedText.length > MAX_TEXT_LENGTH || !CASE_REQUEST_ID_PATTERN.test(caseRequestId)) {
+  if (
+    !diagnosisText ||
+    diagnosisText.length > MAX_TEXT_LENGTH ||
+    responseText.length > MAX_TEXT_LENGTH ||
+    !CASE_REQUEST_ID_PATTERN.test(caseRequestId)
+  ) {
     return Response.json({ error: 'invalid_input' }, { status: 400 })
   }
 
@@ -69,7 +77,7 @@ export const onRequestPost: PagesFunction<Env, 'assessmentId'> = async ({ reques
 
     let result
     try {
-      result = await extractFromDeidentifiedText(apiKey, deidentifiedText)
+      result = await extractFromDeidentifiedText(apiKey, diagnosisText, responseText || undefined)
     } catch (error) {
       if (error instanceof GeminiApiError) {
         // detail 원문은 Gemini 오류 메시지일 뿐 요청 본문이 아니지만, 혹시라도 입력이

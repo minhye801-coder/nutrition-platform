@@ -1,10 +1,10 @@
 import {
   DEMO_STUDENTS,
+  DEMO_CASES,
   DEMO_CASE_SEARCH_ITEMS,
   DEMO_CASE_DETAILS,
   DEMO_CONSENT_LIST_ITEMS,
   DEMO_CONSENT_DETAILS,
-  DEMO_ASSESSMENT_LIST_ITEMS,
   DEMO_ASSESSMENTS,
   DEMO_INTAKES,
 } from '@/data/demoFixtures'
@@ -31,7 +31,6 @@ const caseSearchItems = clone(DEMO_CASE_SEARCH_ITEMS)
 const caseDetails = clone(DEMO_CASE_DETAILS)
 const consentListItems = clone(DEMO_CONSENT_LIST_ITEMS)
 const consentDetails = clone(DEMO_CONSENT_DETAILS)
-const assessmentListItems = clone(DEMO_ASSESSMENT_LIST_ITEMS)
 let assessments = clone(DEMO_ASSESSMENTS)
 const intakes = clone(DEMO_INTAKES)
 
@@ -159,23 +158,50 @@ export const demoConsentStore = {
   },
 }
 
+/** 체험 모드 assessments 배열을 case/student 시드와 StudentID로 조인한다 — 실제
+ * API(GET /api/assessments, GET /api/assessments/:id)와 동일한 조인 방식이라, 새로 등록한
+ * 데모 검사결과도 곧바로 올바른 학생 이름으로 보인다(별도 고정 목록을 두지 않는다). */
+function joinAssessment(assessment: Assessment): AssessmentListItem {
+  const caseRecord = DEMO_CASES.find((c) => c.caseId === assessment.caseId)
+  const student = students.find((s) => s.studentUuid === assessment.studentUuid)
+  return {
+    assessment,
+    caseTopic: caseRecord?.topic ?? '',
+    caseStatus: caseRecord?.status ?? '',
+    studentName: student?.name ?? '',
+    grade: student?.grade ?? '',
+    studentClass: student?.class ?? '',
+    studentNumber: student?.studentNumber ?? '',
+  }
+}
+
 export const demoAssessmentStore = {
   async list(): Promise<AssessmentListItem[]> {
-    return clone(assessmentListItems)
+    return assessments.map((a) => clone(joinAssessment(a)))
   },
-  async detail(assessmentId: string): Promise<Assessment> {
+  async detail(assessmentId: string): Promise<AssessmentListItem> {
     const found = assessments.find((a) => a.assessmentId === assessmentId)
     if (!found) throw new Error('not_found')
-    return clone(found)
+    return clone(joinAssessment(found))
   },
-  /** 체험 모드는 원본 파일을 실제로 읽지 않는다 — 항상 준비된 샘플 결과만 돌려준다. */
+  /**
+   * 체험 모드는 원본 파일을 실제로 읽지 않는다 — 항상 준비된 샘플 결과만 돌려준다.
+   * 실제 ensureAssessment(functions/_lib/assessmentSheet.ts)와 동일하게 같은
+   * caseId+timepoint 기록이 이미 있으면 새로 만들지 않고 그대로 돌려준다(요구사항
+   * 3·8절 — 체험 모드에서도 중복 등록이 재현되지 않아야 한다).
+   */
   async uploadSample(caseId: string, round: string, timepoint: string): Promise<Assessment> {
+    const existing = assessments.find((a) => a.caseId === caseId && a.timepoint === timepoint)
+    if (existing) return clone(existing)
+
     const now = new Date().toISOString()
     const sample = clone(assessments[0])
+    const studentUuid = DEMO_CASES.find((c) => c.caseId === caseId)?.studentUuid ?? sample.studentUuid
     const record: Assessment = {
       ...sample,
       assessmentId: demoId('ASSESS'),
       caseId,
+      studentUuid,
       round,
       timepoint,
       status: '검토 대기',
@@ -184,6 +210,8 @@ export const demoAssessmentStore = {
       updatedAt: now,
       extractionStatus: '수동 입력',
       extractedAt: '',
+      warnings: '',
+      responseHighlights: '',
     }
     assessments = [...assessments, record]
     return clone(record)

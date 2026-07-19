@@ -1,7 +1,7 @@
 import type { Student } from '@/types/student'
 import type { Case, CaseDetail, CaseSearchItem } from '@/types/case'
 import type { Consent, ConsentDetail, ConsentListItem } from '@/types/consent'
-import type { Assessment, AssessmentListItem } from '@/types/assessment'
+import type { Assessment } from '@/types/assessment'
 import type { Intake } from '@/types/intake'
 
 /**
@@ -280,18 +280,6 @@ const DEMO_EXTRACTED_FIELDS: Assessment = {
 }
 
 export const DEMO_ASSESSMENTS: Assessment[] = [DEMO_EXTRACTED_FIELDS]
-
-export const DEMO_ASSESSMENT_LIST_ITEMS: AssessmentListItem[] = [
-  {
-    assessment: DEMO_EXTRACTED_FIELDS,
-    caseTopic: '편식·균형 식생활',
-    caseStatus: '상담 예정',
-    studentName: '김민수',
-    grade: '5',
-    studentClass: '2',
-    studentNumber: '15',
-  },
-]
 
 export const DEMO_INTAKES: Intake[] = [
   {

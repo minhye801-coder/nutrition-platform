@@ -19,13 +19,8 @@ const MENU_ITEMS: NavItem[] = [
   { label: '테스트 데이터 정리', path: '/cleanup', comingSoon: true },
 ]
 
-/**
- * legacy에서는 학교별 "설정" 시트에 저장된 OFFICIAL_DIAG_URL을 그대로 열었지만,
- * 현재 시스템에는 이 값을 저장·조회하는 설정 화면/API가 아직 없다(임의 URL을
- * 지어내지 않는다) — 그래서 고정 외부 링크가 아니라 다른 항목들과 같은 방식의
- * "준비 중" 라우트로 취급한다.
- */
-const OFFICIAL_DIAGNOSIS_ITEM: NavItem = { label: '교육부 진단프로그램', path: '/official-diagnosis', comingSoon: true }
+/** 교육부 식생활·생활습관 진단(공식 진단프로그램) 고정 외부 URL — AppPage.tsx와 동일한 값. */
+const OFFICIAL_DIAGNOSIS_URL = 'http://www.sfpi.or.kr/food/index.html#/'
 
 /** legacy `Index.html` "질병관리청 성장도표 계산기" 링크와 동일한 고정 외부 URL. */
 const GROWTH_CHART_URL = 'https://knhanes.kdca.go.kr/knhanes/grtcht/clclt/measClclt.do'
@@ -78,10 +73,14 @@ export function Sidebar({ schoolPublicId, onLogout, loggingOut, onNavigate }: Si
         </span>
       )}
 
-      <NavLink to={OFFICIAL_DIAGNOSIS_ITEM.path} onClick={onNavigate} className={({ isActive }) => itemClass(isActive)}>
-        {OFFICIAL_DIAGNOSIS_ITEM.label}
-        <span className="ml-1.5 text-xs font-normal text-gray-400">(준비 중)</span>
-      </NavLink>
+      <a
+        href={OFFICIAL_DIAGNOSIS_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+      >
+        교육부 진단프로그램
+      </a>
 
       <a
         href={GROWTH_CHART_URL}
@@ -89,7 +88,7 @@ export function Sidebar({ schoolPublicId, onLogout, loggingOut, onNavigate }: Si
         rel="noopener noreferrer"
         className="block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
       >
-        질병관리청 성장도표 계산기
+        성장도표 계산기
       </a>
 
       <div className="my-2 border-t border-gray-100" />

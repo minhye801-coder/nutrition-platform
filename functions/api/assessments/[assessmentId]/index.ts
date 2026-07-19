@@ -5,11 +5,20 @@ import {
   reviewAssessment,
   type ReviewAssessmentInput,
 } from '../../../_lib/assessmentSheet'
-import { CASE_STATUS_RESULT_CHECK, CASE_STATUS_SESSION_SCHEDULED, transitionCaseStatus } from '../../../_lib/caseSheet'
+import { CASE_STATUS_RESULT_CHECK, CASE_STATUS_SESSION_SCHEDULED, getCase, transitionCaseStatus } from '../../../_lib/caseSheet'
+import { getStudentByUuid } from '../../../_lib/studentSheet'
 import { getAssessmentIdParam, handleAssessmentSheetError } from '../../../_lib/assessmentApiHelpers'
 import type { Env } from '../../../_lib/env'
 
-/** 검사결과 상세 조회(GET /api/assessments/:assessmentId). 로그인 필요. */
+/**
+ * 검사결과 상세 조회(GET /api/assessments/:assessmentId). 로그인 필요.
+ *
+ * 목록(GET /api/assessments)과 동일한 모양(assessment + caseTopic/caseStatus/studentName/
+ * grade/studentClass/studentNumber)으로 응답한다 — 이전에는 여기가 assessment 레코드만
+ * 돌려줘서 검토 화면이 학생 이름을 아예 표시하지 못했다(요구사항 2절 학생 연결 복원).
+ * caseId/studentUuid는 이미 조회된 assessment 레코드에서 읽으므로 이름이 아니라 항상
+ * StudentID+caseId로 조인한다.
+ */
 export const onRequestGet: PagesFunction<Env, 'assessmentId'> = async ({ request, env, params }) => {
   const access = await requireSchoolWorkspaceAccess(request, env)
   if (isAccessError(access)) {
@@ -26,7 +35,21 @@ export const onRequestGet: PagesFunction<Env, 'assessmentId'> = async ({ request
     if (!assessment) {
       return Response.json({ error: 'not_found' }, { status: 404 })
     }
-    return Response.json({ assessment })
+
+    const [caseRecord, student] = await Promise.all([
+      getCase(access.accessToken, access.spreadsheetId, assessment.caseId),
+      getStudentByUuid(access.accessToken, access.identitySpreadsheetId, assessment.studentUuid),
+    ])
+
+    return Response.json({
+      assessment,
+      caseTopic: caseRecord?.topic ?? '',
+      caseStatus: caseRecord?.status ?? '',
+      studentName: student?.name ?? '',
+      grade: student?.grade ?? '',
+      studentClass: student?.class ?? '',
+      studentNumber: student?.studentNumber ?? '',
+    })
   } catch (error) {
     return handleAssessmentSheetError('get', error)
   }

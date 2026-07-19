@@ -291,6 +291,26 @@ export async function getAssessment(
   return row ? rowToRecord(row, sheet.headerIndex) : null
 }
 
+/**
+ * legacy `ensureDiagnosisRecord_`(counseling-manager/code.gs.txt:3859-3885)와 동일한 유일성
+ * 규칙: 같은 caseId+timepoint(평가시점) 행은 하나만 존재한다. Sheets에는 유니크 인덱스가
+ * 없으므로 이 조회가 유일성의 유일한 근거다 — 이 함수를 거치지 않고 새 행을 append하면
+ * (예전 createAssessment 직접 호출) 중복이 생긴다(요구사항 3·8절).
+ */
+export async function findAssessmentByCaseAndTimepoint(
+  accessToken: string,
+  spreadsheetId: string,
+  caseId: string,
+  timepoint: string,
+): Promise<AssessmentRecord | null> {
+  const sheet = await loadWritableSheet(accessToken, spreadsheetId)
+  const caseColumn = sheet.headerIndex.caseId
+  const timepointColumn = sheet.headerIndex.timepoint
+  if (caseColumn === undefined || timepointColumn === undefined) return null
+  const row = sheet.rows.find((row) => row[caseColumn] === caseId && row[timepointColumn] === timepoint)
+  return row ? rowToRecord(row, sheet.headerIndex) : null
+}
+
 export interface CreateAssessmentInput {
   tenantId: string
   caseId: string
@@ -351,6 +371,34 @@ export async function createAssessment(
   const row = recordToRow(record, sheet.headers)
   await appendValues(accessToken, spreadsheetId, `${quoteSheetName(ASSESSMENT_SHEET_NAME)}!A1`, [row])
   return record
+}
+
+export interface EnsureAssessmentResult {
+  assessment: AssessmentRecord
+  /** false면 이미 있던 caseId+timepoint 행을 그대로 돌려준 것 — 새로 만들지 않았다. */
+  created: boolean
+}
+
+/**
+ * 검사결과 등록의 유일한 진입점(요구사항 3·8절) — createAssessment를 직접 부르지 않는다.
+ * 같은 caseId+timepoint 행이 이미 있으면 그 행을 그대로 반환하고(새 행을 만들지 않음),
+ * 없을 때만 append한다. 버튼을 여러 번 눌러도, 새로고침 후 같은 시점을 다시 등록해도
+ * 새 행이 생기지 않는다 — legacy `ensureDiagnosisRecord_`와 동일한 규칙.
+ *
+ * 조회와 append 사이에 진짜 트랜잭션은 없다(Sheets API 한계) — 두 요청이 정확히 같은
+ * 순간에 들어오면 이론적으로 행이 두 개 생길 수 있다. 서버 idempotency는 "같은 요청을
+ * 반복해도 안전함"을 보장하는 1차 방어선이고, 실제 동시 클릭은 클라이언트의 버튼 비활성화
+ * 가드(AssessmentsPage/AssessmentDetailPage)로 막는다.
+ */
+export async function ensureAssessment(
+  accessToken: string,
+  spreadsheetId: string,
+  input: CreateAssessmentInput,
+): Promise<EnsureAssessmentResult> {
+  const existing = await findAssessmentByCaseAndTimepoint(accessToken, spreadsheetId, input.caseId, input.timepoint)
+  if (existing) return { assessment: existing, created: false }
+  const assessment = await createAssessment(accessToken, spreadsheetId, input)
+  return { assessment, created: true }
 }
 
 export interface ApplyExtractionInput {
