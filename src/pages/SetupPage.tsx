@@ -123,12 +123,77 @@ function SavedInfoNotice({ info }: { info: SavedInfo }) {
 function DriveConsentNotice() {
   return (
     <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-3 text-xs text-blue-800">
-      <p className="font-medium">설치 시작을 누르면 Google 화면이 한 번 더 열립니다.</p>
+      <p className="font-medium">설치 시작을 누르면 권한 안내 화면이 먼저 표시됩니다.</p>
       <ul className="mt-1.5 list-disc space-y-1 pl-4">
-        <li>방금 완료한 로그인과는 별개로, Drive 접근을 위한 추가 권한 승인 화면입니다(재로그인이 아닙니다).</li>
+        <li>방금 완료한 로그인과는 별개로, Drive 접근을 위한 추가 권한 승인이 필요합니다(재로그인이 아닙니다).</li>
         <li>이 앱이 만든 파일만 관리할 수 있는 최소 권한(drive.file)만 요청합니다.</li>
         <li>선생님의 기존 Google Drive 파일·폴더는 열람하지 않습니다.</li>
       </ul>
+    </div>
+  )
+}
+
+/** 설치 시작 전, Drive/Spreadsheet 권한이 왜 필요한지와 데이터 저장 위치를 명확히
+ * 설명하는 안내 화면. "Google 권한 부여 시작" 버튼을 눌러야만 OAuth 화면으로
+ * 이동하며, 자동으로 넘어가지 않는다(사용자가 무엇을 눌러야 할지 알 수 있도록). */
+function ConsentIntro({
+  consentDenied,
+  savedInfo,
+  steps,
+  onStart,
+}: {
+  consentDenied: boolean
+  savedInfo: SavedInfo | null
+  steps: SetupStep[]
+  onStart: () => void
+}) {
+  return (
+    <div className="space-y-4">
+      <Card className="space-y-4">
+        <div>
+          <p className="text-sm font-semibold text-gray-900">Google 권한 부여가 필요합니다</p>
+          <p className="mt-1 text-sm text-gray-600">
+            학교 작업공간(Drive 폴더 + Spreadsheet)을 만들기 전에, 아래 권한이 왜 필요한지 확인해 주세요.
+          </p>
+        </div>
+
+        <ul className="space-y-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-3 text-xs text-blue-900">
+          <li>
+            <span className="font-medium">Drive 권한</span> — 학교 전용 폴더와 하위 폴더를 만들기 위해 필요합니다.
+          </li>
+          <li>
+            <span className="font-medium">Spreadsheet 권한</span> — 상담 데이터와 학생식별정보를 담을 Google
+            Sheets를 만들기 위해 필요합니다.
+          </li>
+          <li>
+            이 권한은 <span className="font-medium">학교 작업공간을 생성하는 용도로만</span> 사용되며, 이 앱이
+            직접 만든 파일 외에는 접근하지 않습니다(drive.file).
+          </li>
+          <li>
+            학생 개인정보는 <span className="font-medium">선생님의 Google Drive</span>에만 저장됩니다.{' '}
+            <span className="font-medium">Cloudflare 서버에는 저장되지 않습니다.</span>
+          </li>
+        </ul>
+
+        {consentDenied && (
+          <p className="text-sm text-red-600">
+            Google 권한 요청이 거부되었거나 완료되지 않았습니다. 내 Google Drive에 폴더와 Spreadsheet를
+            만들려면 Drive 접근 권한 승인이 반드시 필요합니다. 아래 버튼으로 다시 승인해 주세요.
+          </p>
+        )}
+
+        {savedInfo && <SavedInfoNotice info={savedInfo} />}
+        <ProgressBar steps={steps} />
+        {steps.length > 0 && <StepList steps={steps} />}
+
+        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+          다음 화면에서 <span className="font-bold">허용</span>을 눌러 주세요.
+        </p>
+
+        <button type="button" onClick={onStart} className={`${primaryButtonClass} w-full`}>
+          {consentDenied ? 'Drive 권한 다시 승인하기' : 'Google 권한 부여 시작'}
+        </button>
+      </Card>
     </div>
   )
 }
@@ -253,7 +318,7 @@ function SetupContent({ user }: { user: SessionUser }) {
     setErrorMessage('')
     try {
       const result = await retrySetup()
-      applyResult(result, true)
+      applyResult(result, false)
     } catch {
       setErrorMessage('설치 상태를 이어가는 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.')
       setPhase('failed')
@@ -272,7 +337,7 @@ function SetupContent({ user }: { user: SessionUser }) {
     setPhase('running')
     try {
       const result = await startSetup({ schoolName: schoolName.trim(), managerName: managerName.trim() })
-      applyResult(result, true)
+      applyResult(result, false)
     } catch {
       setErrorMessage('설치 시작 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.')
       setPhase('failed')
@@ -362,40 +427,23 @@ function SetupContent({ user }: { user: SessionUser }) {
       {phase === 'redirecting' && (
         <Card className="space-y-4">
           <div>
-            <p className="text-sm font-medium text-gray-900">Google Drive 연결 화면으로 이동합니다</p>
-            <p className="mt-1 text-sm text-gray-600">권한 승인 후 자동으로 설치가 계속됩니다.</p>
+            <p className="text-sm font-medium text-gray-900">Google 권한 승인 화면으로 이동합니다</p>
+            <p className="mt-1 text-sm text-gray-600">
+              다음 화면에서 <span className="font-semibold">허용</span>을 눌러 주세요. 승인 후 자동으로 설치가
+              계속됩니다.
+            </p>
           </div>
           {savedInfo && <SavedInfoNotice info={savedInfo} />}
         </Card>
       )}
 
       {phase === 'needs_consent' && (
-        <div className="space-y-4">
-          <Card className="space-y-4">
-            {consentDenied ? (
-              <p className="text-sm text-red-600">
-                Google 권한 요청이 거부되었거나 완료되지 않았습니다. 내 Google Drive에
-                폴더와 Spreadsheet를 만들려면 Drive 접근 권한 승인이 반드시 필요합니다.
-                아래 버튼으로 다시 승인해 주세요.
-              </p>
-            ) : (
-              <p className="text-sm text-gray-700">
-                내 Google Drive에 폴더와 Spreadsheet를 만들려면 Drive 접근 권한이
-                필요합니다. 아래 버튼을 눌러 Google 동의 화면에서 권한을 허용해 주세요.
-              </p>
-            )}
-            {savedInfo && <SavedInfoNotice info={savedInfo} />}
-            <ProgressBar steps={steps} />
-            <StepList steps={steps} />
-            <button
-              type="button"
-              onClick={() => goToConsent(consentUrl)}
-              className={`${primaryButtonClass} w-full`}
-            >
-              {consentDenied ? 'Drive 권한 다시 승인하기' : 'Google 권한 허용하기'}
-            </button>
-          </Card>
-        </div>
+        <ConsentIntro
+          consentDenied={consentDenied}
+          savedInfo={savedInfo}
+          steps={steps}
+          onStart={() => goToConsent(consentUrl)}
+        />
       )}
 
       {phase === 'failed' && (
